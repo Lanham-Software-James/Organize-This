@@ -1,0 +1,56 @@
+services:
+  db:
+    image: postgres:15.8-alpine3.20
+    container_name: organize-this-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - organize-this-backend
+    ports:
+      - "5432:5432"
+    volumes:
+      - organize-this-db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./Backend
+    container_name: organize-this-backend
+    depends_on:
+      - db
+    networks:
+      - organize-this-backend
+      - organize-this-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - "./Backend:/app"
+    restart: unless-stopped
+
+  frontend:
+    build: 
+      context: ./Frontend
+    container_name: organize-this-frontend
+    depends_on:
+      - backend
+    networks:
+      - organize-this-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - "./Frontend/src:/app/src"
+      - "./Frontend/tests:/app/tests"
+      - "./Frontend/static:/app/static"
+
+    restart: unless-stopped
+
+networks:
+  organize-this-backend:
+    driver: bridge
+  organize-this-frontend:
+    driver: bridge
+
+volumes:
+  organize-this-db-data:
