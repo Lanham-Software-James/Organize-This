@@ -11,7 +11,7 @@ COPY go.mod .
 COPY go.sum .
 
 RUN --mount=type=ssh go mod download
- 
+
 COPY ./ ./
 RUN go build -o ./tmp/main ./main.go
 
@@ -22,7 +22,7 @@ FROM build AS dev
 
 RUN apk add --no-cache git
 RUN go install github.com/air-verse/air@latest
- 
+
 EXPOSE 3000
 
 WORKDIR /app
