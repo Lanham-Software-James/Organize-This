@@ -14,7 +14,7 @@ import (
 func RegisterRoutes(r *chi.Mux) {
 	handler := controllers.Handler{Repository: &repository.Repository{Database: database.DB}}
 
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/", func(w http.ResponseWriter, _ *http.Request) {
 		helpers.SuccessResponse(w, "alive ok")
 	})
 
@@ -31,6 +31,9 @@ func RegisterRoutes(r *chi.Mux) {
 
 			// Shelving Units
 			r.Post("/shelvingunit", handler.CreateShelvingUnit)
+
+			// Shelves
+			r.Post("/shelf", handler.CreateShelf)
 		})
 	})
 }
