@@ -25,6 +25,12 @@ func (handler Handler) CreateBuilding(w http.ResponseWriter, request *http.Reque
 		return
 	}
 
+	if building.Name == "" {
+		logger.Errorf("Error creating building: Missing name.")
+		http.Error(w, "Missing building name.", http.StatusBadRequest)
+		return
+	}
+
 	handler.Repository.Save(&building)
 	helpers.SuccessResponse(w, &building)
 }
