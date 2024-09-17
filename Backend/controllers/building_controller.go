@@ -4,14 +4,9 @@ import (
 	"chi-boilerplate/helpers"
 	"chi-boilerplate/infra/logger"
 	"chi-boilerplate/models"
-	"chi-boilerplate/repository"
 	"encoding/json"
 	"net/http"
 )
-
-type Handler struct {
-	Repository *repository.Repository
-}
 
 func (handler Handler) CreateBuilding(w http.ResponseWriter, request *http.Request) {
 
