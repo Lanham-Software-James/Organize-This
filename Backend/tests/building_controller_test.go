@@ -1,8 +1,8 @@
-package controllers
+package tests
 
 import (
 	"bytes"
-	"chi-boilerplate/infra/logger"
+	"chi-boilerplate/controllers"
 	"chi-boilerplate/repository"
 	"encoding/json"
 	"io"
@@ -10,13 +10,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-chi/chi/v5"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
-type singleResponse struct {
+type buildingSingleResponse struct {
 	Message string `json:"message"`
 	Data    struct {
 		ID        uint   `json:"ID"`
@@ -28,28 +25,12 @@ type singleResponse struct {
 	}
 }
 
-func NewMockDB() (*gorm.DB, sqlmock.Sqlmock) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		logger.Fatalf("An error '%s' was not expected when opening a stub database connection", err)
-	}
-
-	gormDB, err := gorm.Open(postgres.New(postgres.Config{
-		Conn: db,
-	}), &gorm.Config{})
-
-	if err != nil {
-		logger.Fatalf("An error '%s' was not expected when opening gorm database", err)
-	}
-
-	return gormDB, mock
-}
-
 func TestCreateBuilding(t *testing.T) {
 	mockDB, _ := NewMockDB()
-	handler := Handler{Repository: &repository.Repository{Database: mockDB}}
+	handler := controllers.Handler{Repository: &repository.Repository{Database: mockDB}}
+	endpoint := "/v1/entity-management/building"
 	r := chi.NewRouter()
-	r.Post("/v1/entity-management/building", handler.CreateBuilding)
+	r.Post(endpoint, handler.CreateBuilding)
 
 	srv := httptest.NewServer(r)
 	defer srv.Close()
@@ -63,7 +44,7 @@ func TestCreateBuilding(t *testing.T) {
 		values := map[string]string{"Name": testName, "Address": testAddress, "Notes": testNotes}
 		payload, _ := json.Marshal(values)
 
-		req := httptest.NewRequest(http.MethodPost, srv.URL+"/v1/entity-management/building", bytes.NewBuffer(payload))
+		req := httptest.NewRequest(http.MethodPost, srv.URL+endpoint, bytes.NewBuffer(payload))
 		w := httptest.NewRecorder()
 
 		handler.CreateBuilding(w, req)
@@ -79,7 +60,7 @@ func TestCreateBuilding(t *testing.T) {
 			t.Errorf("Expected error to be nil. Got: %v", err)
 		}
 
-		contents := singleResponse{}
+		contents := buildingSingleResponse{}
 		err = json.Unmarshal(data, &contents)
 		if err != nil {
 			t.Errorf("Expected error to be nil. Got: %v", err)
@@ -110,7 +91,7 @@ func TestCreateBuilding(t *testing.T) {
 		values := map[string]string{"Name": testName, "Address": testAddress}
 		payload, _ := json.Marshal(values)
 
-		req := httptest.NewRequest(http.MethodPost, srv.URL+"/v1/entity-management/building", bytes.NewBuffer(payload))
+		req := httptest.NewRequest(http.MethodPost, srv.URL+endpoint, bytes.NewBuffer(payload))
 		w := httptest.NewRecorder()
 
 		handler.CreateBuilding(w, req)
@@ -126,7 +107,7 @@ func TestCreateBuilding(t *testing.T) {
 			t.Errorf("Expected error to be nil. Got: %v", err)
 		}
 
-		contents := singleResponse{}
+		contents := buildingSingleResponse{}
 		err = json.Unmarshal(data, &contents)
 		if err != nil {
 			t.Errorf("Expected error to be nil. Got: %v", err)
@@ -157,7 +138,7 @@ func TestCreateBuilding(t *testing.T) {
 		values := map[string]string{"Name": testName, "Notes": testNotes}
 		payload, _ := json.Marshal(values)
 
-		req := httptest.NewRequest(http.MethodPost, srv.URL+"/v1/entity-management/building", bytes.NewBuffer(payload))
+		req := httptest.NewRequest(http.MethodPost, srv.URL+endpoint, bytes.NewBuffer(payload))
 		w := httptest.NewRecorder()
 
 		handler.CreateBuilding(w, req)
@@ -173,7 +154,7 @@ func TestCreateBuilding(t *testing.T) {
 			t.Errorf("Expected error to be nil. Got: %v", err)
 		}
 
-		contents := singleResponse{}
+		contents := buildingSingleResponse{}
 		err = json.Unmarshal(data, &contents)
 		if err != nil {
 			t.Errorf("Expected error to be nil. Got: %v", err)
@@ -203,7 +184,7 @@ func TestCreateBuilding(t *testing.T) {
 		values := map[string]string{"Name": testName}
 		payload, _ := json.Marshal(values)
 
-		req := httptest.NewRequest(http.MethodPost, srv.URL+"/v1/entity-management/building", bytes.NewBuffer(payload))
+		req := httptest.NewRequest(http.MethodPost, srv.URL+endpoint, bytes.NewBuffer(payload))
 		w := httptest.NewRecorder()
 
 		handler.CreateBuilding(w, req)
@@ -219,7 +200,7 @@ func TestCreateBuilding(t *testing.T) {
 			t.Errorf("Expected error to be nil. Got: %v", err)
 		}
 
-		contents := singleResponse{}
+		contents := buildingSingleResponse{}
 		err = json.Unmarshal(data, &contents)
 		if err != nil {
 			t.Errorf("Expected error to be nil. Got: %v", err)
@@ -248,7 +229,7 @@ func TestCreateBuilding(t *testing.T) {
 		values := map[string]string{}
 		payload, _ := json.Marshal(values)
 
-		req := httptest.NewRequest(http.MethodPost, srv.URL+"/v1/entity-management/building", bytes.NewBuffer(payload))
+		req := httptest.NewRequest(http.MethodPost, srv.URL+endpoint, bytes.NewBuffer(payload))
 		w := httptest.NewRecorder()
 
 		handler.CreateBuilding(w, req)
