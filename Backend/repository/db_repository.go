@@ -26,12 +26,12 @@ func (repo Repository) Get(model interface{}) interface{} {
 	return err
 }
 
-func GetOne(model interface{}) interface{} {
+func (repo Repository) GetOne(model interface{}) interface{} {
 	err := database.DB.Last(model).Error
 	return err
 }
 
-func Update(model interface{}) interface{} {
+func (repo Repository) Update(model interface{}) interface{} {
 	err := database.DB.Find(model).Error
 	return err
 }
