@@ -28,6 +28,9 @@ func RegisterRoutes(r *chi.Mux) {
 
 			// Rooms
 			r.Post("/room", handler.CreateRoom)
+
+			// Shelving Units
+			r.Post("/shelvingunit", handler.CreateShelvingUnit)
 		})
 	})
 }
