@@ -22,5 +22,5 @@ jobs:
         working-directory: Backend
 
       - name: Test with the Go CLI
-        run: go test ./tests/
+        run: go test -v ./tests/
         working-directory: Backend
