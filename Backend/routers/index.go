@@ -23,7 +23,11 @@ func RegisterRoutes(r *chi.Mux) {
 
 		// enitity management routes
 		r.Route("/entity-management", func(r chi.Router) {
+			// Buildings
 			r.Post("/building", handler.CreateBuilding)
+
+			// Rooms
+			r.Post("/room", handler.CreateRoom)
 		})
 	})
 }
