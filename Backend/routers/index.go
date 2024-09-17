@@ -38,6 +38,9 @@ func RegisterRoutes(r *chi.Mux) {
 
 			// Containers
 			r.Post("/container", handler.CreateContainer)
+
+			// Items
+			r.Post("/item", handler.CreateItem)
 		})
 	})
 }

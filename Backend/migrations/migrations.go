@@ -8,7 +8,7 @@ import (
 
 // Migrate is called in main.go to migrate out DB to the latest version.
 func Migrate() {
-	var migrationModels = []interface{}{&models.Building{}, &models.Room{}, &models.ShelvingUnit{}, &models.Shelf{}, &models.Container{}}
+	var migrationModels = []interface{}{&models.Building{}, &models.Room{}, &models.ShelvingUnit{}, &models.Shelf{}, &models.Container{}, &models.Item{}}
 	err := database.GetDB().AutoMigrate(migrationModels...)
 	if err != nil {
 		return
