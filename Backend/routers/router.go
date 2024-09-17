@@ -1,3 +1,4 @@
+// Package routers provides all the details of our chi router.
 package routers
 
 import (
@@ -7,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
+// SetupRoute configures our Chi Router.
 func SetupRoute() *chi.Mux {
 
 	router := chi.NewRouter()

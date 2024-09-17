@@ -1,3 +1,4 @@
+// Package routers provides all the details of our chi router.
 package routers
 
 import (
@@ -34,6 +35,9 @@ func RegisterRoutes(r *chi.Mux) {
 
 			// Shelves
 			r.Post("/shelf", handler.CreateShelf)
+
+			// Containers
+			r.Post("/container", handler.CreateContainer)
 		})
 	})
 }

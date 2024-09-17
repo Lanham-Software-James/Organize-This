@@ -1,3 +1,4 @@
+// Package migrations is used to handle all of our GORM DB migrations.
 package migrations
 
 import (
@@ -5,8 +6,9 @@ import (
 	"organize-this/models"
 )
 
+// Migrate is called in main.go to migrate out DB to the latest version.
 func Migrate() {
-	var migrationModels = []interface{}{&models.Building{}, &models.Room{}, &models.ShelvingUnit{}, &models.Shelf{}}
+	var migrationModels = []interface{}{&models.Building{}, &models.Room{}, &models.ShelvingUnit{}, &models.Shelf{}, &models.Container{}}
 	err := database.GetDB().AutoMigrate(migrationModels...)
 	if err != nil {
 		return
