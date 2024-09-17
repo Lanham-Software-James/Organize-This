@@ -7,15 +7,20 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.23.x'
-      - name: CD into Backend
-        run: cd Backend
+
       - name: Install dependencies
         run: go get .
+        working-directory: Backend
+
       - name: Build
         run: go build -v ./...
+        working-directory: Backend
+
       - name: Test with the Go CLI
         run: go test ./tests/
+        working-directory: Backend
