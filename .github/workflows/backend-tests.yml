@@ -1,4 +1,4 @@
-name: Go
+name: Test Backend
 on: [pull_request]
 
 jobs:
@@ -17,8 +17,8 @@ jobs:
         run: go get .
         working-directory: Backend
 
-      - name: Build
-        run: go build -v ./...
+      - name: Tidy Go Modules
+        run: go mod tidy
         working-directory: Backend
 
       - name: Test with the Go CLI
