@@ -1,3 +1,4 @@
+// Package controllers provides all the various controllers for requests coming to the Organize This API.
 package controllers
 
 import (
@@ -8,6 +9,7 @@ import (
 	"organize-this/models"
 )
 
+// CreateShelf returns void, but sends an http response with the newly created Shelf back to the client.
 func (handler Handler) CreateShelf(w http.ResponseWriter, request *http.Request) {
 
 	shelf := new(models.Shelf)

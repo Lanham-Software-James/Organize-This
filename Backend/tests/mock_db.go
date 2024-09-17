@@ -1,3 +1,4 @@
+// Package tests is where all of out unit tests are described.
 package tests
 
 import (
@@ -8,6 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// NewMockDB returns a gorm DB and sqlMock object to use during unit testing.
 func NewMockDB() (*gorm.DB, sqlmock.Sqlmock) {
 	db, mock, err := sqlmock.New()
 	if err != nil {

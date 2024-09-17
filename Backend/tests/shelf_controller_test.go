@@ -1,3 +1,4 @@
+// Package tests is where all of out unit tests are described.
 package tests
 
 import (
@@ -24,6 +25,7 @@ type shelfSingleResponse struct {
 	}
 }
 
+// TestCreatShelf runs all our various unit tests for the CreateShelf function
 func TestCreateShelf(t *testing.T) {
 	mockDB, _ := NewMockDB()
 	handler := controllers.Handler{Repository: &repository.Repository{Database: mockDB}}

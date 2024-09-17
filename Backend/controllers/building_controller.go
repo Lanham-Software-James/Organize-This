@@ -1,3 +1,4 @@
+// Package controllers provides all the various controllers for requests coming to the Organize This API.
 package controllers
 
 import (
@@ -8,6 +9,7 @@ import (
 	"organize-this/models"
 )
 
+// CreateBuilding returns void, but sends an http response with the newly created Building back to the client.
 func (handler Handler) CreateBuilding(w http.ResponseWriter, request *http.Request) {
 
 	building := new(models.Building)

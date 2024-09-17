@@ -1,3 +1,4 @@
+// Package tests is where all of out unit tests are described.
 package tests
 
 import (
@@ -25,6 +26,7 @@ type buildingSingleResponse struct {
 	}
 }
 
+// TestCreatBuilding runs all our various unit tests for the CreateBuilding function
 func TestCreateBuilding(t *testing.T) {
 	mockDB, _ := NewMockDB()
 	handler := controllers.Handler{Repository: &repository.Repository{Database: mockDB}}
