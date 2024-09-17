@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"chi-boilerplate/repository"
+	"organize-this/repository"
 )
 
 type Handler struct {

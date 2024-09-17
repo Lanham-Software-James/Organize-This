@@ -1,11 +1,11 @@
 package routers
 
 import (
-	"chi-boilerplate/controllers"
-	"chi-boilerplate/helpers"
-	"chi-boilerplate/infra/database"
-	"chi-boilerplate/repository"
 	"net/http"
+	"organize-this/controllers"
+	"organize-this/helpers"
+	"organize-this/infra/database"
+	"organize-this/repository"
 
 	"github.com/go-chi/chi/v5"
 )

@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"chi-boilerplate/infra/database"
-	"chi-boilerplate/infra/logger"
+	"organize-this/infra/database"
+	"organize-this/infra/logger"
 
 	"gorm.io/gorm"
 )

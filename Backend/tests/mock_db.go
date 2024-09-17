@@ -1,7 +1,7 @@
 package tests
 
 import (
-	"chi-boilerplate/infra/logger"
+	"organize-this/infra/logger"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"gorm.io/driver/postgres"

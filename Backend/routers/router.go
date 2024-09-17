@@ -1,7 +1,8 @@
 package routers
 
 import (
-	"chi-boilerplate/routers/middlewares"
+	"organize-this/routers/middlewares"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )

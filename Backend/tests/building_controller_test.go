@@ -2,12 +2,12 @@ package tests
 
 import (
 	"bytes"
-	"chi-boilerplate/controllers"
-	"chi-boilerplate/repository"
 	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"organize-this/controllers"
+	"organize-this/repository"
 	"testing"
 
 	"github.com/go-chi/chi/v5"

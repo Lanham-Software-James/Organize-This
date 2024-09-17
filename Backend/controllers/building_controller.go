@@ -1,11 +1,11 @@
 package controllers
 
 import (
-	"chi-boilerplate/helpers"
-	"chi-boilerplate/infra/logger"
-	"chi-boilerplate/models"
 	"encoding/json"
 	"net/http"
+	"organize-this/helpers"
+	"organize-this/infra/logger"
+	"organize-this/models"
 )
 
 func (handler Handler) CreateBuilding(w http.ResponseWriter, request *http.Request) {

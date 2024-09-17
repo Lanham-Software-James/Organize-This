@@ -1,4 +1,4 @@
-module chi-boilerplate
+module organize-this
 
 go 1.23
 
