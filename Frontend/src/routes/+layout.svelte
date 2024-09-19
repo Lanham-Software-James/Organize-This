@@ -19,54 +19,37 @@
 	// Floating UI for Popups
 	import { computePosition, autoUpdate, flip, shift, offset, arrow } from '@floating-ui/dom';
 	import { storePopup } from '@skeletonlabs/skeleton';
-	import { AppRail, AppRailTile, AppRailAnchor } from '@skeletonlabs/skeleton';
+	storePopup.set({ computePosition, autoUpdate, flip, shift, offset, arrow });
+
+	// Font Awesome
 	import '@fortawesome/fontawesome-free/css/all.min.css';
 
-	storePopup.set({ computePosition, autoUpdate, flip, shift, offset, arrow });
-	let currentTile: number = 0;
+	// Modal and drawers
+	import { initializeStores, Drawer, type DrawerSettings } from '@skeletonlabs/skeleton';
+	initializeStores();
 
-	let visible = true;
-	function toggleVisible() {
-		visible = !visible;
+	import { getDrawerStore } from "@skeletonlabs/skeleton";
+
+	const drawerStore = getDrawerStore();
+
+	function showNavigation() {
+		const drawerSettings: DrawerSettings = {
+			padding: 'p-4',
+			rounded: 'rounded-xl',
+			position: 'right',
+			width: 'w-6/12'
+		};
+		drawerStore.open(drawerSettings);
 	}
 </script>
 
-<div class="flex flex-row-reverse h-full">
-	{#if visible}
-		<AppRail>
-			<svelte:fragment slot="lead">
-				<AppRailAnchor on:click={toggleVisible}><i class="fa-solid fa-bars"></i></AppRailAnchor>
-			</svelte:fragment>
-			<!-- --- -->
-			<AppRailTile bind:group={currentTile} name="tile-2" value={0} title="tile-2">
-				<svelte:fragment slot="lead"><i class="fa-solid fa-plus"></i></svelte:fragment>
-				<span>Add New</span>
-			</AppRailTile>
-			<AppRailTile bind:group={currentTile} name="tile-3" value={1} title="tile-3">
-				<svelte:fragment slot="lead"><i class="fa-solid fa-filter"></i></svelte:fragment>
-				<span>Filter</span>
-			</AppRailTile>
-			<!-- --- -->
-			<svelte:fragment slot="trail">
-				<AppRailAnchor
-					href="https://github.com/Lanham-Software-James/Organize-This"
-					target="_blank"
-					title="Account"><i class="fa-brands fa-github"></i></AppRailAnchor
-				>
-			</svelte:fragment>
-		</AppRail>
-	{/if}
+<Drawer />
 
-	{#if !visible}
-		<AppRail height="h-fit">
-			<svelte:fragment slot="lead">
-				<AppRailAnchor on:click={toggleVisible}><i class="fa-solid fa-bars"></i></AppRailAnchor>
-			</svelte:fragment>
-		</AppRail>
-	{/if}
+<div class="container p-3 h-full">
+	<div class="flex flex-row justify-between items-center pb-2">
+		<h1 class="text-3xl">Organize This!</h1>
 
-	<div class="container p-3">
-		<h1 class="pb-4 text-3xl">Organize This!</h1>
-		<slot />
+		<button type="button" class="btn-icon variant-filled" on:click={showNavigation}><i class="fa-solid fa-bars fa-sm"></i></button>
 	</div>
+	<slot />
 </div>
