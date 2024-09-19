@@ -25,13 +25,10 @@
 	import '@fortawesome/fontawesome-free/css/all.min.css';
 
 	// Modal and drawers
-	import { initializeStores, Drawer, type DrawerSettings } from '@skeletonlabs/skeleton';
+	import { initializeStores, Modal, getModalStore, type ModalComponent, type ModalSettings, Drawer, type DrawerSettings, getDrawerStore, Toast, getToastStore } from '@skeletonlabs/skeleton';
 	initializeStores();
 
-	import { getDrawerStore } from "@skeletonlabs/skeleton";
-
 	const drawerStore = getDrawerStore();
-
 	function showNavigation() {
 		const drawerSettings: DrawerSettings = {
 			id: 'navbar',
@@ -42,6 +39,26 @@
 		};
 		drawerStore.open(drawerSettings);
 	}
+
+	import AddNewModal from '$lib/AddNewModal/AddNewModal.svelte';
+	const modalStore = getModalStore();
+	const modalRegistry: Record<string, ModalComponent> = {
+		addNewModal: { ref: AddNewModal },
+	};
+
+	function showModal() {
+		drawerStore.close();
+
+		const modal: ModalSettings = {
+			type: 'component',
+			component: 'addNewModal',
+			title: "Add New",
+			body: "Please complete the form to add a new item, container, shelf, shelving unit, room, or building.",
+		};
+		modalStore.trigger(modal);
+	}
+
+	const toastStore = getToastStore();
 </script>
 
 <Drawer>
@@ -61,7 +78,7 @@
 			<ul id="tools" class="pt-4">
 				<p>Tools</p>
 				<li>
-					<button type="button" class="btn bg-initial">
+					<button type="button" class="btn bg-initial" on:click={showModal}>
 					<span><i class="fa-solid fa-plus"></i></span>
 					<span>Add New</span>
 					</button>
@@ -74,6 +91,9 @@
 	{/if}
 </Drawer>
 
+<Modal components={modalRegistry} />
+
+<Toast />
 
 <div class="container p-3 h-full">
 	<div class="flex flex-row justify-between items-center pb-2">
