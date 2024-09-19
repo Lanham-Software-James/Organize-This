@@ -49,7 +49,7 @@
 	<div class="flex flex-row justify-between items-center pb-2">
 		<h1 class="text-3xl">Organize This!</h1>
 
-		<button type="button" class="btn-icon variant-filled" on:click={showNavigation}><i class="fa-solid fa-bars fa-sm"></i></button>
+		<button type="button" class="btn-icon bg-initial" on:click={showNavigation}><i class="fa-solid fa-bars fa-xl"></i></button>
 	</div>
 	<slot />
 </div>

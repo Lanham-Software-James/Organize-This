@@ -11,7 +11,12 @@
 } satisfies PaginationSettings;
 </script>
 
-<h2 class="pb-4 text-xl">Items</h2>
+<div class="flex flex-row justify-between items-center pb-2">
+	<h2 class="text-xl">Items</h2>
+
+	<button type="button" class="btn-icon btn-icon-sm variant-filled"><i class="fa-solid fa-filter fa-xs"></i></button>
+</div>
+
 <div class="flex flex-col justify-between">
 	<div class="table-container pb-4">
 		<table class="table table-compact table-hover">
@@ -30,7 +35,7 @@
 		</table>
 	</div>
 
-	<div>
+	<div class="fixed bottom-0 left-1/2 -translate-x-1/2">
 		<Paginator
 		bind:settings={paginationSettings}
 		showFirstLastButtons="{false}"
