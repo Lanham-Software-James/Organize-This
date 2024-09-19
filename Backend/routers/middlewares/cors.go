@@ -1,9 +1,10 @@
 package middlewares
 
 import (
+	"net/http"
+
 	"github.com/go-chi/cors"
 	"github.com/spf13/viper"
-	"net/http"
 )
 
 func Cors() func(http.Handler) http.Handler {
