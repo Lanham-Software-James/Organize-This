@@ -24,7 +24,7 @@ func (handler Handler) CreateContainer(w http.ResponseWriter, request *http.Requ
 
 	if container.Name == "" {
 		logger.Errorf("Error creating container: Missing name.")
-		http.Error(w, "Missing container name.", http.StatusBadRequest)
+		helpers.BadRequest(w, "Missing Building Name.")
 		return
 	}
 

@@ -24,7 +24,7 @@ func (handler Handler) CreateShelf(w http.ResponseWriter, request *http.Request)
 
 	if shelf.Name == "" {
 		logger.Errorf("Error creating shelf: Missing name.")
-		http.Error(w, "Missing shelf name.", http.StatusBadRequest)
+		helpers.BadRequest(w, "Missing Building Name.")
 		return
 	}
 

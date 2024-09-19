@@ -24,7 +24,7 @@ func (handler Handler) CreateShelvingUnit(w http.ResponseWriter, request *http.R
 
 	if shelvingUnit.Name == "" {
 		logger.Errorf("Error creating shelving unit: Missing name.")
-		http.Error(w, "Missing shelving unit name.", http.StatusBadRequest)
+		helpers.BadRequest(w, "Missing Building Name.")
 		return
 	}
 

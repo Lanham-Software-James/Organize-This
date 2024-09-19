@@ -24,7 +24,7 @@ func (handler Handler) CreateItem(w http.ResponseWriter, request *http.Request) 
 
 	if item.Name == "" {
 		logger.Errorf("Error creating item: Missing name.")
-		http.Error(w, "Missing item name.", http.StatusBadRequest)
+		helpers.BadRequest(w, "Missing Building Name.")
 		return
 	}
 

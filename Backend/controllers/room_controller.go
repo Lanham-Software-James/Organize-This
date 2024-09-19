@@ -24,7 +24,7 @@ func (handler Handler) CreateRoom(w http.ResponseWriter, request *http.Request) 
 
 	if room.Name == "" {
 		logger.Errorf("Error creating room: Missing name.")
-		http.Error(w, "Missing room name.", http.StatusBadRequest)
+		helpers.BadRequest(w, "Missing Building Name.")
 		return
 	}
 
