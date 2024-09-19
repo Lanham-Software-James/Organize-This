@@ -34,6 +34,7 @@
 
 	function showNavigation() {
 		const drawerSettings: DrawerSettings = {
+			id: 'navbar',
 			padding: 'p-4',
 			rounded: 'rounded-xl',
 			position: 'right',
@@ -43,7 +44,36 @@
 	}
 </script>
 
-<Drawer />
+<Drawer>
+	{#if $drawerStore.id === 'navbar'}
+		<div class="p-2">
+			<ul id="pages">
+				<p>Overview</p>
+				<li>
+					<a href="/">
+					<button type="button" class="btn bg-initial">
+					<span><i class="fa-solid fa-house"></i></span>
+					<span>Home</span>
+					</button>
+					</a>
+				</li>
+			</ul>
+			<ul id="tools" class="pt-4">
+				<p>Tools</p>
+				<li>
+					<button type="button" class="btn bg-initial">
+					<span><i class="fa-solid fa-plus"></i></span>
+					<span>Add New</span>
+					</button>
+				</li>
+			</ul>
+			<ul id ="account" class="pt-4">
+				<p>Account</p>
+			</ul>
+		</div>
+	{/if}
+</Drawer>
+
 
 <div class="container p-3 h-full">
 	<div class="flex flex-row justify-between items-center pb-2">
