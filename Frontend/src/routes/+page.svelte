@@ -16,7 +16,7 @@
 <div class="flex flex-row justify-between items-center pb-2">
 	<h2 class="text-xl">Items</h2>
 
-	<button type="button" class="btn-icon btn-icon-sm variant-filled"
+	<button id="filter" type="button" class="btn-icon btn-icon-sm variant-filled"
 		><i class="fa-solid fa-filter fa-xs"></i></button
 	>
 </div>
@@ -26,8 +26,8 @@
 		<table class="table table-compact table-hover">
 			<thead>
 				<tr>
-					<th class="!py-2">Name</th>
-					<th class="!py-2">Location</th>
+					<th id="th-name" class="!py-2">Name</th>
+					<th id="th-location" class="!py-2">Location</th>
 				</tr>
 			</thead>
 			<tbody>
