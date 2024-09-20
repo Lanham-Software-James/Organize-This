@@ -25,7 +25,18 @@
 	import '@fortawesome/fontawesome-free/css/all.min.css';
 
 	// Modal and drawers
-	import { initializeStores, Modal, getModalStore, type ModalComponent, type ModalSettings, Drawer, type DrawerSettings, getDrawerStore, Toast, getToastStore } from '@skeletonlabs/skeleton';
+	import {
+		initializeStores,
+		Modal,
+		getModalStore,
+		type ModalComponent,
+		type ModalSettings,
+		Drawer,
+		type DrawerSettings,
+		getDrawerStore,
+		Toast,
+		getToastStore
+	} from '@skeletonlabs/skeleton';
 	initializeStores();
 
 	const drawerStore = getDrawerStore();
@@ -43,7 +54,7 @@
 	import AddNewModal from '$lib/AddNewModal/AddNewModal.svelte';
 	const modalStore = getModalStore();
 	const modalRegistry: Record<string, ModalComponent> = {
-		addNewModal: { ref: AddNewModal },
+		addNewModal: { ref: AddNewModal }
 	};
 
 	function showModal() {
@@ -52,13 +63,11 @@
 		const modal: ModalSettings = {
 			type: 'component',
 			component: 'addNewModal',
-			title: "Add New",
-			body: "Please complete the form to add a new item, container, shelf, shelving unit, room, or building.",
+			title: 'Add New',
+			body: 'Please complete the form to add a new item, container, shelf, shelving unit, room, or building.'
 		};
 		modalStore.trigger(modal);
 	}
-
-	const toastStore = getToastStore();
 </script>
 
 <Drawer>
@@ -68,10 +77,10 @@
 				<p>Overview</p>
 				<li>
 					<a href="/">
-					<button type="button" class="btn bg-initial">
-					<span><i class="fa-solid fa-house"></i></span>
-					<span>Home</span>
-					</button>
+						<button type="button" class="btn bg-initial">
+							<span><i class="fa-solid fa-house"></i></span>
+							<span>Home</span>
+						</button>
 					</a>
 				</li>
 			</ul>
@@ -79,12 +88,12 @@
 				<p>Tools</p>
 				<li>
 					<button type="button" class="btn bg-initial" on:click={showModal}>
-					<span><i class="fa-solid fa-plus"></i></span>
-					<span>Add New</span>
+						<span><i class="fa-solid fa-plus"></i></span>
+						<span>Add New</span>
 					</button>
 				</li>
 			</ul>
-			<ul id ="account" class="pt-4">
+			<ul id="account" class="pt-4">
 				<p>Account</p>
 			</ul>
 		</div>
@@ -95,11 +104,13 @@
 
 <Toast />
 
-<div class="container p-3 h-full">
+<div class="container p-3 m-h-full">
 	<div class="flex flex-row justify-between items-center pb-2">
 		<h1 class="text-3xl">Organize This!</h1>
 
-		<button type="button" class="btn-icon bg-initial" on:click={showNavigation}><i class="fa-solid fa-bars fa-xl"></i></button>
+		<button type="button" class="btn-icon bg-initial" on:click={showNavigation}
+			><i class="fa-solid fa-bars fa-xl"></i></button
+		>
 	</div>
 	<slot />
 </div>
