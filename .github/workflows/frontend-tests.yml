@@ -23,6 +23,4 @@ jobs:
 
       - name: Test with npm
         run: npm run test
-        env:
-          PUBLIC_API_URL: ${{ secrets.PUBLIC_API_URL_TEST }}
         working-directory: Frontend
