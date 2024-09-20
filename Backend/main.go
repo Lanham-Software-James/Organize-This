@@ -1,12 +1,12 @@
 package main
 
 import (
-	"chi-boilerplate/config"
-	"chi-boilerplate/infra/database"
-	"chi-boilerplate/infra/logger"
-	"chi-boilerplate/migrations"
-	"chi-boilerplate/routers"
 	"net/http"
+	"organize-this/config"
+	"organize-this/infra/database"
+	"organize-this/infra/logger"
+	"organize-this/migrations"
+	"organize-this/routers"
 	"time"
 
 	"github.com/spf13/viper"

@@ -1,20 +1,46 @@
+// Package routers provides all the details of our chi router.
 package routers
 
 import (
-	"chi-boilerplate/controllers"
-	"chi-boilerplate/helpers"
-	"github.com/go-chi/chi/v5"
 	"net/http"
+	"organize-this/controllers"
+	"organize-this/helpers"
+	"organize-this/infra/database"
+	"organize-this/repository"
+
+	"github.com/go-chi/chi/v5"
 )
 
-//RegisterRoutes add all routing list here automatically get main router
-func RegisterRoutes(router *chi.Mux) {
-	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+// RegisterRoutes add all routing list here automatically get main router
+func RegisterRoutes(r *chi.Mux) {
+	handler := controllers.Handler{Repository: &repository.Repository{Database: database.DB}}
+
+	r.Get("/", func(w http.ResponseWriter, _ *http.Request) {
 		helpers.SuccessResponse(w, "alive ok")
 	})
-	//Add All route
-	router.Group(func(r chi.Router) {
-		r.Post("/test/", controllers.CreateExample)
-		r.Get("/test/", controllers.GetData)
+
+	// v1 api routes
+	r.Route("/v1", func(r chi.Router) {
+
+		// enitity management routes
+		r.Route("/entity-management", func(r chi.Router) {
+			// Buildings
+			r.Post("/building", handler.CreateBuilding)
+
+			// Rooms
+			r.Post("/room", handler.CreateRoom)
+
+			// Shelving Units
+			r.Post("/shelvingunit", handler.CreateShelvingUnit)
+
+			// Shelves
+			r.Post("/shelf", handler.CreateShelf)
+
+			// Containers
+			r.Post("/container", handler.CreateContainer)
+
+			// Items
+			r.Post("/item", handler.CreateItem)
+		})
 	})
 }

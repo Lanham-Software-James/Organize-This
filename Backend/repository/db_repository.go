@@ -1,29 +1,37 @@
 package repository
 
 import (
-	"chi-boilerplate/infra/database"
-	"chi-boilerplate/infra/logger"
+	"organize-this/infra/database"
+	"organize-this/infra/logger"
+
+	"gorm.io/gorm"
 )
 
-func Save(model interface{}) interface{} {
-	err := database.DB.Create(model).Error
+type Repository struct {
+	Database *gorm.DB
+}
+
+func (repo Repository) Save(model interface{}) interface{} {
+	err := repo.Database.Create(model).Error
+
 	if err != nil {
 		logger.Errorf("error, not save data %v", err)
 	}
+
 	return err
 }
 
-func Get(model interface{}) interface{} {
+func (repo Repository) Get(model interface{}) interface{} {
 	err := database.DB.Find(model).Error
 	return err
 }
 
-func GetOne(model interface{}) interface{} {
+func (repo Repository) GetOne(model interface{}) interface{} {
 	err := database.DB.Last(model).Error
 	return err
 }
 
-func Update(model interface{}) interface{} {
+func (repo Repository) Update(model interface{}) interface{} {
 	err := database.DB.Find(model).Error
 	return err
 }
