@@ -17,7 +17,7 @@ test.describe('home page items pages components', () => {
 	test('home page has expected h2', async ({ page }) => {
 		await page.goto('/');
 		await expect(page.locator('h2')).toBeVisible();
-		await expect(page.locator('h2')).toContainText("Items");
+		await expect(page.locator('h2')).toContainText("All Things");
 	});
 
 	test('home page has filter button', async ({ page }) => {
