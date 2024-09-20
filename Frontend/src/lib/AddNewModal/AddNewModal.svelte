@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { SvelteComponent } from 'svelte';
 	import { getModalStore, getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
-	import { PUBLIC_API_URL } from '$env/static/public';
+	import { createEntity } from './AddNewModal';
 
 	export let parent: SvelteComponent;
 
@@ -15,21 +15,29 @@
 		Notes: ''
 	};
 
+	const entities = [
+		{ value: 'item', display: 'Item' },
+		{ value: 'container', display: 'Container' },
+		{ value: 'shelf', display: 'Shelf' },
+		{ value: 'shelvingunit', display: 'Shevling Unit' },
+		{ value: 'room', display: 'Room' },
+		{ value: 'building', display: 'Building' }
+	];
+
+	// Base Classes
+	const cBase = 'card p-4 w-modal shadow-xl space-y-4';
+	const cHeader = 'text-2xl font-bold';
+	const cForm = 'border border-surface-500 p-4 space-y-4 rounded-container-token';
+
 	async function onFormSubmit() {
 		modalStore.close();
 
-		const response = await fetch(PUBLIC_API_URL + 'v1/entity-management/' + formData.Category, {
-			method: 'POST',
-			body: JSON.stringify({
-				Address: formData.Address,
-				Name: formData.Name,
-				Notes: formData.Notes
-			})
-		});
+		const response = await createEntity(formData)
 
-		response.json().then((res) => {
+		response.json().then((res: { message: string; data: string }) => {
 			let toastMessage = '';
 			let toastBackground = 'variant-filled-secondary';
+
 			if (res.message == 'success') {
 				toastMessage = 'Successfully added!';
 			} else {
@@ -42,23 +50,10 @@
 				background: toastBackground,
 				timeout: 5000
 			};
+
 			toastStore.trigger(t);
 		});
 	}
-
-	const entities = [
-		{ value: 'item', display: 'Item' },
-		{ value: 'container', display: 'Container' },
-		{ value: 'shelf', display: 'Shelf' },
-		{ value: 'unit', display: 'Shevling Unit' },
-		{ value: 'room', display: 'Room' },
-		{ value: 'building', display: 'Building' }
-	];
-
-	// Base Classes
-	const cBase = 'card p-4 w-modal shadow-xl space-y-4';
-	const cHeader = 'text-2xl font-bold';
-	const cForm = 'border border-surface-500 p-4 space-y-4 rounded-container-token';
 </script>
 
 {#if $modalStore[0]}
