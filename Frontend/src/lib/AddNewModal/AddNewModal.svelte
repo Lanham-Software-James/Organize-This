@@ -9,10 +9,10 @@
 	const toastStore = getToastStore();
 
 	const formData = {
-		Category: 'item',
-		Name: '',
-		Address: '',
-		Notes: ''
+		category: 'item',
+		name: '',
+		address: '',
+		notes: ''
 	};
 
 	const entities = [
@@ -63,7 +63,7 @@
 		<!-- Enable for debugging: -->
 		<form class="modal-form {cForm}">
 			<label class="label" for="category">Category:</label>
-			<select id="category" class="select" bind:value={formData.Category}>
+			<select id="category" class="select" bind:value={formData.category}>
 				{#each entities as entity}
 					<option value={entity.value}>{entity.display}</option>
 				{/each}
@@ -74,17 +74,17 @@
 				id="name"
 				class="input"
 				type="text"
-				bind:value={formData.Name}
+				bind:value={formData.name}
 				placeholder="Enter name..."
 			/>
 
-			{#if formData.Category == 'building'}
+			{#if formData.category == 'building'}
 				<label for="address" class="label">Address:</label>
 				<input
 					id="address"
 					class="input"
 					type="tel"
-					bind:value={formData.Address}
+					bind:value={formData.address}
 					placeholder="Enter address..."
 				/>
 			{/if}
@@ -95,7 +95,7 @@
 				class="textarea"
 				rows="4"
 				placeholder="Notes..."
-				bind:value={formData.Notes}
+				bind:value={formData.notes}
 			/>
 		</form>
 		<!-- prettier-ignore -->

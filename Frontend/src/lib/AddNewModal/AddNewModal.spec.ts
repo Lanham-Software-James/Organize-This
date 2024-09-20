@@ -14,22 +14,23 @@ describe("testing send request", () => {
 
     it("item request", async () => {
         const formData = {
-            Category: 'item',
-            Name: 'Test item',
-            Address: '',
-            Notes: 'Test notes'
+            category: 'item',
+            name: 'Test item',
+            address: '',
+            notes: 'Test notes'
         };
 
         await createEntity(formData);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}v1/entity-management/${formData.Category}`,
+            `${PUBLIC_API_URL}v1/entity`,
             {
                 method: 'POST',
                 body: JSON.stringify({
-                    Address: formData.Address,
-                    Name: formData.Name,
-                    Notes: formData.Notes
+                    category: formData.category,
+                    address: formData.address,
+                    name: formData.name,
+                    notes: formData.notes
                 }),
             }
         );
@@ -37,22 +38,23 @@ describe("testing send request", () => {
 
     it("container request", async () => {
         const formData = {
-            Category: 'container',
-            Name: 'Test container',
-            Address: '',
-            Notes: 'Test notes'
+            category: 'container',
+            name: 'Test container',
+            address: '',
+            notes: 'Test notes'
         };
 
         await createEntity(formData);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}v1/entity-management/${formData.Category}`,
+            `${PUBLIC_API_URL}v1/entity`,
             {
                 method: 'POST',
                 body: JSON.stringify({
-                    Address: formData.Address,
-                    Name: formData.Name,
-                    Notes: formData.Notes
+                    category: formData.category,
+                    address: formData.address,
+                    name: formData.name,
+                    notes: formData.notes
                 }),
             }
         );
@@ -60,22 +62,23 @@ describe("testing send request", () => {
 
     it("shelf request", async () => {
         const formData = {
-            Category: 'shelf',
-            Name: 'Test shelf',
-            Address: '',
-            Notes: 'Test notes'
+            category: 'shelf',
+            name: 'Test shelf',
+            address: '',
+            notes: 'Test notes'
         };
 
         await createEntity(formData);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}v1/entity-management/${formData.Category}`,
+            `${PUBLIC_API_URL}v1/entity`,
             {
                 method: 'POST',
                 body: JSON.stringify({
-                    Address: formData.Address,
-                    Name: formData.Name,
-                    Notes: formData.Notes
+                    category: formData.category,
+                    address: formData.address,
+                    name: formData.name,
+                    notes: formData.notes
                 }),
             }
         );
@@ -83,22 +86,23 @@ describe("testing send request", () => {
 
     it("shelving unit request", async () => {
         const formData = {
-            Category: 'shelvingunit',
-            Name: 'Test shelving unit',
-            Address: '',
-            Notes: 'Test notes'
+            category: 'shelvingunit',
+            name: 'Test shelving unit',
+            address: '',
+            notes: 'Test notes'
         };
 
         await createEntity(formData);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}v1/entity-management/${formData.Category}`,
+            `${PUBLIC_API_URL}v1/entity`,
             {
                 method: 'POST',
                 body: JSON.stringify({
-                    Address: formData.Address,
-                    Name: formData.Name,
-                    Notes: formData.Notes
+                    category: formData.category,
+                    address: formData.address,
+                    name: formData.name,
+                    notes: formData.notes
                 }),
             }
         );
@@ -106,22 +110,23 @@ describe("testing send request", () => {
 
     it("room request", async () => {
         const formData = {
-            Category: 'room',
-            Name: 'Test room',
-            Address: '',
-            Notes: 'Test notes'
+            category: 'room',
+            name: 'Test room',
+            address: '',
+            notes: 'Test notes'
         };
 
         await createEntity(formData);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}v1/entity-management/${formData.Category}`,
+            `${PUBLIC_API_URL}v1/entity`,
             {
                 method: 'POST',
                 body: JSON.stringify({
-                    Address: formData.Address,
-                    Name: formData.Name,
-                    Notes: formData.Notes
+                    category: formData.category,
+                    address: formData.address,
+                    name: formData.name,
+                    notes: formData.notes
                 }),
             }
         );
@@ -129,22 +134,23 @@ describe("testing send request", () => {
 
     it("building request", async () => {
         const formData = {
-            Category: 'building',
-            Name: 'Test building',
-            Address: '888 test road',
-            Notes: 'Test notes'
+            category: 'building',
+            name: 'Test building',
+            address: '888 test road',
+            notes: 'Test notes'
         };
 
         await createEntity(formData);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}v1/entity-management/${formData.Category}`,
+            `${PUBLIC_API_URL}v1/entity`,
             {
                 method: 'POST',
                 body: JSON.stringify({
-                    Address: formData.Address,
-                    Name: formData.Name,
-                    Notes: formData.Notes
+                    category: formData.category,
+                    address: formData.address,
+                    name: formData.name,
+                    notes: formData.notes
                 }),
             }
         );
