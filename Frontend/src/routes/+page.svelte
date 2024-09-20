@@ -27,9 +27,9 @@
 			<thead>
 				<tr>
 					<th id="th-name" class="!py-2">Name</th>
-					<th id="th-location" class="!py-2 hidden md:block">Category</th>
+					<th id="th-category" class="!py-2 hidden md:block">Category</th>
 					<th id="th-location" class="!py-2">Location</th>
-					<th id="th-location" class="!py-2 hidden lg:block">Notes</th>
+					<th id="th-notes" class="!py-2 hidden lg:block">Notes</th>
 
 				</tr>
 			</thead>
