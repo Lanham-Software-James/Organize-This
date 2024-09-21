@@ -20,6 +20,71 @@ type createSingleResponse struct {
 	Data    uint   `json:"ID"`
 }
 
+// TestCreateEntityAll runs our unit tests for the CreateEntity function that apply to all categories.
+func TestCreatEntityAll(t *testing.T) {
+	mockDB, _ := NewMockDB()
+	handler := controllers.Handler{Repository: &repository.Repository{Database: mockDB}}
+	endpoint := "/v1/entity"
+	r := chi.NewRouter()
+	r.Post(endpoint, handler.CreateEntity)
+
+	srv := httptest.NewServer(r)
+	defer srv.Close()
+
+	t.Run("BEUT-1: Create Entity Missing Name", func(t *testing.T) {
+
+		testCategory := "building"
+		values := map[string]string{"category": testCategory}
+		payload, _ := json.Marshal(values)
+
+		req := httptest.NewRequest(http.MethodPost, srv.URL+endpoint, bytes.NewBuffer(payload))
+		w := httptest.NewRecorder()
+
+		handler.CreateEntity(w, req)
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusBadRequest {
+			t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusBadRequest, res.StatusCode)
+		}
+	})
+
+	t.Run("BEUT-2: Create Entity Missing Category", func(t *testing.T) {
+
+		testName := "Test Building 6"
+		values := map[string]string{"name": testName}
+		payload, _ := json.Marshal(values)
+
+		req := httptest.NewRequest(http.MethodPost, srv.URL+endpoint, bytes.NewBuffer(payload))
+		w := httptest.NewRecorder()
+
+		handler.CreateEntity(w, req)
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusBadRequest {
+			t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusBadRequest, res.StatusCode)
+		}
+	})
+
+	t.Run("BEUT-3: Create Entity Missing Name and Category", func(t *testing.T) {
+
+		values := map[string]string{}
+		payload, _ := json.Marshal(values)
+
+		req := httptest.NewRequest(http.MethodPost, srv.URL+endpoint, bytes.NewBuffer(payload))
+		w := httptest.NewRecorder()
+
+		handler.CreateEntity(w, req)
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusBadRequest {
+			t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusBadRequest, res.StatusCode)
+		}
+	})
+}
+
 // TestCreateEntityItem runs our unit tests for the CreateEntity function with the shelving unit category.
 func TestCreateEntityItem(t *testing.T) {
 	mockDB, _ := NewMockDB()
@@ -31,8 +96,7 @@ func TestCreateEntityItem(t *testing.T) {
 	srv := httptest.NewServer(r)
 	defer srv.Close()
 
-	// Create Item Test Case 1 - Valid input and includes all fields
-	t.Run("CreateEntity-Item-ValidAllFields", func(t *testing.T) {
+	t.Run("BEUT-4: Create Entity Item Valid All Fields", func(t *testing.T) {
 		testName := "Test Item 1"
 		testNotes := "Test Notes 1"
 		testCategory := "item"
@@ -71,8 +135,7 @@ func TestCreateEntityItem(t *testing.T) {
 		}
 	})
 
-	// Create Item Test Case 2 - Valid input and does not include notes
-	t.Run("CreateEntity-Item-ValidNoNotes", func(t *testing.T) {
+	t.Run("BEUT-5: Create Entity Item Valid No Notes", func(t *testing.T) {
 		testName := "Test Item 2"
 		testCategory := "item"
 
@@ -122,8 +185,7 @@ func TestCreateEntityContainer(t *testing.T) {
 	srv := httptest.NewServer(r)
 	defer srv.Close()
 
-	// Create Container Test Case 1 - Valid input and includes all fields
-	t.Run("CreateEntity-Container-ValidAllFields", func(t *testing.T) {
+	t.Run("BEUT-6: Create Entity Container Valid All Fields", func(t *testing.T) {
 		testName := "Test Container 1"
 		testNotes := "Test Notes 1"
 		testCategory := "container"
@@ -162,8 +224,7 @@ func TestCreateEntityContainer(t *testing.T) {
 		}
 	})
 
-	// Create Container Test Case 2 - Valid input and does not include notes
-	t.Run("CreateEntity-Container-ValidNoNotes", func(t *testing.T) {
+	t.Run("BEUT-7: Create Entity Container Valid No Notes", func(t *testing.T) {
 		testName := "Test Container 2"
 		testCategory := "container"
 
@@ -213,8 +274,7 @@ func TestCreateEntityShelf(t *testing.T) {
 	srv := httptest.NewServer(r)
 	defer srv.Close()
 
-	// Create Shelf Test Case 1 - Valid input and includes all fields
-	t.Run("CreateEntity-Shelf-ValidAllFields", func(t *testing.T) {
+	t.Run("BEUT-8: Create Entity Shelf Valid All Fields", func(t *testing.T) {
 		testName := "Test Shelf 1"
 		testNotes := "Test Notes 1"
 		testCategory := "shelf"
@@ -253,8 +313,7 @@ func TestCreateEntityShelf(t *testing.T) {
 		}
 	})
 
-	// Create Shelf Test Case 2 - Valid input and does not include notes
-	t.Run("CreateEntity-Shelf-ValidNoNotes", func(t *testing.T) {
+	t.Run("BEUT-9: Create Entity Shelf Valid No Notes", func(t *testing.T) {
 		testName := "Test Shelf 2"
 		testCategory := "shelf"
 
@@ -304,8 +363,7 @@ func TestCreateEntityShelvingUnit(t *testing.T) {
 	srv := httptest.NewServer(r)
 	defer srv.Close()
 
-	// Create ShelvingUnit Test Case 1 - Valid input and includes all fields
-	t.Run("CreateEntity-ShelvingUnit-ValidAllFields", func(t *testing.T) {
+	t.Run("BEUT-10: Create Entity Shelving Unit Valid All Fields", func(t *testing.T) {
 		testName := "Test ShelvingUnit 1"
 		testNotes := "Test Notes 1"
 		testCategory := "shelvingunit"
@@ -344,8 +402,7 @@ func TestCreateEntityShelvingUnit(t *testing.T) {
 		}
 	})
 
-	// Create ShelvingUnit Test Case 2 - Valid input and does not include notes
-	t.Run("CreateEntity-ShelvingUnit-ValidNoNotes", func(t *testing.T) {
+	t.Run("BEUT-11: Create Entity Shelving Unit Valid No Notes", func(t *testing.T) {
 		testName := "Test ShelvingUnit 2"
 		testCategory := "shelvingunit"
 
@@ -395,8 +452,7 @@ func TestCreateEntityRoom(t *testing.T) {
 	srv := httptest.NewServer(r)
 	defer srv.Close()
 
-	// Create Room Test Case 1 - Valid input and includes all fields
-	t.Run("CreateEntity-Room-ValidAllFields", func(t *testing.T) {
+	t.Run("BEUT-12: Create Entity Room Valid All Fields", func(t *testing.T) {
 		testName := "Test Room 1"
 		testNotes := "Test Notes 1"
 		testCategory := "room"
@@ -435,8 +491,7 @@ func TestCreateEntityRoom(t *testing.T) {
 		}
 	})
 
-	// Create Room Test Case 2 - Valid input and does not include notes
-	t.Run("CreateEntity-Room-ValidNoNotes", func(t *testing.T) {
+	t.Run("BEUT-13: Create Entity Room Valid No Notes", func(t *testing.T) {
 		testName := "Test Room 2"
 		testCategory := "room"
 
@@ -486,8 +541,7 @@ func TestCreateEntityBuilding(t *testing.T) {
 	srv := httptest.NewServer(r)
 	defer srv.Close()
 
-	// Create Building Test Case 1 - Valid input and includes all fields
-	t.Run("CreateEntity-Building-ValidAllFields", func(t *testing.T) {
+	t.Run("BEUT-14: Create Entity Building Valid All Fields", func(t *testing.T) {
 		testName := "Test Building 1"
 		testAddress := "Test Address 1"
 		testNotes := "Test Notes 1"
@@ -527,8 +581,7 @@ func TestCreateEntityBuilding(t *testing.T) {
 		}
 	})
 
-	// Create Building Test Case 2 - Valid input and does not include notes
-	t.Run("CreateEntity-Building-ValidNoNotes", func(t *testing.T) {
+	t.Run("BEUT-15: Create Entity Building Valid No Notes", func(t *testing.T) {
 		testName := "Test Building 2"
 		testAddress := "Test Address 2"
 		testCategory := "building"
@@ -567,8 +620,7 @@ func TestCreateEntityBuilding(t *testing.T) {
 		}
 	})
 
-	// Create Building Test Case 3 - Valid input and does not include address
-	t.Run("CreateEntity-Building-ValidNoAddress", func(t *testing.T) {
+	t.Run("BEUT-16: Create Entity Building Valid No Address", func(t *testing.T) {
 		testName := "Test Building 3"
 		testNotes := "Test Notes 3"
 		testCategory := "building"
@@ -607,8 +659,7 @@ func TestCreateEntityBuilding(t *testing.T) {
 		}
 	})
 
-	// Create Building Test Case 4 - Valid input and does not include address or notes
-	t.Run("CreateEntity-Building-ValidNoAddressNoNotes", func(t *testing.T) {
+	t.Run("BEUT-17: Create Entity Building Valid Not Notes No Address ", func(t *testing.T) {
 		testName := "Test Building 4"
 		testCategory := "building"
 
@@ -643,73 +694,6 @@ func TestCreateEntityBuilding(t *testing.T) {
 
 		if reflect.TypeOf(contents.Data).String() != "uint" {
 			t.Errorf("Expected data to be entity id.")
-		}
-	})
-}
-
-// TestCreateEntityAll runs our unit tests for the CreateEntity function that apply to all categories.
-func TestCreatEntityAll(t *testing.T) {
-	mockDB, _ := NewMockDB()
-	handler := controllers.Handler{Repository: &repository.Repository{Database: mockDB}}
-	endpoint := "/v1/entity"
-	r := chi.NewRouter()
-	r.Post(endpoint, handler.CreateEntity)
-
-	srv := httptest.NewServer(r)
-	defer srv.Close()
-	// Create Entity Test Case 1 - Invalid input, missing name
-	t.Run("CreateEntity-InvalidMissingName", func(t *testing.T) {
-
-		testCategory := "building"
-		values := map[string]string{"category": testCategory}
-		payload, _ := json.Marshal(values)
-
-		req := httptest.NewRequest(http.MethodPost, srv.URL+endpoint, bytes.NewBuffer(payload))
-		w := httptest.NewRecorder()
-
-		handler.CreateEntity(w, req)
-		res := w.Result()
-		defer res.Body.Close()
-
-		if res.StatusCode != http.StatusBadRequest {
-			t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusBadRequest, res.StatusCode)
-		}
-	})
-
-	// Create Entity Test Case 2 - Invalid input, missing category
-	t.Run("CreateEntity-InvalidMissingCategory", func(t *testing.T) {
-
-		testName := "Test Building 6"
-		values := map[string]string{"name": testName}
-		payload, _ := json.Marshal(values)
-
-		req := httptest.NewRequest(http.MethodPost, srv.URL+endpoint, bytes.NewBuffer(payload))
-		w := httptest.NewRecorder()
-
-		handler.CreateEntity(w, req)
-		res := w.Result()
-		defer res.Body.Close()
-
-		if res.StatusCode != http.StatusBadRequest {
-			t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusBadRequest, res.StatusCode)
-		}
-	})
-
-	// Create Entity Test Case 3 - Invalid input, missing name and category
-	t.Run("CreateEntity-InvalidMissingNameCategory", func(t *testing.T) {
-
-		values := map[string]string{}
-		payload, _ := json.Marshal(values)
-
-		req := httptest.NewRequest(http.MethodPost, srv.URL+endpoint, bytes.NewBuffer(payload))
-		w := httptest.NewRecorder()
-
-		handler.CreateEntity(w, req)
-		res := w.Result()
-		defer res.Body.Close()
-
-		if res.StatusCode != http.StatusBadRequest {
-			t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusBadRequest, res.StatusCode)
 		}
 	})
 }
