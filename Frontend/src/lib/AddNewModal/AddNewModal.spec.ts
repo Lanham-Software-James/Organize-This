@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createEntity } from './AddNewModal';
 import { PUBLIC_API_URL } from '$env/static/public';
 
-describe("testing send request", () => {
+describe("Unit Tests for createEntity()", () => {
     beforeEach(() => {
         // Mock the global fetch
         global.fetch = vi.fn();
@@ -12,7 +12,7 @@ describe("testing send request", () => {
         vi.resetAllMocks();
     });
 
-    it("item request", async () => {
+    it("UT-1: Build Create Item Request", async () => {
         const formData = {
             category: 'item',
             name: 'Test item',
@@ -36,7 +36,7 @@ describe("testing send request", () => {
         );
     });
 
-    it("container request", async () => {
+    it("UT-2: Build Create Container Request", async () => {
         const formData = {
             category: 'container',
             name: 'Test container',
@@ -60,7 +60,7 @@ describe("testing send request", () => {
         );
     });
 
-    it("shelf request", async () => {
+    it("UT-3: Build Create Shelf Request", async () => {
         const formData = {
             category: 'shelf',
             name: 'Test shelf',
@@ -84,7 +84,7 @@ describe("testing send request", () => {
         );
     });
 
-    it("shelving unit request", async () => {
+    it("UT-4: Build Create Shelving Unit Request", async () => {
         const formData = {
             category: 'shelvingunit',
             name: 'Test shelving unit',
@@ -108,7 +108,7 @@ describe("testing send request", () => {
         );
     });
 
-    it("room request", async () => {
+    it("UT-5: Build Create Room Request", async () => {
         const formData = {
             category: 'room',
             name: 'Test room',
@@ -132,7 +132,7 @@ describe("testing send request", () => {
         );
     });
 
-    it("building request", async () => {
+    it("UT-6: Build Create Building Request", async () => {
         const formData = {
             name: 'Test building',
             category: 'building',
