@@ -12,7 +12,7 @@ describe("Unit Tests for createEntity()", () => {
         vi.resetAllMocks();
     });
 
-    it("UT-1: Build Create Item Request", async () => {
+    it("FEUT-1: Build Create Item Request", async () => {
         const formData = {
             category: 'item',
             name: 'Test item',
@@ -36,7 +36,7 @@ describe("Unit Tests for createEntity()", () => {
         );
     });
 
-    it("UT-2: Build Create Container Request", async () => {
+    it("FEUT-2: Build Create Container Request", async () => {
         const formData = {
             category: 'container',
             name: 'Test container',
@@ -60,7 +60,7 @@ describe("Unit Tests for createEntity()", () => {
         );
     });
 
-    it("UT-3: Build Create Shelf Request", async () => {
+    it("FEUT-3: Build Create Shelf Request", async () => {
         const formData = {
             category: 'shelf',
             name: 'Test shelf',
@@ -84,7 +84,7 @@ describe("Unit Tests for createEntity()", () => {
         );
     });
 
-    it("UT-4: Build Create Shelving Unit Request", async () => {
+    it("FEUT-4: Build Create Shelving Unit Request", async () => {
         const formData = {
             category: 'shelvingunit',
             name: 'Test shelving unit',
@@ -108,7 +108,7 @@ describe("Unit Tests for createEntity()", () => {
         );
     });
 
-    it("UT-5: Build Create Room Request", async () => {
+    it("FEUT-5: Build Create Room Request", async () => {
         const formData = {
             category: 'room',
             name: 'Test room',
@@ -132,7 +132,7 @@ describe("Unit Tests for createEntity()", () => {
         );
     });
 
-    it("UT-6: Build Create Building Request", async () => {
+    it("FEUT-6: Build Create Building Request", async () => {
         const formData = {
             name: 'Test building',
             category: 'building',
