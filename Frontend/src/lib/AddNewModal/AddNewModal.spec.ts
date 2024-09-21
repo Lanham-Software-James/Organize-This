@@ -27,8 +27,8 @@ describe("testing send request", () => {
             {
                 method: 'POST',
                 body: JSON.stringify({
-                    category: formData.category,
                     address: formData.address,
+                    category: formData.category,
                     name: formData.name,
                     notes: formData.notes
                 }),
@@ -51,8 +51,8 @@ describe("testing send request", () => {
             {
                 method: 'POST',
                 body: JSON.stringify({
-                    category: formData.category,
                     address: formData.address,
+                    category: formData.category,
                     name: formData.name,
                     notes: formData.notes
                 }),
@@ -75,8 +75,8 @@ describe("testing send request", () => {
             {
                 method: 'POST',
                 body: JSON.stringify({
-                    category: formData.category,
                     address: formData.address,
+                    category: formData.category,
                     name: formData.name,
                     notes: formData.notes
                 }),
@@ -99,8 +99,8 @@ describe("testing send request", () => {
             {
                 method: 'POST',
                 body: JSON.stringify({
-                    category: formData.category,
                     address: formData.address,
+                    category: formData.category,
                     name: formData.name,
                     notes: formData.notes
                 }),
@@ -123,8 +123,8 @@ describe("testing send request", () => {
             {
                 method: 'POST',
                 body: JSON.stringify({
-                    category: formData.category,
                     address: formData.address,
+                    category: formData.category,
                     name: formData.name,
                     notes: formData.notes
                 }),
@@ -134,8 +134,8 @@ describe("testing send request", () => {
 
     it("building request", async () => {
         const formData = {
-            category: 'building',
             name: 'Test building',
+            category: 'building',
             address: '888 test road',
             notes: 'Test notes'
         };
@@ -147,8 +147,8 @@ describe("testing send request", () => {
             {
                 method: 'POST',
                 body: JSON.stringify({
-                    category: formData.category,
                     address: formData.address,
+                    category: formData.category,
                     name: formData.name,
                     notes: formData.notes
                 }),
