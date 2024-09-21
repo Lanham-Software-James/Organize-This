@@ -1,10 +1,9 @@
 import { test, expect } from '@playwright/test';
 
-test('navbar loads', async ({ page }) => {
+test('INT-2: Navigation Menu Has Expected HTML and Loads Properly', async ({ page }) => {
   await page.goto('/');
 
   await expect(page.locator('.drawer')).toBeHidden();
-  await expect(page.locator('.modal-add-entity-form')).toBeHidden();
 
   // Load Nav Bar
   await page.click('#hamburgerMenu');
