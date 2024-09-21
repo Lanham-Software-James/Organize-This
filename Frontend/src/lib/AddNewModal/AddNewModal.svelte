@@ -29,6 +29,28 @@
 	const cHeader = 'text-2xl font-bold';
 	const cForm = 'border border-surface-500 p-4 space-y-4 rounded-container-token';
 
+	var isFormInvalid = true;
+	var formError = {
+		name: ''
+	};
+	var formErrorClass = {
+		name: ''
+	};
+
+	function validateForm() {
+		if(formData.name == '') {
+			isFormInvalid = true;
+			formError.name = 'Name is required!'
+			formErrorClass.name = 'input-error'
+		}
+		else {
+			isFormInvalid = false;
+			formError.name = ''
+			formErrorClass.name = ''
+		}
+
+	}
+
 	async function onFormSubmit() {
 		modalStore.close();
 
@@ -72,11 +94,16 @@
 			<label for="name" class="label">Name:</label>
 			<input
 				id="name"
-				class="input"
+				class="input {formErrorClass.name}"
 				type="text"
 				bind:value={formData.name}
+				on:input={validateForm}
+				on:focusout={validateForm}
 				placeholder="Enter name..."
 			/>
+			{#if formError.name}
+				<p class="text-red-500 !mt-0">{formError.name}</p>
+			{/if}
 
 			{#if formData.category == 'building'}
 				<label for="address" class="label">Address:</label>
@@ -101,7 +128,7 @@
 		<!-- prettier-ignore -->
 		<footer class="modal-footer {parent.regionFooter}">
 			<button class="btn {parent.buttonNeutral}" on:click={parent.onClose}>{parent.buttonTextCancel}</button>
-			<button class="btn {parent.buttonPositive}" on:click={onFormSubmit}>{parent.buttonTextSubmit}</button>
+			<button class="btn {parent.buttonPositive}" disabled={isFormInvalid} on:click={onFormSubmit}>{parent.buttonTextSubmit}</button>
 		</footer>
 	</div>
 {/if}
