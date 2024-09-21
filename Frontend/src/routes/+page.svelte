@@ -9,12 +9,12 @@
 		page: 0,
 		limit: 5,
 		size: source.length,
-		amounts: [10, 25, 50, 100]
+		amounts: []
 	} satisfies PaginationSettings;
 </script>
 
 <div class="flex flex-row justify-between items-center pb-2">
-	<h2 class="text-xl">Items</h2>
+	<h2 class="text-xl">All Things</h2>
 
 	<button id="filter" type="button" class="btn-icon btn-icon-sm variant-filled"
 		><i class="fa-solid fa-filter fa-xs"></i></button
@@ -27,13 +27,18 @@
 			<thead>
 				<tr>
 					<th id="th-name" class="!py-2">Name</th>
+					<th id="th-category" class="!py-2 hidden md:block">Category</th>
 					<th id="th-location" class="!py-2">Location</th>
+					<th id="th-notes" class="!py-2 hidden lg:block">Notes</th>
+
 				</tr>
 			</thead>
 			<tbody>
 				<tr>
 					<td> </td>
+					<td class="hidden md:block"> </td>
 					<td> </td>
+					<td class="hidden lg:block"> </td>
 				</tr>
 			</tbody>
 		</table>

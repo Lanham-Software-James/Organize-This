@@ -34,8 +34,7 @@
 		Drawer,
 		type DrawerSettings,
 		getDrawerStore,
-		Toast,
-		getToastStore
+		Toast
 	} from '@skeletonlabs/skeleton';
 	initializeStores();
 
@@ -46,7 +45,7 @@
 			padding: 'p-4',
 			rounded: 'rounded-xl',
 			position: 'right',
-			width: 'w-6/12'
+			width: 'w-6/12 md:w-4/12 lg:w-2/12'
 		};
 		drawerStore.open(drawerSettings);
 	}
@@ -104,7 +103,7 @@
 
 <Toast />
 
-<div class="container p-3 m-h-full">
+<div class="container p-3 m-h-full mx-auto">
 	<div class="flex flex-row justify-between items-center pb-2">
 		<h1 class="text-3xl">Organize This!</h1>
 

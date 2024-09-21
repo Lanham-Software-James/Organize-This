@@ -21,26 +21,6 @@ func RegisterRoutes(r *chi.Mux) {
 
 	// v1 api routes
 	r.Route("/v1", func(r chi.Router) {
-
-		// enitity management routes
-		r.Route("/entity-management", func(r chi.Router) {
-			// Buildings
-			r.Post("/building", handler.CreateBuilding)
-
-			// Rooms
-			r.Post("/room", handler.CreateRoom)
-
-			// Shelving Units
-			r.Post("/shelvingunit", handler.CreateShelvingUnit)
-
-			// Shelves
-			r.Post("/shelf", handler.CreateShelf)
-
-			// Containers
-			r.Post("/container", handler.CreateContainer)
-
-			// Items
-			r.Post("/item", handler.CreateItem)
-		})
+		r.Post("/entity", handler.CreateEntity)
 	})
 }

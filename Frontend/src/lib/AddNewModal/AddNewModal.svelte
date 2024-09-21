@@ -9,10 +9,10 @@
 	const toastStore = getToastStore();
 
 	const formData = {
-		Category: 'item',
-		Name: '',
-		Address: '',
-		Notes: ''
+		category: 'item',
+		name: '',
+		address: '',
+		notes: ''
 	};
 
 	const entities = [
@@ -25,9 +25,31 @@
 	];
 
 	// Base Classes
-	const cBase = 'card p-4 w-modal shadow-xl space-y-4';
+	const cBase = 'card p-4 w-modal shadow-xl space-y-4 max-h-screen overflow-scroll';
 	const cHeader = 'text-2xl font-bold';
 	const cForm = 'border border-surface-500 p-4 space-y-4 rounded-container-token';
+
+	var isFormInvalid = true;
+	var formError = {
+		name: ''
+	};
+	var formErrorClass = {
+		name: ''
+	};
+
+	function validateForm() {
+		if(formData.name == '') {
+			isFormInvalid = true;
+			formError.name = 'Name is required!'
+			formErrorClass.name = 'input-error'
+		}
+		else {
+			isFormInvalid = false;
+			formError.name = ''
+			formErrorClass.name = ''
+		}
+
+	}
 
 	async function onFormSubmit() {
 		modalStore.close();
@@ -57,13 +79,13 @@
 </script>
 
 {#if $modalStore[0]}
-	<div class="modal-example-form {cBase}">
+	<div class="modal-add-entity-form {cBase}">
 		<header class={cHeader}>{$modalStore[0].title ?? '(title missing)'}</header>
 		<article>{$modalStore[0].body ?? '(body missing)'}</article>
 		<!-- Enable for debugging: -->
 		<form class="modal-form {cForm}">
 			<label class="label" for="category">Category:</label>
-			<select id="category" class="select" bind:value={formData.Category}>
+			<select id="category" class="select" bind:value={formData.category}>
 				{#each entities as entity}
 					<option value={entity.value}>{entity.display}</option>
 				{/each}
@@ -72,19 +94,24 @@
 			<label for="name" class="label">Name:</label>
 			<input
 				id="name"
-				class="input"
+				class="input {formErrorClass.name}"
 				type="text"
-				bind:value={formData.Name}
+				bind:value={formData.name}
+				on:input={validateForm}
+				on:focusout={validateForm}
 				placeholder="Enter name..."
 			/>
+			{#if formError.name}
+				<p class="text-red-500 !mt-0">{formError.name}</p>
+			{/if}
 
-			{#if formData.Category == 'building'}
+			{#if formData.category == 'building'}
 				<label for="address" class="label">Address:</label>
 				<input
 					id="address"
 					class="input"
 					type="tel"
-					bind:value={formData.Address}
+					bind:value={formData.address}
 					placeholder="Enter address..."
 				/>
 			{/if}
@@ -95,13 +122,13 @@
 				class="textarea"
 				rows="4"
 				placeholder="Notes..."
-				bind:value={formData.Notes}
+				bind:value={formData.notes}
 			/>
 		</form>
 		<!-- prettier-ignore -->
 		<footer class="modal-footer {parent.regionFooter}">
 			<button class="btn {parent.buttonNeutral}" on:click={parent.onClose}>{parent.buttonTextCancel}</button>
-			<button class="btn {parent.buttonPositive}" on:click={onFormSubmit}>{parent.buttonTextSubmit}</button>
+			<button class="btn {parent.buttonPositive}" disabled={isFormInvalid} on:click={onFormSubmit}>{parent.buttonTextSubmit}</button>
 		</footer>
 	</div>
 {/if}
