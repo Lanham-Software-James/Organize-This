@@ -21,9 +21,10 @@ RUN go build -o ./tmp/main ./main.go
 FROM build AS dev
 
 RUN apk add --no-cache git
-RUN go install github.com/air-verse/air@latest
+RUN go install github.com/air-verse/air@latest && go install github.com/go-delve/delve/cmd/dlv@latest
 
 EXPOSE 3000
+EXPOSE 2345
 
 WORKDIR /app
 

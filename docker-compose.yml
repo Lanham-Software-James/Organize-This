@@ -38,6 +38,7 @@ services:
       - organize-this-frontend
     ports:
       - "3000:3000"
+      - "2345:2345"
     volumes:
       - "./Backend:/app"
     restart: unless-stopped
