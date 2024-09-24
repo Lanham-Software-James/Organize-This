@@ -17,6 +17,13 @@
             "showLog": true,
             "apiVersion": 2,
             "trace": "verbose"
+        },
+        {
+            "name": "Frontend Debugging",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:5173",
+            "webRoot": "/root/repos/Organize-This/Frontend"
         }
     ]
 }
