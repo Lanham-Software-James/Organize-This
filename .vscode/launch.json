@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Backend Debugging",
+            "type": "go",
+            "request": "attach",
+            "mode": "remote",
+            "substitutePath": [
+                {
+                    "from": "/root/repos/Organize-This/Backend/",
+                    "to": "/app/",
+                },
+            ],
+            "port": 2345,
+            "host": "127.0.0.1",
+            "showLog": true,
+            "apiVersion": 2,
+            "trace": "verbose"
+        }
+    ]
+}
