@@ -7,7 +7,16 @@ import (
 	"net/http"
 	"organize-this/helpers"
 	"organize-this/infra/logger"
+	"organize-this/models"
 )
+
+type entityResponse struct {
+	ID       uint
+	Name     string
+	Category string
+	Location string
+	Notes    string
+}
 
 // CreateEntity returns void, but sends an success message or error message back to the client
 func (handler Handler) CreateEntity(w http.ResponseWriter, request *http.Request) {
@@ -68,4 +77,17 @@ func (handler Handler) CreateEntity(w http.ResponseWriter, request *http.Request
 	}
 
 	helpers.SuccessResponse(w, &id)
+}
+
+// func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request) {
+
+// 	handler.Repository.Get(&building)
+// 	helpers.SuccessResponse(w, &building)
+// }
+
+// GetBuildings returns void, but sends an http response with a list of all buildings that belong to the user.
+func (handler Handler) GetBuildings(w http.ResponseWriter, _ *http.Request) {
+	var building []models.Building
+	handler.Repository.Get(&building)
+	helpers.SuccessResponse(w, &building)
 }

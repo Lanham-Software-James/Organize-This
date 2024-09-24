@@ -8,70 +8,90 @@ import (
 func (h *Handler) addItem(data map[string]string) (id uint) {
 	tmpNotes := data["notes"]
 
-	item := models.Item{
+	entity := models.Entity{
 		Name:  data["name"],
 		Notes: &tmpNotes,
 	}
 
+	item := models.Item{
+		Entity: entity,
+	}
+
 	h.Repository.Database.Save(&item)
 
-	return uint(item.ID)
+	return uint(item.Entity.ID)
 }
 
 // addContainer is a helper function for the CreateEntity endpoint to actually create the container.
 func (h *Handler) addContainer(data map[string]string) (id uint) {
 	tmpNotes := data["notes"]
 
-	container := models.Container{
+	entity := models.Entity{
 		Name:  data["name"],
 		Notes: &tmpNotes,
 	}
 
+	container := models.Container{
+		Entity: entity,
+	}
+
 	h.Repository.Database.Save(&container)
 
-	return uint(container.ID)
+	return uint(container.Entity.ID)
 }
 
 // addShelf is a helper function for the CreateEntity endpoint to actually create the shelf.
 func (h *Handler) addShelf(data map[string]string) (id uint) {
 	tmpNotes := data["notes"]
 
-	shelf := models.Shelf{
+	entity := models.Entity{
 		Name:  data["name"],
 		Notes: &tmpNotes,
 	}
 
+	shelf := models.Shelf{
+		Entity: entity,
+	}
+
 	h.Repository.Database.Save(&shelf)
 
-	return uint(shelf.ID)
+	return uint(shelf.Entity.ID)
 }
 
 // addShelvingUnit is a helper function for the CreateEntity endpoint to actually create the shelving unit.
 func (h *Handler) addShelvingUnit(data map[string]string) (id uint) {
 	tmpNotes := data["notes"]
 
-	unit := models.ShelvingUnit{
+	entity := models.Entity{
 		Name:  data["name"],
 		Notes: &tmpNotes,
 	}
 
+	unit := models.ShelvingUnit{
+		Entity: entity,
+	}
+
 	h.Repository.Database.Save(&unit)
 
-	return uint(unit.ID)
+	return uint(unit.Entity.ID)
 }
 
 // addRoom is a helper function for the CreateEntity endpoint to actually create the room.
 func (h *Handler) addRoom(data map[string]string) (id uint) {
 	tmpNotes := data["notes"]
 
-	room := models.Room{
+	entity := models.Entity{
 		Name:  data["name"],
 		Notes: &tmpNotes,
 	}
 
+	room := models.Room{
+		Entity: entity,
+	}
+
 	h.Repository.Database.Save(&room)
 
-	return uint(room.ID)
+	return uint(room.Entity.ID)
 }
 
 // addBuilding is a helper function for the CreateEntity endpoint to actually create the building.
@@ -79,13 +99,17 @@ func (h *Handler) addBuilding(data map[string]string) (id uint) {
 	tmpAddress := data["address"]
 	tmpNotes := data["notes"]
 
+	entity := models.Entity{
+		Name:  data["name"],
+		Notes: &tmpNotes,
+	}
+
 	building := models.Building{
-		Name:    data["name"],
+		Entity:  entity,
 		Address: &tmpAddress,
-		Notes:   &tmpNotes,
 	}
 
 	h.Repository.Database.Save(&building)
 
-	return uint(building.ID)
+	return uint(building.Entity.ID)
 }
