@@ -8,7 +8,7 @@
             "mode": "remote",
             "substitutePath": [
                 {
-                    "from": "/root/repos/Organize-This/Backend/",
+                    "from": "${workspaceFolder}/Backend/",
                     "to": "/app/",
                 },
             ],
@@ -23,7 +23,7 @@
             "type": "chrome",
             "request": "launch",
             "url": "http://localhost:5173",
-            "webRoot": "/root/repos/Organize-This/Frontend"
+            "webRoot": "${workspaceFolder}/Frontend"
         }
     ]
 }
