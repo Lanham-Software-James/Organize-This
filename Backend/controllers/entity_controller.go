@@ -6,65 +6,37 @@ import (
 	"io"
 	"net/http"
 	"organize-this/helpers"
-	"organize-this/infra/logger"
 	"organize-this/models"
 )
 
-// CreateEntity returns void, but sends an success message or error message back to the client
+// CreateEntity returns void but sends a success message or error message back to the client.
 func (handler Handler) CreateEntity(w http.ResponseWriter, request *http.Request) {
-
-	var id uint
-
 	byteData, err := io.ReadAll(request.Body)
 	if err != nil {
-		logger.Errorf("Error parsing request: %s", err)
-		helpers.BadRequest(w, err)
+		logAndRespond(w, "Error parsing request", err)
 		return
 	}
 
-	parsedData := map[string]string{}
+	var parsedData map[string]string
+	if err = json.Unmarshal(byteData, &parsedData); err != nil {
+		logAndRespond(w, "Error parsing json", err)
+		return
+	}
 
-	err = json.Unmarshal(byteData, &parsedData)
+	name, category := parsedData["name"], parsedData["category"]
+	if name == "" {
+		logAndRespond(w, "Missing name", nil)
+		return
+	}
+
+	if category == "" {
+		logAndRespond(w, "Missing category", nil)
+		return
+	}
+
+	id, err := handler.createEntityByCategory(category, parsedData)
 	if err != nil {
-		logger.Errorf("Error parsing json: %s", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if parsedData["name"] == "" {
-		logger.Errorf("Error creating entity: Missing name.")
-		helpers.BadRequest(w, "Missing name")
-		return
-	}
-
-	switch parsedData["category"] {
-	case "item":
-		id = handler.addItem(parsedData)
-		break
-
-	case "container":
-		id = handler.addContainer(parsedData)
-		break
-
-	case "shelf":
-		id = handler.addShelf(parsedData)
-		break
-
-	case "shelvingunit":
-		id = handler.addShelvingUnit(parsedData)
-		break
-
-	case "room":
-		id = handler.addRoom(parsedData)
-		break
-
-	case "building":
-		id = handler.addBuilding(parsedData)
-		break
-
-	default:
-		logger.Errorf("Error creating entity: Invalid category")
-		helpers.BadRequest(w, "Invalid category")
+		logAndRespond(w, err.Error(), nil)
 		return
 	}
 
@@ -79,7 +51,7 @@ func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request)
 	values := request.URL.Query()
 	offset, limit, err := getEntitiesParseQueryParams(values)
 	if err != nil {
-		helpers.BadRequest(w, err)
+		logAndRespond(w, "Error reading query parameters", err)
 		return
 	}
 
@@ -96,7 +68,7 @@ func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request)
 
 		buildingCount, err := handler.Repository.Count(&models.Building{})
 		if err != nil {
-			helpers.BadRequest(w, err)
+			logAndRespond(w, "Error counting buildings", err)
 			return
 		}
 
@@ -115,7 +87,7 @@ func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request)
 	if len(entities) < limit {
 		roomCount, err := handler.Repository.Count(&models.Room{})
 		if err != nil {
-			helpers.BadRequest(w, err)
+			logAndRespond(w, "Error counting rooms", err)
 			return
 		}
 
@@ -133,7 +105,7 @@ func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request)
 	if len(entities) < limit {
 		unitCount, err := handler.Repository.Count(&models.ShelvingUnit{})
 		if err != nil {
-			helpers.BadRequest(w, err)
+			logAndRespond(w, "Error counting shelving units", err)
 			return
 		}
 
@@ -151,7 +123,7 @@ func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request)
 	if len(entities) < limit {
 		shelfCount, err := handler.Repository.Count(&models.Shelf{})
 		if err != nil {
-			helpers.BadRequest(w, err)
+			logAndRespond(w, "Error counting shelves", err)
 			return
 		}
 
@@ -169,7 +141,7 @@ func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request)
 	if len(entities) < limit {
 		containerCount, err := handler.Repository.Count(&models.Container{})
 		if err != nil {
-			helpers.BadRequest(w, err)
+			logAndRespond(w, "Error counting containers", err)
 			return
 		}
 
