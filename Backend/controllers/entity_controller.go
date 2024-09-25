@@ -71,13 +71,13 @@ func (handler Handler) CreateEntity(w http.ResponseWriter, request *http.Request
 	helpers.SuccessResponse(w, &id)
 }
 
-// GetEntites return void, but sends a paginated list of all entities back to the client.
+// GetEntities return void, but sends a paginated list of all entities back to the client.
 func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request) {
-	var response helpers.GetEntities_Response
-	var entities []helpers.GetEntities_IntermediateEntity
+	var response getEntitiesResponse
+	var entities []getEntitiesIntermediateEntity
 
 	values := request.URL.Query()
-	offset, limit, err := helpers.GetEntities_ParseQueryParams(values)
+	offset, limit, err := getEntitiesParseQueryParams(values)
 	if err != nil {
 		helpers.BadRequest(w, err)
 		return
@@ -88,13 +88,18 @@ func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request)
 	handler.Repository.Get(&buildings, offset, limit)
 
 	for _, building := range buildings {
-		entities = append(entities, helpers.GetEntities_IntermediateEntity{Category: "Building", Entity: building.Entity})
+		entities = append(entities, getEntitiesIntermediateEntity{Category: "Building", Entity: building.Entity})
 	}
 
 	// If length left get rooms
 	if len(entities) < limit {
 
-		buildingCount, _ := handler.Repository.Count(&models.Building{})
+		buildingCount, err := handler.Repository.Count(&models.Building{})
+		if err != nil {
+			helpers.BadRequest(w, err)
+			return
+		}
+
 		offset = offset - int(buildingCount)
 
 		var rooms []models.Room
@@ -102,13 +107,17 @@ func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request)
 		handler.Repository.Get(&rooms, offset, limit-len(entities))
 
 		for _, room := range rooms {
-			entities = append(entities, helpers.GetEntities_IntermediateEntity{Category: "Room", Entity: room.Entity})
+			entities = append(entities, getEntitiesIntermediateEntity{Category: "Room", Entity: room.Entity})
 		}
 	}
 
 	// If length left get shelving units
 	if len(entities) < limit {
-		roomCount, _ := handler.Repository.Count(&models.Room{})
+		roomCount, err := handler.Repository.Count(&models.Room{})
+		if err != nil {
+			helpers.BadRequest(w, err)
+			return
+		}
 
 		offset = offset - int(roomCount)
 
@@ -116,13 +125,17 @@ func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request)
 		handler.Repository.Get(&units, offset, limit-len(entities))
 
 		for _, unit := range units {
-			entities = append(entities, helpers.GetEntities_IntermediateEntity{Category: "Shelving Unit", Entity: unit.Entity})
+			entities = append(entities, getEntitiesIntermediateEntity{Category: "Shelving Unit", Entity: unit.Entity})
 		}
 	}
 
 	// If length left get shelves
 	if len(entities) < limit {
-		unitCount, _ := handler.Repository.Count(&models.ShelvingUnit{})
+		unitCount, err := handler.Repository.Count(&models.ShelvingUnit{})
+		if err != nil {
+			helpers.BadRequest(w, err)
+			return
+		}
 
 		offset = offset - int(unitCount)
 
@@ -130,13 +143,17 @@ func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request)
 		handler.Repository.Get(&shelves, offset, limit-len(entities))
 
 		for _, shelf := range shelves {
-			entities = append(entities, helpers.GetEntities_IntermediateEntity{Category: "Shelf", Entity: shelf.Entity})
+			entities = append(entities, getEntitiesIntermediateEntity{Category: "Shelf", Entity: shelf.Entity})
 		}
 	}
 
 	// If length left get containers
 	if len(entities) < limit {
-		shelfCount, _ := handler.Repository.Count(&models.Shelf{})
+		shelfCount, err := handler.Repository.Count(&models.Shelf{})
+		if err != nil {
+			helpers.BadRequest(w, err)
+			return
+		}
 
 		offset = offset - int(shelfCount)
 
@@ -144,13 +161,17 @@ func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request)
 		handler.Repository.Get(&containers, offset, limit-len(entities))
 
 		for _, container := range containers {
-			entities = append(entities, helpers.GetEntities_IntermediateEntity{Category: "Container", Entity: container.Entity})
+			entities = append(entities, getEntitiesIntermediateEntity{Category: "Container", Entity: container.Entity})
 		}
 	}
 
 	// If length left get items
 	if len(entities) < limit {
-		containerCount, _ := handler.Repository.Count(&models.Container{})
+		containerCount, err := handler.Repository.Count(&models.Container{})
+		if err != nil {
+			helpers.BadRequest(w, err)
+			return
+		}
 
 		offset = offset - int(containerCount)
 
@@ -158,11 +179,11 @@ func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request)
 		handler.Repository.Get(&items, offset, limit-len(entities))
 
 		for _, item := range items {
-			entities = append(entities, helpers.GetEntities_IntermediateEntity{Category: "Item", Entity: item.Entity})
+			entities = append(entities, getEntitiesIntermediateEntity{Category: "Item", Entity: item.Entity})
 		}
 	}
 
-	response = helpers.GetEntities_BuildResponse(entities)
+	response = getEntitiesBuildResponse(entities)
 
 	helpers.SuccessResponse(w, &response)
 }

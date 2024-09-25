@@ -1,4 +1,4 @@
-package helpers
+package controllers
 
 import (
 	"net/url"
@@ -7,12 +7,12 @@ import (
 	"strconv"
 )
 
-type GetEntities_Response struct {
+type getEntitiesResponse struct {
 	Count    int
-	Entities []GetEntities_ResponseData
+	Entities []getEntitiesResponseData
 }
 
-type GetEntities_ResponseData struct {
+type getEntitiesResponseData struct {
 	ID       uint
 	Name     string
 	Category string
@@ -20,12 +20,12 @@ type GetEntities_ResponseData struct {
 	Notes    *string
 }
 
-type GetEntities_IntermediateEntity struct {
+type getEntitiesIntermediateEntity struct {
 	Category string
 	Entity   models.Entity
 }
 
-func GetEntities_ParseQueryParams(values url.Values) (int, int, error) {
+func getEntitiesParseQueryParams(values url.Values) (int, int, error) {
 	offsetString := values.Get("offset")
 	limitString := values.Get("limit")
 
@@ -44,14 +44,14 @@ func GetEntities_ParseQueryParams(values url.Values) (int, int, error) {
 	return offset, limit, nil
 }
 
-func GetEntities_BuildResponse(entities []GetEntities_IntermediateEntity) (response GetEntities_Response) {
-	response = GetEntities_Response{
+func getEntitiesBuildResponse(entities []getEntitiesIntermediateEntity) (response getEntitiesResponse) {
+	response = getEntitiesResponse{
 		Count:    len(entities),
-		Entities: []GetEntities_ResponseData{},
+		Entities: []getEntitiesResponseData{},
 	}
 
 	for _, entity := range entities {
-		data := GetEntities_ResponseData{
+		data := getEntitiesResponseData{
 			ID:       uint(entity.Entity.ID),
 			Name:     entity.Entity.Name,
 			Category: entity.Category,
