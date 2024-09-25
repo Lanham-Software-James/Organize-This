@@ -129,7 +129,7 @@ func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request)
 
 		offset = offset - int(shelfCount)
 
-		var containers []models.Shelf
+		var containers []models.Container
 		handler.Repository.Get(&containers, offset, limit-len(entities))
 
 		for _, container := range containers {
