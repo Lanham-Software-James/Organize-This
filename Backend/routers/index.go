@@ -22,5 +22,6 @@ func RegisterRoutes(r *chi.Mux) {
 	// v1 api routes
 	r.Route("/v1", func(r chi.Router) {
 		r.Post("/entity", handler.CreateEntity)
+		r.Get("/entities", handler.GetEntities)
 	})
 }

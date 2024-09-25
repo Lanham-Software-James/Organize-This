@@ -21,8 +21,8 @@ func (repo Repository) Save(model interface{}) interface{} {
 	return err
 }
 
-func (repo Repository) Get(model interface{}) interface{} {
-	err := database.DB.Find(model).Error
+func (repo Repository) Get(model interface{}, offset int, limit int) interface{} {
+	err := repo.Database.Offset(offset).Limit(limit).Find(model).Error
 	return err
 }
 
@@ -34,4 +34,13 @@ func (repo Repository) GetOne(model interface{}) interface{} {
 func (repo Repository) Update(model interface{}) interface{} {
 	err := database.DB.Find(model).Error
 	return err
+}
+
+func (repo Repository) Count(model interface{}) (int, error) {
+	var count int64
+	err := repo.Database.Model(model).Count(&count).Error
+	if err != nil {
+		return 0, err
+	}
+	return int(count), nil
 }
