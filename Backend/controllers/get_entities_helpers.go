@@ -65,55 +65,6 @@ func (handler Handler) getEntitiesBuildResponse(entities []getEntitiesIntermedia
 		response.Entities = append(response.Entities, data)
 	}
 
-	response.TotalCount = handler.getEntitiesCountEntities()
+	response.TotalCount = handler.Repository.CountEntities()
 	return response
-}
-
-func (handler Handler) getEntitiesCountEntities() (sum int) {
-	sum = 0
-
-	buildings, err := handler.Repository.Count(&models.Building{})
-	if err != nil {
-		logger.Errorf("Error counting buildings: %v", err)
-		return
-	}
-
-	sum += buildings
-	rooms, err := handler.Repository.Count(&models.Room{})
-	if err != nil {
-		logger.Errorf("Error counting rooms: %v", err)
-		return
-	}
-
-	sum += rooms
-	units, err := handler.Repository.Count(&models.ShelvingUnit{})
-	if err != nil {
-		logger.Errorf("Error counting shelving units: %v", err)
-		return
-	}
-
-	sum += units
-	shelves, err := handler.Repository.Count(&models.Shelf{})
-	if err != nil {
-		logger.Errorf("Error counting shelves: %v", err)
-		return
-	}
-
-	sum += shelves
-	containers, err := handler.Repository.Count(&models.Container{})
-	if err != nil {
-		logger.Errorf("Error counting containers: %v", err)
-		return
-	}
-
-	sum += containers
-	items, err := handler.Repository.Count(&models.Item{})
-	if err != nil {
-		logger.Errorf("Error counting items: %v", err)
-		return
-	}
-
-	sum += items
-
-	return sum
 }

@@ -44,3 +44,25 @@ func (repo Repository) Count(model interface{}) (int, error) {
 	}
 	return int(count), nil
 }
+
+// CountEntities is used to count the total number of entities that belong to a user.
+func (repo Repository) CountEntities() int {
+	var entityCount int
+
+	err := repo.Database.Raw(`
+		SELECT
+			(SELECT COUNT(*) FROM buildings) +
+			(SELECT COUNT(*) FROM rooms) +
+			(SELECT COUNT(*) FROM shelving_units) +
+			(SELECT COUNT(*) FROM shelves) +
+			(SELECT COUNT(*) FROM containers) +
+			(SELECT COUNT(*) FROM items)
+		AS EntityCount
+	`).Scan(&entityCount).Error
+
+	if err != nil {
+		logger.Errorf("error executing query: %v", err)
+	}
+
+	return entityCount
+}
