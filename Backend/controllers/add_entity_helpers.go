@@ -21,7 +21,7 @@ func (handler Handler) createEntityByCategory(category string, data map[string]s
 	case "building":
 		return handler.addBuilding(data), nil
 	default:
-		return 0, fmt.Errorf("invalid category")
+		return 0, fmt.Errorf("invalid category: %v", category)
 	}
 }
 
