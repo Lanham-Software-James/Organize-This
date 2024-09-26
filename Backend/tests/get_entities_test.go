@@ -55,11 +55,6 @@ func TestGetEntities(t *testing.T) {
 		if res.StatusCode != http.StatusOK {
 			t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusOK, res.StatusCode)
 		}
-
-		contentRange := res.Header.Get("Content-Range")
-		if contentRange != "0-20/0" {
-			t.Errorf("Expected Content-Range header to be: 0-20/0. Got: %v.", contentRange)
-		}
 	})
 
 	t.Run("BEUT-19: Get Entities No Offset Param", func(t *testing.T) {
@@ -91,11 +86,6 @@ func TestGetEntities(t *testing.T) {
 
 		if res.StatusCode != http.StatusOK {
 			t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusOK, res.StatusCode)
-		}
-
-		contentRange := res.Header.Get("Content-Range")
-		if contentRange != "0-20/0" {
-			t.Errorf("Expected Content-Range header to be: 0-20/0. Got: %v.", contentRange)
 		}
 	})
 
@@ -129,11 +119,6 @@ func TestGetEntities(t *testing.T) {
 		if res.StatusCode != http.StatusOK {
 			t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusOK, res.StatusCode)
 		}
-
-		contentRange := res.Header.Get("Content-Range")
-		if contentRange != "0-20/0" {
-			t.Errorf("Expected Content-Range header to be: 0-20/0. Got: %v.", contentRange)
-		}
 	})
 
 	t.Run("BEUT-21: Get Entities No Params", func(t *testing.T) {
@@ -166,11 +151,6 @@ func TestGetEntities(t *testing.T) {
 		if res.StatusCode != http.StatusOK {
 			t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusOK, res.StatusCode)
 		}
-
-		contentRange := res.Header.Get("Content-Range")
-		if contentRange != "0-20/0" {
-			t.Errorf("Expected Content-Range header to be: 0-20/0. Got: %v.", contentRange)
-		}
 	})
 
 	t.Run("BEUT-22: Get Entities Non-Zero Offset", func(t *testing.T) {
@@ -202,11 +182,6 @@ func TestGetEntities(t *testing.T) {
 
 		if res.StatusCode != http.StatusOK {
 			t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusOK, res.StatusCode)
-		}
-
-		contentRange := res.Header.Get("Content-Range")
-		if contentRange != "20-40/0" {
-			t.Errorf("Expected Content-Range header to be: 20-40/0. Got: %v.", contentRange)
 		}
 	})
 

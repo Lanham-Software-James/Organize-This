@@ -8,7 +8,8 @@ import (
 )
 
 type getEntitiesResponse struct {
-	Entities []getEntitiesResponseData
+	TotalCount int
+	Entities   []getEntitiesResponseData
 }
 
 type getEntitiesResponseData struct {
@@ -51,7 +52,7 @@ func getEntitiesParseQueryParams(values url.Values) (int, int, error) {
 	return offset, limit, nil
 }
 
-func getEntitiesBuildResponse(entities []getEntitiesIntermediateEntity) (response []getEntitiesResponseData) {
+func (handler Handler) getEntitiesBuildResponse(entities []getEntitiesIntermediateEntity) (response getEntitiesResponse) {
 	for _, entity := range entities {
 		data := getEntitiesResponseData{
 			ID:       uint(entity.Entity.ID),
@@ -61,9 +62,10 @@ func getEntitiesBuildResponse(entities []getEntitiesIntermediateEntity) (respons
 			Notes:    entity.Entity.Notes,
 		}
 
-		response = append(response, data)
+		response.Entities = append(response.Entities, data)
 	}
 
+	response.TotalCount = handler.getEntitiesCountEntities()
 	return response
 }
 
@@ -105,7 +107,7 @@ func (handler Handler) getEntitiesCountEntities() (sum int) {
 	}
 
 	sum += containers
-	items, err := handler.Repository.Count(&models.Shelf{})
+	items, err := handler.Repository.Count(&models.Item{})
 	if err != nil {
 		logger.Errorf("Error counting items: %v", err)
 		return

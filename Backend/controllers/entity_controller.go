@@ -3,7 +3,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"organize-this/helpers"
@@ -46,7 +45,7 @@ func (handler Handler) CreateEntity(w http.ResponseWriter, request *http.Request
 
 // GetEntities return void, but sends a paginated list of all entities back to the client.
 func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request) {
-	var response []getEntitiesResponseData
+	var response getEntitiesResponse
 	var entities []getEntitiesIntermediateEntity
 
 	values := request.URL.Query()
@@ -55,9 +54,6 @@ func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request)
 		logAndRespond(w, "Error reading query parameters", err)
 		return
 	}
-
-	responseOffset := fmt.Sprint(offset)
-	responseLimit := fmt.Sprint(offset + limit)
 
 	// Get Buildings
 	var buildings []models.Building
@@ -159,12 +155,7 @@ func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request)
 		}
 	}
 
-	numerator := responseOffset + "-" + responseLimit
-	denominator := fmt.Sprint(handler.getEntitiesCountEntities())
-	header := numerator + "/" + denominator
-
-	w.Header().Add("Content-Range", header)
-	response = getEntitiesBuildResponse(entities)
+	response = handler.getEntitiesBuildResponse(entities)
 
 	helpers.SuccessResponse(w, &response)
 }
