@@ -1,6 +1,10 @@
 import { PUBLIC_API_URL } from '$env/static/public';
 
-export const createEntity = async (formData: { category: string; address: any; name: any; notes: any; }) => {
+export const createEntity = async (formData: { category: string; address: any; name: any; notes: any; }): Promise<[string, number]> => {
+    let message: string = ""
+    let id: number = 0
+
+
     const response = await fetch(PUBLIC_API_URL + 'v1/entity', {
         method: 'POST',
         body: JSON.stringify({
@@ -11,5 +15,12 @@ export const createEntity = async (formData: { category: string; address: any; n
         })
     });
 
-    return response;
+    const data = await response.json()
+
+    message = data.message
+    if(message == "success") {
+        id = data.data
+    }
+
+    return [message, id];
 }
