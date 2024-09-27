@@ -3,14 +3,8 @@ package controllers
 import (
 	"net/url"
 	"organize-this/infra/logger"
-	"organize-this/models"
 	"strconv"
 )
-
-type getEntitiesResponse struct {
-	TotalCount int
-	Entities   []models.GetEntitiesResponseData
-}
 
 func getEntitiesParseQueryParams(values url.Values) (int, int, error) {
 	offsetString := values.Get("offset")

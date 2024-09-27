@@ -2,15 +2,24 @@
 package tests
 
 import (
+	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"organize-this/controllers"
+	"organize-this/models"
 	"organize-this/repository"
 	"organize-this/routers"
+	"reflect"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
 )
+
+type getEntitiesSingleResponse struct {
+	Message string                     `json:"message"`
+	Data    models.GetEntitiesResponse `json:"data"`
+}
 
 // TestCreateEntityAll runs our unit tests for the CreateEntity function that apply to all categories.
 func TestGetEntities(t *testing.T) {
@@ -75,6 +84,33 @@ func TestGetEntities(t *testing.T) {
 		if res.StatusCode != http.StatusOK {
 			t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusOK, res.StatusCode)
 		}
+
+		data, err := io.ReadAll(res.Body)
+		if err != nil {
+			t.Errorf("Expected error to be nil. Got: %v", err)
+		}
+
+		contents := getEntitiesSingleResponse{}
+		err = json.Unmarshal(data, &contents)
+
+		if contents.Message != "success" {
+			t.Errorf("Expected message to be 'success'. Got: %s", contents.Message)
+		}
+
+		dataType := reflect.TypeOf(contents.Data).String()
+		if dataType != "models.GetEntitiesResponse" {
+			t.Errorf("Expected data to be type models.GetEntitiesResponse. Got: %v", dataType)
+		}
+
+		dataType = reflect.TypeOf(contents.Data.TotalCount).String()
+		if dataType != "int" {
+			t.Errorf("Expected TotalCount to be type int. Got: %v", dataType)
+		}
+
+		dataType = reflect.TypeOf(contents.Data.Entities).String()
+		if dataType != "[]models.GetEntitiesResponseData" {
+			t.Errorf("Expected TotalCount to be type []models.GetEntitiesResponseData. Got: %v", dataType)
+		}
 	})
 
 	t.Run("BEUT-19: Get Entities No Offset Param", func(t *testing.T) {
@@ -126,6 +162,33 @@ func TestGetEntities(t *testing.T) {
 		if res.StatusCode != http.StatusOK {
 			t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusOK, res.StatusCode)
 		}
+
+		data, err := io.ReadAll(res.Body)
+		if err != nil {
+			t.Errorf("Expected error to be nil. Got: %v", err)
+		}
+
+		contents := getEntitiesSingleResponse{}
+		err = json.Unmarshal(data, &contents)
+
+		if contents.Message != "success" {
+			t.Errorf("Expected message to be 'success'. Got: %s", contents.Message)
+		}
+
+		dataType := reflect.TypeOf(contents.Data).String()
+		if dataType != "models.GetEntitiesResponse" {
+			t.Errorf("Expected data to be type models.GetEntitiesResponse. Got: %v", dataType)
+		}
+
+		dataType = reflect.TypeOf(contents.Data.TotalCount).String()
+		if dataType != "int" {
+			t.Errorf("Expected TotalCount to be type int. Got: %v", dataType)
+		}
+
+		dataType = reflect.TypeOf(contents.Data.Entities).String()
+		if dataType != "[]models.GetEntitiesResponseData" {
+			t.Errorf("Expected TotalCount to be type []models.GetEntitiesResponseData. Got: %v", dataType)
+		}
 	})
 
 	t.Run("BEUT-20: Get Entities No Limit Param", func(t *testing.T) {
@@ -176,6 +239,33 @@ func TestGetEntities(t *testing.T) {
 
 		if res.StatusCode != http.StatusOK {
 			t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusOK, res.StatusCode)
+		}
+
+		data, err := io.ReadAll(res.Body)
+		if err != nil {
+			t.Errorf("Expected error to be nil. Got: %v", err)
+		}
+
+		contents := getEntitiesSingleResponse{}
+		err = json.Unmarshal(data, &contents)
+
+		if contents.Message != "success" {
+			t.Errorf("Expected message to be 'success'. Got: %s", contents.Message)
+		}
+
+		dataType := reflect.TypeOf(contents.Data).String()
+		if dataType != "models.GetEntitiesResponse" {
+			t.Errorf("Expected data to be type models.GetEntitiesResponse. Got: %v", dataType)
+		}
+
+		dataType = reflect.TypeOf(contents.Data.TotalCount).String()
+		if dataType != "int" {
+			t.Errorf("Expected TotalCount to be type int. Got: %v", dataType)
+		}
+
+		dataType = reflect.TypeOf(contents.Data.Entities).String()
+		if dataType != "[]models.GetEntitiesResponseData" {
+			t.Errorf("Expected TotalCount to be type []models.GetEntitiesResponseData. Got: %v", dataType)
 		}
 	})
 
@@ -229,6 +319,33 @@ func TestGetEntities(t *testing.T) {
 		if res.StatusCode != http.StatusOK {
 			t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusOK, res.StatusCode)
 		}
+
+		data, err := io.ReadAll(res.Body)
+		if err != nil {
+			t.Errorf("Expected error to be nil. Got: %v", err)
+		}
+
+		contents := getEntitiesSingleResponse{}
+		err = json.Unmarshal(data, &contents)
+
+		if contents.Message != "success" {
+			t.Errorf("Expected message to be 'success'. Got: %s", contents.Message)
+		}
+
+		dataType := reflect.TypeOf(contents.Data).String()
+		if dataType != "models.GetEntitiesResponse" {
+			t.Errorf("Expected data to be type models.GetEntitiesResponse. Got: %v", dataType)
+		}
+
+		dataType = reflect.TypeOf(contents.Data.TotalCount).String()
+		if dataType != "int" {
+			t.Errorf("Expected TotalCount to be type int. Got: %v", dataType)
+		}
+
+		dataType = reflect.TypeOf(contents.Data.Entities).String()
+		if dataType != "[]models.GetEntitiesResponseData" {
+			t.Errorf("Expected TotalCount to be type []models.GetEntitiesResponseData. Got: %v", dataType)
+		}
 	})
 
 	t.Run("BEUT-22: Get Entities Non-Zero Offset", func(t *testing.T) {
@@ -280,6 +397,33 @@ func TestGetEntities(t *testing.T) {
 
 		if res.StatusCode != http.StatusOK {
 			t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusOK, res.StatusCode)
+		}
+
+		data, err := io.ReadAll(res.Body)
+		if err != nil {
+			t.Errorf("Expected error to be nil. Got: %v", err)
+		}
+
+		contents := getEntitiesSingleResponse{}
+		err = json.Unmarshal(data, &contents)
+
+		if contents.Message != "success" {
+			t.Errorf("Expected message to be 'success'. Got: %s", contents.Message)
+		}
+
+		dataType := reflect.TypeOf(contents.Data).String()
+		if dataType != "models.GetEntitiesResponse" {
+			t.Errorf("Expected data to be type models.GetEntitiesResponse. Got: %v", dataType)
+		}
+
+		dataType = reflect.TypeOf(contents.Data.TotalCount).String()
+		if dataType != "int" {
+			t.Errorf("Expected TotalCount to be type int. Got: %v", dataType)
+		}
+
+		dataType = reflect.TypeOf(contents.Data.Entities).String()
+		if dataType != "[]models.GetEntitiesResponseData" {
+			t.Errorf("Expected TotalCount to be type []models.GetEntitiesResponseData. Got: %v", dataType)
 		}
 	})
 

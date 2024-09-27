@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"organize-this/helpers"
+	"organize-this/models"
 )
 
 // CreateEntity returns void but sends a success message or error message back to the client.
@@ -44,7 +45,7 @@ func (handler Handler) CreateEntity(w http.ResponseWriter, request *http.Request
 
 // GetEntities return void, but sends a paginated list of all entities back to the client.
 func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request) {
-	var response getEntitiesResponse
+	var response models.GetEntitiesResponse
 
 	values := request.URL.Query()
 	offset, limit, err := getEntitiesParseQueryParams(values)
