@@ -9,20 +9,7 @@ import (
 
 type getEntitiesResponse struct {
 	TotalCount int
-	Entities   []getEntitiesResponseData
-}
-
-type getEntitiesResponseData struct {
-	ID       uint
-	Name     string
-	Category string
-	Location string
-	Notes    *string
-}
-
-type getEntitiesIntermediateEntity struct {
-	Category string
-	Entity   models.Entity
+	Entities   []models.GetEntitiesResponseData
 }
 
 func getEntitiesParseQueryParams(values url.Values) (int, int, error) {
@@ -50,21 +37,4 @@ func getEntitiesParseQueryParams(values url.Values) (int, int, error) {
 	}
 
 	return offset, limit, nil
-}
-
-func (handler Handler) getEntitiesBuildResponse(entities []getEntitiesIntermediateEntity) (response getEntitiesResponse) {
-	for _, entity := range entities {
-		data := getEntitiesResponseData{
-			ID:       uint(entity.Entity.ID),
-			Name:     entity.Entity.Name,
-			Category: entity.Category,
-			Location: " ",
-			Notes:    entity.Entity.Notes,
-		}
-
-		response.Entities = append(response.Entities, data)
-	}
-
-	response.TotalCount = handler.Repository.CountEntities()
-	return response
 }

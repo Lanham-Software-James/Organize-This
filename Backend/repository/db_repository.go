@@ -3,6 +3,8 @@ package repository
 import (
 	"organize-this/infra/database"
 	"organize-this/infra/logger"
+	"organize-this/models"
+	"strconv"
 
 	"gorm.io/gorm"
 )
@@ -43,6 +45,32 @@ func (repo Repository) Count(model interface{}) (int, error) {
 		return 0, err
 	}
 	return int(count), nil
+}
+
+// GetAllEntities returns all entities that belong to the user.
+func (repo Repository) GetAllEntities(offset int, limit int) []models.GetEntitiesResponseData {
+	var results []models.GetEntitiesResponseData
+	err := repo.Database.Raw(`
+        SELECT 'building' AS category, id, name, notes, ' ' as location FROM buildings
+        UNION ALL
+        SELECT 'room' AS category, id, name, notes, ' ' as location FROM rooms
+        UNION ALL
+        SELECT 'shelving_unit' AS category, id, name, notes, ' ' as location FROM shelving_units
+        UNION ALL
+        SELECT 'shelf' AS category, id, name, notes, ' ' as location FROM shelves
+        UNION ALL
+        SELECT 'container' AS category, id, name, notes, ' ' as location FROM containers
+        UNION ALL
+        SELECT 'item' AS category, id, name, notes, ' ' as location FROM items
+		OFFSET ` + strconv.Itoa(offset) +
+		` LIMIT ` + strconv.Itoa(limit)).Scan(&results).Error
+
+	// Check for errors
+	if err != nil {
+		logger.Errorf("error executing query: %v", err)
+	}
+
+	return results
 }
 
 // CountEntities is used to count the total number of entities that belong to a user.
