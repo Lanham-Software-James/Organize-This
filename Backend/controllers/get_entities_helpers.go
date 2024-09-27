@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"net/url"
 	"organize-this/infra/logger"
 	"strconv"
@@ -27,6 +28,18 @@ func getEntitiesParseQueryParams(values url.Values) (int, int, error) {
 	limit, err := strconv.Atoi(limitString)
 	if err != nil {
 		logger.Errorf("Error converting limit to int: %v", err)
+		return 0, 0, err
+	}
+
+	if offset < 0 {
+		err = errors.New("offset must be positive")
+		logger.Errorf("Error: %v", err)
+		return 0, 0, err
+	}
+
+	if limit < 0 {
+		err = errors.New("limit must be positive")
+		logger.Errorf("Error: %v", err)
 		return 0, 0, err
 	}
 

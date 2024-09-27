@@ -54,27 +54,26 @@
 	async function onFormSubmit() {
 		modalStore.close();
 
-		const response = await createEntity(formData)
+		const [message, _] = await createEntity(formData)
 
-		response.json().then((res: { message: string; data: string }) => {
-			let toastMessage = '';
-			let toastBackground = 'variant-filled-secondary';
 
-			if (res.message == 'success') {
-				toastMessage = 'Successfully added!';
-			} else {
-				toastMessage = 'There was an issue adding your item. ' + res.data;
-				toastBackground = 'variant-filled-error';
-			}
+		let toastMessage = '';
+		let toastBackground = 'variant-filled-secondary';
 
-			const t: ToastSettings = {
-				message: toastMessage,
-				background: toastBackground,
-				timeout: 5000
-			};
+		if (message == 'success') {
+			toastMessage = 'Successfully added!';
+		} else {
+			toastMessage = 'There was an issue adding your item.'
+			toastBackground = 'variant-filled-error';
+		}
 
-			toastStore.trigger(t);
-		});
+		const t: ToastSettings = {
+			message: toastMessage,
+			background: toastBackground,
+			timeout: 5000
+		};
+
+		toastStore.trigger(t);
 	}
 </script>
 
