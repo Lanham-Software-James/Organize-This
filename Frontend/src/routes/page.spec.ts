@@ -108,6 +108,12 @@ describe("Unit Tests for _getEntities()", () => {
 
         expect(size).toEqual(0)
 
-        expect(entities).toEqual([])
+        expect(entities).toEqual([{
+            ID: 0,
+            Name: " ",
+            Category: " ",
+            Location: " ",
+            Notes: " "
+        }])
     });
 });
