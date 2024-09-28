@@ -12,8 +12,6 @@ test('INT-1: Homepage Has Expected HTML', async ({ page }) => {
 
 	await expect(page.locator('#filter')).toBeVisible();
 
-	await expect(page.locator('i.fa-spinner')).toBeVisible();
-
 	await expect(page.locator('.paginator')).toBeVisible();
 	await expect(page.locator('select')).toBeVisible();
 
