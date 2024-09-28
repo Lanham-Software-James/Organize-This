@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('INT-3: Add New Modal Has Expected Shell HTML', async ({ page }) => {
+test('INT-3: Add New Modal Has Expected Shell', async ({ page }) => {
   await page.goto('/');
 
   await expect(page.locator('.modal-add-entity-form')).toBeHidden();
@@ -14,10 +14,16 @@ test('INT-3: Add New Modal Has Expected Shell HTML', async ({ page }) => {
   await expect(page.locator('.modal-add-entity-form')).toBeVisible();
   await expect(page.locator('.drawer')).toBeHidden();
 
+  await expect(page.locator('header')).toBeVisible();
+  await expect(page.locator('header')).toContainText("Add New");
+
+  await expect(page.locator('article')).toBeVisible();
+  await expect(page.locator('article')).toContainText("Please complete the form to add a new item, container, shelf, shelving unit, room, or building.");
+
   await expect(page.locator('label[for=category]')).toBeVisible();
   await expect(page.locator('label[for=category]')).toContainText("Category");
-  await expect(page.locator('select#category')).toBeVisible();
 
+  await expect(page.locator('select#category')).toBeVisible();
   await expect(page.locator('option[value="item"]')).toBeDefined();
 	await expect(page.locator('option[value="category"]')).toBeDefined();
 	await expect(page.locator('option[value="shelf"]')).toBeDefined();
@@ -134,7 +140,7 @@ test('INT-8: Add New Modal Room Category Has Fields', async ({ page }) => {
   await expect(page.locator('textarea#notes')).toBeVisible();
 })
 
-test('INT-9: Add New Modal Shelf Building Has Fields', async ({ page }) => {
+test('INT-9: Add New Modal Building Has Fields', async ({ page }) => {
   await page.goto('/');
 
   // Load Nav Bar
