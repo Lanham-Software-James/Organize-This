@@ -21,33 +21,6 @@ type getEntitiesSingleResponse struct {
 	Data    models.GetEntitiesResponse `json:"data"`
 }
 
-func setupMockExpectations(mock sqlmock.Sqlmock, getEntitiesQuery string) {
-	mock.ExpectQuery(getEntitiesQuery).
-		WillReturnRows(sqlmock.NewRows([]string{"category", "id", "name", "notes", "location"}).
-			AddRow("building", 1, "Building 1", "", " ").
-			AddRow("building", 2, "Building 2", "", " ").
-			AddRow("room", 1, "Room 1", "", " ").
-			AddRow("room", 2, "Room 2", "", " ").
-			AddRow("shelving_unit", 1, "Shelving Unit 1", "", " ").
-			AddRow("shelving_unit", 2, "Shelving Unit 2", "", " ").
-			AddRow("shelf", 1, "Shelf 1", "", " ").
-			AddRow("shelf", 2, "Shelf 2", "", " ").
-			AddRow("container", 1, "Container 1", "", " ").
-			AddRow("container", 2, "Container 2", "", " ").
-			AddRow("item", 1, "Item 1", "", " ").
-			AddRow("item", 2, "Item 2", "", " "))
-
-	mock.ExpectQuery(`SELECT
-						(SELECT COUNT\(\*\) FROM buildings) \+
-						(SELECT COUNT\(\*\) FROM rooms) \+
-						(SELECT COUNT\(\*\) FROM shelving_units) \+
-						(SELECT COUNT\(\*\) FROM shelves) \+
-						(SELECT COUNT\(\*\) FROM containers) \+
-						(SELECT COUNT\(\*\) FROM items)
-					AS EntityCount`).
-		WillReturnRows(sqlmock.NewRows([]string{"EntityCount"}).AddRow(6))
-}
-
 func processResponse(t *testing.T, w *httptest.ResponseRecorder) (contents getEntitiesSingleResponse) {
 	res := w.Result()
 	defer res.Body.Close()
@@ -112,11 +85,29 @@ func TestGetEntities(t *testing.T) {
 							UNION ALL
 							SELECT 'item' AS category, id, name, notes, ' ' as location FROM items`
 
+	countQuery := `(?i)SELECT\s*\(\s*SELECT\s+COUNT\(\*\)\s+FROM\s+buildings\s*\)\s*\+\s*\(\s*SELECT\s+COUNT\(\*\)\s+FROM\s+rooms\s*\)\s*\+\s*\(\s*SELECT\s+COUNT\(\*\)\s+FROM\s+shelving_units\s*\)\s*\+\s*\(\s*SELECT\s+COUNT\(\*\)\s+FROM\s+shelves\s*\)\s*\+\s*\(\s*SELECT\s+COUNT\(\*\)\s+FROM\s+containers\s*\)\s*\+\s*\(\s*SELECT\s+COUNT\(\*\)\s+FROM\s+items\s*\)\s+AS\s+EntityCount`
+
 	t.Run("BEUT-18: Get Entities Valid URL Params", func(t *testing.T) {
 		offset := "0"
 		limit := "20"
 
-		setupMockExpectations(mock, getEntitiesQueryBase+" OFFSET "+offset+" LIMIT "+limit)
+		mock.ExpectQuery(getEntitiesQueryBase + " OFFSET " + offset + " LIMIT " + limit).
+			WillReturnRows(sqlmock.NewRows([]string{"category", "id", "name", "notes", "location"}).
+				AddRow("building", 1, "Building 1", "", " ").
+				AddRow("building", 2, "Building 2", "", " ").
+				AddRow("room", 1, "Room 1", "", " ").
+				AddRow("room", 2, "Room 2", "", " ").
+				AddRow("shelving_unit", 1, "Shelving Unit 1", "", " ").
+				AddRow("shelving_unit", 2, "Shelving Unit 2", "", " ").
+				AddRow("shelf", 1, "Shelf 1", "", " ").
+				AddRow("shelf", 2, "Shelf 2", "", " ").
+				AddRow("container", 1, "Container 1", "", " ").
+				AddRow("container", 2, "Container 2", "", " ").
+				AddRow("item", 1, "Item 1", "", " ").
+				AddRow("item", 2, "Item 2", "", " "))
+
+		mock.ExpectQuery(countQuery).
+			WillReturnRows(sqlmock.NewRows([]string{"EntityCount"}).AddRow(6))
 
 		params := "?offset=" + offset + "&limit=" + limit
 		req := httptest.NewRequest(http.MethodGet, srv.URL+endpoint+params, nil)
@@ -132,7 +123,23 @@ func TestGetEntities(t *testing.T) {
 	t.Run("BEUT-19: Get Entities No Offset Param", func(t *testing.T) {
 		limit := "20"
 
-		setupMockExpectations(mock, getEntitiesQueryBase+" LIMIT "+limit)
+		mock.ExpectQuery(getEntitiesQueryBase + " OFFSET 0" + " LIMIT " + limit).
+			WillReturnRows(sqlmock.NewRows([]string{"category", "id", "name", "notes", "location"}).
+				AddRow("building", 1, "Building 1", "", " ").
+				AddRow("building", 2, "Building 2", "", " ").
+				AddRow("room", 1, "Room 1", "", " ").
+				AddRow("room", 2, "Room 2", "", " ").
+				AddRow("shelving_unit", 1, "Shelving Unit 1", "", " ").
+				AddRow("shelving_unit", 2, "Shelving Unit 2", "", " ").
+				AddRow("shelf", 1, "Shelf 1", "", " ").
+				AddRow("shelf", 2, "Shelf 2", "", " ").
+				AddRow("container", 1, "Container 1", "", " ").
+				AddRow("container", 2, "Container 2", "", " ").
+				AddRow("item", 1, "Item 1", "", " ").
+				AddRow("item", 2, "Item 2", "", " "))
+
+		mock.ExpectQuery(countQuery).
+			WillReturnRows(sqlmock.NewRows([]string{"EntityCount"}).AddRow(6))
 
 		params := "?limit=20"
 		req := httptest.NewRequest(http.MethodGet, srv.URL+endpoint+params, nil)
@@ -148,7 +155,23 @@ func TestGetEntities(t *testing.T) {
 	t.Run("BEUT-20: Get Entities No Limit Param", func(t *testing.T) {
 		offset := "0"
 
-		setupMockExpectations(mock, getEntitiesQueryBase+" OFFSET "+offset)
+		mock.ExpectQuery(getEntitiesQueryBase + " OFFSET " + offset + " LIMIT 20").
+			WillReturnRows(sqlmock.NewRows([]string{"category", "id", "name", "notes", "location"}).
+				AddRow("building", 1, "Building 1", "", " ").
+				AddRow("building", 2, "Building 2", "", " ").
+				AddRow("room", 1, "Room 1", "", " ").
+				AddRow("room", 2, "Room 2", "", " ").
+				AddRow("shelving_unit", 1, "Shelving Unit 1", "", " ").
+				AddRow("shelving_unit", 2, "Shelving Unit 2", "", " ").
+				AddRow("shelf", 1, "Shelf 1", "", " ").
+				AddRow("shelf", 2, "Shelf 2", "", " ").
+				AddRow("container", 1, "Container 1", "", " ").
+				AddRow("container", 2, "Container 2", "", " ").
+				AddRow("item", 1, "Item 1", "", " ").
+				AddRow("item", 2, "Item 2", "", " "))
+
+		mock.ExpectQuery(countQuery).
+			WillReturnRows(sqlmock.NewRows([]string{"EntityCount"}).AddRow(6))
 
 		params := "?offset=0"
 		req := httptest.NewRequest(http.MethodGet, srv.URL+endpoint+params, nil)
@@ -174,7 +197,23 @@ func TestGetEntities(t *testing.T) {
 	})
 
 	t.Run("BEUT-21: Get Entities No Params", func(t *testing.T) {
-		setupMockExpectations(mock, getEntitiesQueryBase+" OFFSET 0 LIMIT 20")
+		mock.ExpectQuery(getEntitiesQueryBase + " OFFSET 0 LIMIT 20").
+			WillReturnRows(sqlmock.NewRows([]string{"category", "id", "name", "notes", "location"}).
+				AddRow("building", 1, "Building 1", "", " ").
+				AddRow("building", 2, "Building 2", "", " ").
+				AddRow("room", 1, "Room 1", "", " ").
+				AddRow("room", 2, "Room 2", "", " ").
+				AddRow("shelving_unit", 1, "Shelving Unit 1", "", " ").
+				AddRow("shelving_unit", 2, "Shelving Unit 2", "", " ").
+				AddRow("shelf", 1, "Shelf 1", "", " ").
+				AddRow("shelf", 2, "Shelf 2", "", " ").
+				AddRow("container", 1, "Container 1", "", " ").
+				AddRow("container", 2, "Container 2", "", " ").
+				AddRow("item", 1, "Item 1", "", " ").
+				AddRow("item", 2, "Item 2", "", " "))
+
+		mock.ExpectQuery(countQuery).
+			WillReturnRows(sqlmock.NewRows([]string{"EntityCount"}).AddRow(6))
 
 		req := httptest.NewRequest(http.MethodGet, srv.URL+endpoint, nil)
 		w := httptest.NewRecorder()
@@ -190,7 +229,23 @@ func TestGetEntities(t *testing.T) {
 		offset := "20"
 		limit := "20"
 
-		setupMockExpectations(mock, getEntitiesQueryBase+" OFFSET "+offset+" LIMIT "+limit)
+		mock.ExpectQuery(getEntitiesQueryBase + " OFFSET " + offset + " LIMIT " + limit).
+			WillReturnRows(sqlmock.NewRows([]string{"category", "id", "name", "notes", "location"}).
+				AddRow("building", 1, "Building 1", "", " ").
+				AddRow("building", 2, "Building 2", "", " ").
+				AddRow("room", 1, "Room 1", "", " ").
+				AddRow("room", 2, "Room 2", "", " ").
+				AddRow("shelving_unit", 1, "Shelving Unit 1", "", " ").
+				AddRow("shelving_unit", 2, "Shelving Unit 2", "", " ").
+				AddRow("shelf", 1, "Shelf 1", "", " ").
+				AddRow("shelf", 2, "Shelf 2", "", " ").
+				AddRow("container", 1, "Container 1", "", " ").
+				AddRow("container", 2, "Container 2", "", " ").
+				AddRow("item", 1, "Item 1", "", " ").
+				AddRow("item", 2, "Item 2", "", " "))
+
+		mock.ExpectQuery(countQuery).
+			WillReturnRows(sqlmock.NewRows([]string{"EntityCount"}).AddRow(6))
 
 		params := "?offset=20&limit=20"
 		req := httptest.NewRequest(http.MethodGet, srv.URL+endpoint+params, nil)

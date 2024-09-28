@@ -12,7 +12,8 @@
     "lint": "prettier --check . && eslint .",
     "format": "prettier --write .",
     "test:integration": "playwright test",
-    "test:unit": "vitest"
+    "test:unit": "vitest",
+    "coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "@playwright/test": "^1.28.1",
@@ -25,6 +26,7 @@
     "@tailwindcss/typography": "0.5.15",
     "@types/eslint": "^9.6.0",
     "@types/node": "22.5.4",
+    "@vitest/coverage-istanbul": "^2.1.1",
     "autoprefixer": "10.4.20",
     "eslint": "^9.0.0",
     "eslint-config-prettier": "^9.1.0",
