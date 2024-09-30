@@ -2,11 +2,8 @@ package repository
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"organize-this/infra/cache"
-	"organize-this/infra/database"
 	"organize-this/infra/logger"
 	"organize-this/models"
 	"strconv"
@@ -17,10 +14,13 @@ import (
 	"gorm.io/gorm"
 )
 
+// Repository is the type we use to pass the infrastructure components to the functions
 type Repository struct {
 	Database *gorm.DB
+	Cache    *redis.Client
 }
 
+// Save is used to create a new record in the DB
 func (repo Repository) Save(model interface{}) interface{} {
 	err := repo.Database.Create(model).Error
 
@@ -31,28 +31,22 @@ func (repo Repository) Save(model interface{}) interface{} {
 	return err
 }
 
-func (repo Repository) Get(model interface{}, offset int, limit int) interface{} {
-	err := repo.Database.Offset(offset).Limit(limit).Find(model).Error
+// Get is used to get multiple records from the DB
+func (repo Repository) Get(model interface{}) interface{} {
+	err := repo.Database.Find(model).Error
 	return err
 }
 
+// GetOne is used to get a single record from the DB
 func (repo Repository) GetOne(model interface{}) interface{} {
-	err := database.DB.Last(model).Error
+	err := repo.Database.Last(model).Error
 	return err
 }
 
+// Update is used to update a record in the DB
 func (repo Repository) Update(model interface{}) interface{} {
-	err := database.DB.Find(model).Error
+	err := repo.Database.Find(model).Error
 	return err
-}
-
-func (repo Repository) Count(model interface{}) (int, error) {
-	var count int64
-	err := repo.Database.Model(model).Count(&count).Error
-	if err != nil {
-		return 0, err
-	}
-	return int(count), nil
 }
 
 // GetAllEntities returns all entities that belong to the user.
@@ -63,8 +57,8 @@ func (repo Repository) GetAllEntities(offset int, limit int) []models.GetEntitie
 
 	cacheTTL := 5 * time.Minute
 	ctx := context.Background()
-	key := base64.StdEncoding.EncodeToString([]byte("allentities" + stringOffset + stringLimit))
-	value, redisErr := cache.Client.Get(ctx, key).Result()
+	key := "user:123_allentities_offset:" + stringOffset + "_limit:" + stringLimit
+	value, redisErr := repo.Cache.Get(ctx, key).Result()
 	if redisErr != nil && !errors.Is(redisErr, redis.Nil) {
 		logger.Errorf("Error retriving entites from Redis: %v", redisErr)
 		return results
@@ -97,7 +91,7 @@ func (repo Repository) GetAllEntities(offset int, limit int) []models.GetEntitie
 			return results
 		}
 
-		cache.Client.Set(ctx, key, byteData, cacheTTL)
+		repo.Cache.Set(ctx, key, byteData, cacheTTL)
 	} else {
 		jsonErr := json.Unmarshal([]byte(value), &results)
 		if jsonErr != nil {
@@ -112,20 +106,67 @@ func (repo Repository) GetAllEntities(offset int, limit int) []models.GetEntitie
 func (repo Repository) CountEntities() int {
 	var entityCount int
 
-	err := repo.Database.Raw(`
-		SELECT
-			(SELECT COUNT(*) FROM buildings) +
-			(SELECT COUNT(*) FROM rooms) +
-			(SELECT COUNT(*) FROM shelving_units) +
-			(SELECT COUNT(*) FROM shelves) +
-			(SELECT COUNT(*) FROM containers) +
-			(SELECT COUNT(*) FROM items)
-		AS EntityCount
-	`).Scan(&entityCount).Error
+	cacheTTL := 5 * time.Minute
+	ctx := context.Background()
+	key := "user:123_countentities"
+	value, redisErr := repo.Cache.Get(ctx, key).Result()
+	if redisErr != nil && !errors.Is(redisErr, redis.Nil) {
+		logger.Errorf("error retriving entites from Redis: %v", redisErr)
+		return entityCount
+	}
 
-	if err != nil {
-		logger.Errorf("error executing query: %v", err)
+	if value == "" {
+		err := repo.Database.Raw(`
+			SELECT
+				(SELECT COUNT(*) FROM buildings) +
+				(SELECT COUNT(*) FROM rooms) +
+				(SELECT COUNT(*) FROM shelving_units) +
+				(SELECT COUNT(*) FROM shelves) +
+				(SELECT COUNT(*) FROM containers) +
+				(SELECT COUNT(*) FROM items)
+			AS EntityCount
+		`).Scan(&entityCount).Error
+
+		if err != nil {
+			logger.Errorf("error executing query: %v", err)
+			return entityCount
+		}
+
+		repo.Cache.Set(ctx, key, entityCount, cacheTTL)
+	} else {
+		var typeErr error
+		entityCount, typeErr = strconv.Atoi(value)
+		if typeErr != nil {
+			logger.Errorf("error converting string to int from cache: %v", typeErr)
+			return entityCount
+		}
 	}
 
 	return entityCount
+}
+
+// FlushEntities clears the redis cache of all things relating to entities
+func (repo Repository) FlushEntities() {
+	ctx := context.Background()
+	patternEntities := "user:123_allentities_*"
+	patternCount := "user:123_countentities"
+	keys, err := repo.Cache.Keys(ctx, patternEntities).Result()
+	if err != nil {
+		logger.Errorf("error getting cache keys: %v", err)
+		return
+	}
+
+	for _, key := range keys {
+		err := repo.Cache.Del(ctx, key).Err()
+		if err != nil {
+			logger.Errorf("error clearing cache: %v", err)
+			return
+		}
+	}
+
+	err = repo.Cache.Del(ctx, patternCount).Err()
+	if err != nil {
+		logger.Errorf("error clearing cache: %v", err)
+		return
+	}
 }

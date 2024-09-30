@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"organize-this/controllers"
 	"organize-this/helpers"
+	"organize-this/infra/cache"
 	"organize-this/infra/database"
 	"organize-this/repository"
 
@@ -13,7 +14,12 @@ import (
 
 // RegisterRoutes add all routing list here automatically get main router
 func RegisterRoutes(r *chi.Mux) {
-	handler := controllers.Handler{Repository: &repository.Repository{Database: database.DB}}
+	handler := controllers.Handler{
+		Repository: &repository.Repository{
+			Database: database.DB,
+			Cache:    cache.Client,
+		},
+	}
 
 	r.Get("/", func(w http.ResponseWriter, _ *http.Request) {
 		helpers.SuccessResponse(w, "alive ok")
