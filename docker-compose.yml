@@ -14,6 +14,20 @@ services:
       - organize-this-db-data:/var/lib/postgresql/data
     restart: unless-stopped
 
+  redis:
+    image: redis/redis-stack:7.4.0-v0
+    container_name: organize-this-redis
+    environment:
+      REDIS_ARGS: "--requirepass password --user ${REDIS_USER} on >${REDIS_PASSWORD} ~* allcommands --user default off nopass nocommands"
+    networks:
+      - organize-this-backend
+    ports:
+      - "6379:6379"
+      - "8001:8001"
+    volumes:
+      - organize-this-redis-data:/data
+    restart: unless-stopped
+
   backend:
     build:
       context: ./Backend
@@ -31,6 +45,9 @@ services:
       ALLOWED_HOSTS: ${ALLOWED_HOSTS}
       SERVER_HOST: ${SERVER_HOST}
       SERVER_PORT: ${SERVER_PORT}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_USER: ${REDIS_USER}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     depends_on:
       - db
     networks:
@@ -68,3 +85,4 @@ networks:
 
 volumes:
   organize-this-db-data:
+  organize-this-redis-data:

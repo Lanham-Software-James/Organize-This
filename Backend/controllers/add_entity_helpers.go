@@ -7,22 +7,27 @@ import (
 
 // createEntityByCategory handles the creation of entities based on their category.
 func (handler Handler) createEntityByCategory(category string, data map[string]string) (uint, error) {
+	var id uint
+
 	switch category {
 	case "item":
-		return handler.addItem(data), nil
+		id = handler.addItem(data)
 	case "container":
-		return handler.addContainer(data), nil
+		id = handler.addContainer(data)
 	case "shelf":
-		return handler.addShelf(data), nil
+		id = handler.addShelf(data)
 	case "shelvingunit":
-		return handler.addShelvingUnit(data), nil
+		id = handler.addShelvingUnit(data)
 	case "room":
-		return handler.addRoom(data), nil
+		id = handler.addRoom(data)
 	case "building":
-		return handler.addBuilding(data), nil
+		id = handler.addBuilding(data)
 	default:
 		return 0, fmt.Errorf("invalid category: %v", category)
 	}
+
+	handler.Repository.FlushEntities()
+	return id, nil
 }
 
 // addItem is a helper function for the CreateEntity endpoint to actually create the item
@@ -38,7 +43,7 @@ func (handler Handler) addItem(data map[string]string) (id uint) {
 		Entity: entity,
 	}
 
-	handler.Repository.Database.Save(&item)
+	handler.Repository.Save(&item)
 
 	return uint(item.Entity.ID)
 }
@@ -56,7 +61,7 @@ func (handler Handler) addContainer(data map[string]string) (id uint) {
 		Entity: entity,
 	}
 
-	handler.Repository.Database.Save(&container)
+	handler.Repository.Save(&container)
 
 	return uint(container.Entity.ID)
 }
@@ -74,7 +79,7 @@ func (handler Handler) addShelf(data map[string]string) (id uint) {
 		Entity: entity,
 	}
 
-	handler.Repository.Database.Save(&shelf)
+	handler.Repository.Save(&shelf)
 
 	return uint(shelf.Entity.ID)
 }
@@ -92,7 +97,7 @@ func (handler Handler) addShelvingUnit(data map[string]string) (id uint) {
 		Entity: entity,
 	}
 
-	handler.Repository.Database.Save(&unit)
+	handler.Repository.Save(&unit)
 
 	return uint(unit.Entity.ID)
 }
@@ -110,7 +115,7 @@ func (handler Handler) addRoom(data map[string]string) (id uint) {
 		Entity: entity,
 	}
 
-	handler.Repository.Database.Save(&room)
+	handler.Repository.Save(&room)
 
 	return uint(room.Entity.ID)
 }
@@ -130,7 +135,7 @@ func (handler Handler) addBuilding(data map[string]string) (id uint) {
 		Address: &tmpAddress,
 	}
 
-	handler.Repository.Database.Save(&building)
+	handler.Repository.Save(&building)
 
 	return uint(building.Entity.ID)
 }

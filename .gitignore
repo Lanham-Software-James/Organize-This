@@ -2,3 +2,4 @@
 .env.local
 tmp/
 test-results/
+coverage/
