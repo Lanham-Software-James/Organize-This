@@ -5,6 +5,7 @@ import (
 	"organize-this/config"
 	"organize-this/infra/database"
 	"organize-this/infra/logger"
+	"organize-this/infra/redis"
 	"organize-this/migrations"
 	"organize-this/routers"
 	"time"
@@ -29,6 +30,11 @@ func main() {
 	}
 	//later separate migration
 	migrations.Migrate()
+
+	redisConnectionString := config.RedisConfiguration()
+	if err := redis.ClientConnection(redisConnectionString); err != nil {
+		logger.Fatalf("redis ClientConnection error: %s", err)
+	}
 
 	router := routers.SetupRoute()
 	logger.Fatalf("%v", http.ListenAndServe(config.ServerConfig(), router))
