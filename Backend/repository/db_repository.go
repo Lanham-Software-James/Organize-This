@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"organize-this/infra/cache"
 	"organize-this/infra/logger"
 	"organize-this/models"
 	"strconv"
@@ -19,6 +20,13 @@ import (
 type Repository struct {
 	Database *gorm.DB
 	Cache    *redis.Client
+}
+
+// GetEntitiesCacheKey is an extension of cachekey that represents the structure of the keys in our cache for the paginated getentities data.
+type GetEntitiesCacheKey struct {
+	CacheKey cache.CacheKey
+	Offset   string
+	Limit    string
 }
 
 // Save is used to create a new record in the DB
@@ -58,8 +66,16 @@ func (repo Repository) GetAllEntities(offset int, limit int) []models.GetEntitie
 
 	cacheTTL := 5 * time.Minute
 	ctx := context.Background()
-	key := "user:123_allentities_offset:" + stringOffset + "_limit:" + stringLimit
-	value, redisErr := repo.Cache.Get(ctx, key).Result()
+	keyStructured := GetEntitiesCacheKey{
+		CacheKey: cache.CacheKey{
+			User:     "123",
+			Function: "GetAllEntities",
+		},
+		Offset: stringOffset,
+		Limit:  stringLimit,
+	}
+	key, _ := json.Marshal(keyStructured)
+	value, redisErr := repo.Cache.Get(ctx, string(key)).Result()
 	if redisErr != nil && !errors.Is(redisErr, redis.Nil) {
 		logger.Errorf("Error retriving entites from Redis: %v", redisErr)
 		return results
@@ -92,7 +108,7 @@ func (repo Repository) GetAllEntities(offset int, limit int) []models.GetEntitie
 			return results
 		}
 
-		repo.Cache.Set(ctx, key, byteData, cacheTTL)
+		repo.Cache.Set(ctx, string(key), byteData, cacheTTL)
 	} else {
 		jsonErr := json.Unmarshal([]byte(value), &results)
 		if jsonErr != nil {
@@ -109,8 +125,12 @@ func (repo Repository) CountEntities() int {
 
 	cacheTTL := 5 * time.Minute
 	ctx := context.Background()
-	key := "user:123_countentities"
-	value, redisErr := repo.Cache.Get(ctx, key).Result()
+	keyStructured := cache.CacheKey{
+		User:     "123",
+		Function: "CountEntities",
+	}
+	key, _ := json.Marshal(keyStructured)
+	value, redisErr := repo.Cache.Get(ctx, string(key)).Result()
 	if redisErr != nil && !errors.Is(redisErr, redis.Nil) {
 		logger.Errorf("error retriving entites from Redis: %v", redisErr)
 		return entityCount
@@ -133,7 +153,7 @@ func (repo Repository) CountEntities() int {
 			return entityCount
 		}
 
-		repo.Cache.Set(ctx, key, entityCount, cacheTTL)
+		repo.Cache.Set(ctx, string(key), entityCount, cacheTTL)
 	} else {
 		var typeErr error
 		entityCount, typeErr = strconv.Atoi(value)
@@ -149,9 +169,11 @@ func (repo Repository) CountEntities() int {
 // FlushEntities clears the redis cache of all things relating to entities
 func (repo Repository) FlushEntities() {
 	ctx := context.Background()
-	patternEntities := "user:123_allentities_*"
-	patternCount := "user:123_countentities"
-	keys, err := repo.Cache.Keys(ctx, patternEntities).Result()
+
+	getAllEntitiesPattern := `{"CacheKey":{"User":"123","Function":"GetAllEntities"},*`
+	countEntitiesPattern := `{"User":"123","Function":"CountEntities"}`
+
+	keys, err := repo.Cache.Keys(ctx, getAllEntitiesPattern).Result()
 	if err != nil {
 		logger.Errorf("error getting cache keys: %v", err)
 		return
@@ -165,7 +187,7 @@ func (repo Repository) FlushEntities() {
 		}
 	}
 
-	err = repo.Cache.Del(ctx, patternCount).Err()
+	err = repo.Cache.Del(ctx, countEntitiesPattern).Err()
 	if err != nil {
 		logger.Errorf("error clearing cache: %v", err)
 		return
