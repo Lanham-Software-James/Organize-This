@@ -1,10 +1,14 @@
+// Package cache is the homebase for our redis connection
 package cache
 
 import (
+	"organize-this/infra/logger"
+
 	"github.com/redis/go-redis/v9"
 )
 
 var (
+	// Client is a singleton redis client connection
 	Client *redis.Client
 	err    error
 )
@@ -15,11 +19,11 @@ func ClientConnection(redisConnectionString string) error {
 
 	opt, err := redis.ParseURL(redisConnectionString)
 	if err != nil {
-		panic(err)
+		logger.Fatalf("error connecting to redis: %v", err)
+		return err
 	}
 
 	client = redis.NewClient(opt)
-
 	Client = client
 
 	return nil
