@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-redis/redismock/v9"
 )
 
 type createSingleResponse struct {
@@ -23,7 +24,8 @@ type createSingleResponse struct {
 // TestCreateEntityAll runs our unit tests for the CreateEntity function that apply to all categories.
 func TestCreatEntityAll(t *testing.T) {
 	mockDB, _ := NewMockDB()
-	handler := controllers.Handler{Repository: &repository.Repository{Database: mockDB}}
+	mockCache, _ := redismock.NewClientMock()
+	handler := controllers.Handler{Repository: &repository.Repository{Database: mockDB, Cache: mockCache}}
 	endpoint := "/v1/entity"
 	r := chi.NewRouter()
 	r.Post(endpoint, handler.CreateEntity)
@@ -88,7 +90,8 @@ func TestCreatEntityAll(t *testing.T) {
 // TestCreateEntityItem runs our unit tests for the CreateEntity function with the shelving unit category.
 func TestCreateEntityItem(t *testing.T) {
 	mockDB, _ := NewMockDB()
-	handler := controllers.Handler{Repository: &repository.Repository{Database: mockDB}}
+	mockCache, _ := redismock.NewClientMock()
+	handler := controllers.Handler{Repository: &repository.Repository{Database: mockDB, Cache: mockCache}}
 	endpoint := "/v1/entity"
 	r := chi.NewRouter()
 	r.Post(endpoint, handler.CreateEntity)
@@ -177,7 +180,8 @@ func TestCreateEntityItem(t *testing.T) {
 // TestCreateEntityContainer runs our unit tests for the CreateEntity function with the shelving unit category.
 func TestCreateEntityContainer(t *testing.T) {
 	mockDB, _ := NewMockDB()
-	handler := controllers.Handler{Repository: &repository.Repository{Database: mockDB}}
+	mockCache, _ := redismock.NewClientMock()
+	handler := controllers.Handler{Repository: &repository.Repository{Database: mockDB, Cache: mockCache}}
 	endpoint := "/v1/entity"
 	r := chi.NewRouter()
 	r.Post(endpoint, handler.CreateEntity)
@@ -266,7 +270,8 @@ func TestCreateEntityContainer(t *testing.T) {
 // TestCreateEntityShelf runs our unit tests for the CreateEntity function with the shelving unit category.
 func TestCreateEntityShelf(t *testing.T) {
 	mockDB, _ := NewMockDB()
-	handler := controllers.Handler{Repository: &repository.Repository{Database: mockDB}}
+	mockCache, _ := redismock.NewClientMock()
+	handler := controllers.Handler{Repository: &repository.Repository{Database: mockDB, Cache: mockCache}}
 	endpoint := "/v1/entity"
 	r := chi.NewRouter()
 	r.Post(endpoint, handler.CreateEntity)
@@ -355,7 +360,8 @@ func TestCreateEntityShelf(t *testing.T) {
 // TestCreateEntityShelvingUnit runs our unit tests for the CreateEntity function with the shelving unit category.
 func TestCreateEntityShelvingUnit(t *testing.T) {
 	mockDB, _ := NewMockDB()
-	handler := controllers.Handler{Repository: &repository.Repository{Database: mockDB}}
+	mockCache, _ := redismock.NewClientMock()
+	handler := controllers.Handler{Repository: &repository.Repository{Database: mockDB, Cache: mockCache}}
 	endpoint := "/v1/entity"
 	r := chi.NewRouter()
 	r.Post(endpoint, handler.CreateEntity)
@@ -444,7 +450,8 @@ func TestCreateEntityShelvingUnit(t *testing.T) {
 // TestCreateEntityRoom runs our unit tests for the CreateEntity function with the room category.
 func TestCreateEntityRoom(t *testing.T) {
 	mockDB, _ := NewMockDB()
-	handler := controllers.Handler{Repository: &repository.Repository{Database: mockDB}}
+	mockCache, _ := redismock.NewClientMock()
+	handler := controllers.Handler{Repository: &repository.Repository{Database: mockDB, Cache: mockCache}}
 	endpoint := "/v1/entity"
 	r := chi.NewRouter()
 	r.Post(endpoint, handler.CreateEntity)
@@ -533,7 +540,8 @@ func TestCreateEntityRoom(t *testing.T) {
 // TestCreateEntityBuilding runs our unit tests for the CreateEntity function with the building category.
 func TestCreateEntityBuilding(t *testing.T) {
 	mockDB, _ := NewMockDB()
-	handler := controllers.Handler{Repository: &repository.Repository{Database: mockDB}}
+	mockCache, _ := redismock.NewClientMock()
+	handler := controllers.Handler{Repository: &repository.Repository{Database: mockDB, Cache: mockCache}}
 	endpoint := "/v1/entity"
 	r := chi.NewRouter()
 	r.Post(endpoint, handler.CreateEntity)

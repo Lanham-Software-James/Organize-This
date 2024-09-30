@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/go-redis/redismock/v9"
 )
 
 type getEntitiesSingleResponse struct {
@@ -65,7 +66,8 @@ func isValidResponse(t *testing.T, contents getEntitiesSingleResponse) {
 func TestGetEntities(t *testing.T) {
 	mockDB, mock := NewMockDB()
 
-	handler := controllers.Handler{Repository: &repository.Repository{Database: mockDB}}
+	mockCache, _ := redismock.NewClientMock()
+	handler := controllers.Handler{Repository: &repository.Repository{Database: mockDB, Cache: mockCache}}
 
 	r := routers.SetupRoute()
 

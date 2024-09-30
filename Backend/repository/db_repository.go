@@ -1,3 +1,4 @@
+// Package repository contains all functions for data manipulation for Organize-This
 package repository
 
 import (
