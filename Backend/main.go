@@ -3,9 +3,9 @@ package main
 import (
 	"net/http"
 	"organize-this/config"
+	"organize-this/infra/cache"
 	"organize-this/infra/database"
 	"organize-this/infra/logger"
-	"organize-this/infra/redis"
 	"organize-this/migrations"
 	"organize-this/routers"
 	"time"
@@ -32,7 +32,7 @@ func main() {
 	migrations.Migrate()
 
 	redisConnectionString := config.RedisConfiguration()
-	if err := redis.ClientConnection(redisConnectionString); err != nil {
+	if err := cache.ClientConnection(redisConnectionString); err != nil {
 		logger.Fatalf("redis ClientConnection error: %s", err)
 	}
 

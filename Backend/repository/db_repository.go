@@ -1,10 +1,18 @@
 package repository
 
 import (
+	"context"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"organize-this/infra/cache"
 	"organize-this/infra/database"
 	"organize-this/infra/logger"
 	"organize-this/models"
 	"strconv"
+	"time"
+
+	"github.com/redis/go-redis/v9"
 
 	"gorm.io/gorm"
 )
@@ -49,25 +57,52 @@ func (repo Repository) Count(model interface{}) (int, error) {
 
 // GetAllEntities returns all entities that belong to the user.
 func (repo Repository) GetAllEntities(offset int, limit int) []models.GetEntitiesResponseData {
+	stringOffset := strconv.Itoa(offset)
+	stringLimit := strconv.Itoa(limit)
 	var results []models.GetEntitiesResponseData
-	err := repo.Database.Raw(`
-        SELECT 'building' AS category, id, name, notes, ' ' as location FROM buildings
-        UNION ALL
-        SELECT 'room' AS category, id, name, notes, ' ' as location FROM rooms
-        UNION ALL
-        SELECT 'shelving_unit' AS category, id, name, notes, ' ' as location FROM shelving_units
-        UNION ALL
-        SELECT 'shelf' AS category, id, name, notes, ' ' as location FROM shelves
-        UNION ALL
-        SELECT 'container' AS category, id, name, notes, ' ' as location FROM containers
-        UNION ALL
-        SELECT 'item' AS category, id, name, notes, ' ' as location FROM items
-		OFFSET ` + strconv.Itoa(offset) +
-		` LIMIT ` + strconv.Itoa(limit)).Scan(&results).Error
 
-	// Check for errors
-	if err != nil {
-		logger.Errorf("error executing query: %v", err)
+	cacheTTL := 5 * time.Minute
+	ctx := context.Background()
+	key := base64.StdEncoding.EncodeToString([]byte("allentities" + stringOffset + stringLimit))
+	value, redisErr := cache.Client.Get(ctx, key).Result()
+	if redisErr != nil && !errors.Is(redisErr, redis.Nil) {
+		logger.Errorf("Error retriving entites from Redis: %v", redisErr)
+		return results
+	}
+
+	if value == "" {
+		dbErr := repo.Database.Raw(`
+			SELECT 'building' AS category, id, name, notes, ' ' as location FROM buildings
+			UNION ALL
+			SELECT 'room' AS category, id, name, notes, ' ' as location FROM rooms
+			UNION ALL
+			SELECT 'shelving_unit' AS category, id, name, notes, ' ' as location FROM shelving_units
+			UNION ALL
+			SELECT 'shelf' AS category, id, name, notes, ' ' as location FROM shelves
+			UNION ALL
+			SELECT 'container' AS category, id, name, notes, ' ' as location FROM containers
+			UNION ALL
+			SELECT 'item' AS category, id, name, notes, ' ' as location FROM items
+			OFFSET ` + stringOffset +
+			` LIMIT ` + stringLimit).Scan(&results).Error
+
+		if dbErr != nil {
+			logger.Errorf("error executing query: %v", dbErr)
+			return results
+		}
+
+		byteData, jsonErr := json.Marshal(results)
+		if jsonErr != nil {
+			logger.Errorf("error executing query: %v", dbErr)
+			return results
+		}
+
+		cache.Client.Set(ctx, key, byteData, cacheTTL)
+	} else {
+		jsonErr := json.Unmarshal([]byte(value), &results)
+		if jsonErr != nil {
+			logger.Errorf("error executing query: %v", jsonErr)
+		}
 	}
 
 	return results
