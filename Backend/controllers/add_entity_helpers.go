@@ -6,22 +6,22 @@ import (
 )
 
 // createEntityByCategory handles the creation of entities based on their category.
-func (handler Handler) createEntityByCategory(category string, data map[string]string) (uint, error) {
+func (handler Handler) createEntityByCategory(userID string, category string, data map[string]string) (uint, error) {
 	var id uint
 
 	switch category {
 	case "item":
-		id = handler.addItem(data)
+		id = handler.addItem(userID, data)
 	case "container":
-		id = handler.addContainer(data)
+		id = handler.addContainer(userID, data)
 	case "shelf":
-		id = handler.addShelf(data)
+		id = handler.addShelf(userID, data)
 	case "shelvingunit":
-		id = handler.addShelvingUnit(data)
+		id = handler.addShelvingUnit(userID, data)
 	case "room":
-		id = handler.addRoom(data)
+		id = handler.addRoom(userID, data)
 	case "building":
-		id = handler.addBuilding(data)
+		id = handler.addBuilding(userID, data)
 	default:
 		return 0, fmt.Errorf("invalid category: %v", category)
 	}
@@ -31,12 +31,13 @@ func (handler Handler) createEntityByCategory(category string, data map[string]s
 }
 
 // addItem is a helper function for the CreateEntity endpoint to actually create the item
-func (handler Handler) addItem(data map[string]string) (id uint) {
+func (handler Handler) addItem(userID string, data map[string]string) (id uint) {
 	tmpNotes := data["notes"]
 
 	entity := models.Entity{
-		Name:  data["name"],
-		Notes: &tmpNotes,
+		Name:   data["name"],
+		Notes:  &tmpNotes,
+		UserID: userID,
 	}
 
 	item := models.Item{
@@ -49,12 +50,13 @@ func (handler Handler) addItem(data map[string]string) (id uint) {
 }
 
 // addContainer is a helper function for the CreateEntity endpoint to actually create the container.
-func (handler Handler) addContainer(data map[string]string) (id uint) {
+func (handler Handler) addContainer(userID string, data map[string]string) (id uint) {
 	tmpNotes := data["notes"]
 
 	entity := models.Entity{
-		Name:  data["name"],
-		Notes: &tmpNotes,
+		Name:   data["name"],
+		Notes:  &tmpNotes,
+		UserID: userID,
 	}
 
 	container := models.Container{
@@ -67,12 +69,13 @@ func (handler Handler) addContainer(data map[string]string) (id uint) {
 }
 
 // addShelf is a helper function for the CreateEntity endpoint to actually create the shelf.
-func (handler Handler) addShelf(data map[string]string) (id uint) {
+func (handler Handler) addShelf(userID string, data map[string]string) (id uint) {
 	tmpNotes := data["notes"]
 
 	entity := models.Entity{
-		Name:  data["name"],
-		Notes: &tmpNotes,
+		Name:   data["name"],
+		Notes:  &tmpNotes,
+		UserID: userID,
 	}
 
 	shelf := models.Shelf{
@@ -85,12 +88,13 @@ func (handler Handler) addShelf(data map[string]string) (id uint) {
 }
 
 // addShelvingUnit is a helper function for the CreateEntity endpoint to actually create the shelving unit.
-func (handler Handler) addShelvingUnit(data map[string]string) (id uint) {
+func (handler Handler) addShelvingUnit(userID string, data map[string]string) (id uint) {
 	tmpNotes := data["notes"]
 
 	entity := models.Entity{
-		Name:  data["name"],
-		Notes: &tmpNotes,
+		Name:   data["name"],
+		Notes:  &tmpNotes,
+		UserID: userID,
 	}
 
 	unit := models.ShelvingUnit{
@@ -103,12 +107,13 @@ func (handler Handler) addShelvingUnit(data map[string]string) (id uint) {
 }
 
 // addRoom is a helper function for the CreateEntity endpoint to actually create the room.
-func (handler Handler) addRoom(data map[string]string) (id uint) {
+func (handler Handler) addRoom(userID string, data map[string]string) (id uint) {
 	tmpNotes := data["notes"]
 
 	entity := models.Entity{
-		Name:  data["name"],
-		Notes: &tmpNotes,
+		Name:   data["name"],
+		Notes:  &tmpNotes,
+		UserID: userID,
 	}
 
 	room := models.Room{
@@ -121,13 +126,14 @@ func (handler Handler) addRoom(data map[string]string) (id uint) {
 }
 
 // addBuilding is a helper function for the CreateEntity endpoint to actually create the building.
-func (handler Handler) addBuilding(data map[string]string) (id uint) {
+func (handler Handler) addBuilding(userID string, data map[string]string) (id uint) {
 	tmpAddress := data["address"]
 	tmpNotes := data["notes"]
 
 	entity := models.Entity{
-		Name:  data["name"],
-		Notes: &tmpNotes,
+		Name:   data["name"],
+		Notes:  &tmpNotes,
+		UserID: userID,
 	}
 
 	building := models.Building{

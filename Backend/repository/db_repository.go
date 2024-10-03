@@ -59,7 +59,7 @@ func (repo Repository) Update(model interface{}) interface{} {
 }
 
 // GetAllEntities returns all entities that belong to the user.
-func (repo Repository) GetAllEntities(offset int, limit int) []models.GetEntitiesResponseData {
+func (repo Repository) GetAllEntities(userID string, offset int, limit int) []models.GetEntitiesResponseData {
 	stringOffset := strconv.Itoa(offset)
 	stringLimit := strconv.Itoa(limit)
 	var results []models.GetEntitiesResponseData
@@ -83,19 +83,19 @@ func (repo Repository) GetAllEntities(offset int, limit int) []models.GetEntitie
 
 	if value == "" {
 		dbErr := repo.Database.Raw(`
-			SELECT 'building' AS category, id, name, notes, ' ' as location FROM buildings
+			(SELECT 'building' AS category, id, name, notes, ' ' as location FROM buildings WHERE user_id = ? LIMIT `+stringLimit+`)
 			UNION ALL
-			SELECT 'room' AS category, id, name, notes, ' ' as location FROM rooms
+			(SELECT 'room' AS category, id, name, notes, ' ' as location FROM rooms WHERE user_id = ? LIMIT `+stringLimit+`)
 			UNION ALL
-			SELECT 'shelving_unit' AS category, id, name, notes, ' ' as location FROM shelving_units
+			(SELECT 'shelving_unit' AS category, id, name, notes, ' ' as location FROM shelving_units WHERE user_id = ? LIMIT `+stringLimit+`)
 			UNION ALL
-			SELECT 'shelf' AS category, id, name, notes, ' ' as location FROM shelves
+			(SELECT 'shelf' AS category, id, name, notes, ' ' as location FROM shelves WHERE user_id = ? LIMIT `+stringLimit+`)
 			UNION ALL
-			SELECT 'container' AS category, id, name, notes, ' ' as location FROM containers
+			(SELECT 'container' AS category, id, name, notes, ' ' as location FROM containers WHERE user_id = ? LIMIT `+stringLimit+`)
 			UNION ALL
-			SELECT 'item' AS category, id, name, notes, ' ' as location FROM items
-			OFFSET ` + stringOffset +
-			` LIMIT ` + stringLimit).Scan(&results).Error
+			(SELECT 'item' AS category, id, name, notes, ' ' as location FROM items WHERE user_id = ? LIMIT `+stringLimit+`)
+			 OFFSET `+stringOffset+
+			` LIMIT `+stringLimit, userID, userID, userID, userID, userID, userID).Scan(&results).Error
 
 		if dbErr != nil {
 			logger.Errorf("error executing query: %v", dbErr)
@@ -120,7 +120,7 @@ func (repo Repository) GetAllEntities(offset int, limit int) []models.GetEntitie
 }
 
 // CountEntities is used to count the total number of entities that belong to a user.
-func (repo Repository) CountEntities() int {
+func (repo Repository) CountEntities(userID string) int {
 	var entityCount int
 
 	cacheTTL := 5 * time.Minute
@@ -139,14 +139,14 @@ func (repo Repository) CountEntities() int {
 	if value == "" {
 		err := repo.Database.Raw(`
 			SELECT
-				(SELECT COUNT(*) FROM buildings) +
-				(SELECT COUNT(*) FROM rooms) +
-				(SELECT COUNT(*) FROM shelving_units) +
-				(SELECT COUNT(*) FROM shelves) +
-				(SELECT COUNT(*) FROM containers) +
-				(SELECT COUNT(*) FROM items)
+				(SELECT COUNT(*) FROM buildings WHERE user_id = ?) +
+				(SELECT COUNT(*) FROM rooms WHERE user_id = ?) +
+				(SELECT COUNT(*) FROM shelving_units WHERE user_id = ?) +
+				(SELECT COUNT(*) FROM shelves WHERE user_id = ?) +
+				(SELECT COUNT(*) FROM containers WHERE user_id = ?) +
+				(SELECT COUNT(*) FROM items WHERE user_id = ?)
 			AS EntityCount
-		`).Scan(&entityCount).Error
+		`, userID, userID, userID, userID, userID, userID).Scan(&entityCount).Error
 
 		if err != nil {
 			logger.Errorf("error executing query: %v", err)
