@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"organize-this/config"
 	"organize-this/infra/cache"
+	"organize-this/infra/cognito"
 	"organize-this/infra/database"
 	"organize-this/infra/logger"
 	"organize-this/migrations"
@@ -34,6 +35,10 @@ func main() {
 	redisConnectionString := config.RedisConfiguration()
 	if err := cache.ClientConnection(redisConnectionString); err != nil {
 		logger.Fatalf("redis ClientConnection error: %s", err)
+	}
+
+	if err := cognito.CognitoClient(); err != nil {
+		logger.Fatalf("redis CognitoConnection error: %s", err)
 	}
 
 	router := routers.SetupRoute()
