@@ -5,7 +5,7 @@ export const createEntity = async (formData: { category: string; address: any; n
     let id: number = 0
 
 
-    const response = await fetch(PUBLIC_API_URL + 'v1/entity', {
+    const response = await fetch(`${PUBLIC_API_URL}api/v1/entity`, {
         method: 'POST',
         body: JSON.stringify({
             address: formData.address,
@@ -18,7 +18,7 @@ export const createEntity = async (formData: { category: string; address: any; n
     const data = await response.json()
 
     message = data.message
-    if(message == "success") {
+    if (message == "success") {
         id = data.data
     }
 
