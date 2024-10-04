@@ -9,7 +9,6 @@ import (
 	"organize-this/config"
 	"organize-this/helpers"
 	"strconv"
-	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
@@ -180,25 +179,6 @@ func (handler Handler) SignIn(w http.ResponseWriter, request *http.Request) {
 
 // Refresh signs up a user with Amazon Cognito.
 func (handler Handler) Refresh(w http.ResponseWriter, request *http.Request) {
-	// Get the JWT from the Authorization header
-	authHeader := request.Header.Get("Authorization")
-	if authHeader == "" {
-		helpers.BadRequest(w, "Missing Authorization Header")
-		return
-	}
-
-	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-	if tokenString == authHeader {
-		helpers.BadRequest(w, "Invalid Authorization header format")
-		return
-	}
-
-	token, err := helpers.VerifyToken(tokenString, false)
-	if err != nil {
-		helpers.BadRequest(w, err)
-		return
-	}
-
 	byteData, err := io.ReadAll(request.Body)
 	if err != nil {
 		logAndRespond(w, "Error parsing request", err)
@@ -217,14 +197,30 @@ func (handler Handler) Refresh(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
+	idToken := parsedData["idToken"]
+	if idToken == "" {
+		logAndRespond(w, "Missing id token", nil)
+		return
+	}
+
+	token, err := helpers.VerifyToken(idToken, false)
+	if err != nil {
+		helpers.BadRequest(w, err)
+		return
+	}
+
 	claims, err := helpers.ExtractClaims(token)
+	if err != nil {
+		helpers.BadRequest(w, err)
+		return
+	}
 
 	output, err := handler.CognitoClient.InitiateAuth(context.TODO(), &cognitoidentityprovider.InitiateAuthInput{
 		AuthFlow: "REFRESH_TOKEN_AUTH",
 		ClientId: aws.String(config.CognitoClientID()),
 		AuthParameters: map[string]string{
 			"REFRESH_TOKEN": refreshToken,
-			"SECRET_HASH":   config.CognitoSecretHash(claims["username"].(string)),
+			"SECRET_HASH":   config.CognitoSecretHash(claims["cognito:username"].(string)),
 		},
 	})
 	if err != nil {
