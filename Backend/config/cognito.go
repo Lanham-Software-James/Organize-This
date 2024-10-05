@@ -20,12 +20,12 @@ func CognitoRegion() string {
 	return viper.GetString("AWS_REGION")
 }
 
-func cognitoClientSecret() string {
+func CognitoClientSecret() string {
 	return viper.GetString("AWS_CLIENT_SECRET")
 }
 
 func CognitoSecretHash(userName string) string {
-	mac := hmac.New(sha256.New, []byte(cognitoClientSecret()))
+	mac := hmac.New(sha256.New, []byte(CognitoClientSecret()))
 	mac.Write([]byte(userName + CognitoClientID()))
 
 	return base64.StdEncoding.EncodeToString(mac.Sum(nil))

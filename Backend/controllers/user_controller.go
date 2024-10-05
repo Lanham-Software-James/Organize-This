@@ -79,7 +79,7 @@ func (handler Handler) SignUp(w http.ResponseWriter, request *http.Request) {
 	helpers.SuccessResponse(w, &output)
 }
 
-// ConfirmSignUp signs up a user with Amazon Cognito.
+// ConfirmSignUp confirms a user's email with Amazon Cognito.
 func (handler Handler) ConfirmSignUp(w http.ResponseWriter, request *http.Request) {
 	byteData, err := io.ReadAll(request.Body)
 	if err != nil {
@@ -120,7 +120,7 @@ func (handler Handler) ConfirmSignUp(w http.ResponseWriter, request *http.Reques
 	helpers.SuccessResponse(w, &output)
 }
 
-// SignIn signs up a user with Amazon Cognito.
+// SignIn returns an initial JWT from Amazon Cognito.
 func (handler Handler) SignIn(w http.ResponseWriter, request *http.Request) {
 	byteData, err := io.ReadAll(request.Body)
 	if err != nil {
@@ -175,7 +175,7 @@ func (handler Handler) SignIn(w http.ResponseWriter, request *http.Request) {
 	helpers.SuccessResponse(w, &response)
 }
 
-// Refresh signs up a user with Amazon Cognito.
+// Refresh returns a refreshed JWT from Amazon Cognito.
 func (handler Handler) Refresh(w http.ResponseWriter, request *http.Request) {
 	byteData, err := io.ReadAll(request.Body)
 	if err != nil {
@@ -235,4 +235,38 @@ func (handler Handler) Refresh(w http.ResponseWriter, request *http.Request) {
 	}
 
 	helpers.SuccessResponse(w, &response)
+}
+
+// LogOut revokes all access tokens granted by Cognito.
+func (handler Handler) LogOut(w http.ResponseWriter, request *http.Request) {
+	byteData, err := io.ReadAll(request.Body)
+	if err != nil {
+		logAndRespond(w, "Error parsing request", err)
+		return
+	}
+
+	var parsedData map[string]string
+	if err = json.Unmarshal(byteData, &parsedData); err != nil {
+		logAndRespond(w, "Error parsing json", err)
+		return
+	}
+
+	refreshToken := parsedData["refreshToken"]
+	if refreshToken == "" {
+		logAndRespond(w, "Missing refresh token", nil)
+		return
+	}
+
+	_, err = handler.CognitoClient.RevokeToken(request.Context(), &cognitoidentityprovider.RevokeTokenInput{
+		ClientId:     aws.String(config.CognitoClientID()),
+		ClientSecret: aws.String(config.CognitoClientSecret()),
+		Token:        aws.String(refreshToken),
+	})
+	if err != nil {
+
+		logAndRespond(w, "Couldn't sign in user", err)
+		return
+	}
+
+	helpers.SuccessResponse(w, nil)
 }

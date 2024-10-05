@@ -36,6 +36,7 @@ func RegisterRoutes(r *chi.Mux) {
 		r.Put("/user", handler.ConfirmSignUp)
 		r.Post("/token", handler.SignIn)
 		r.Put("/token", handler.Refresh)
+		r.Delete("/token", handler.LogOut)
 
 		// Protected endpoints
 		r.Group(func(r chi.Router) {
