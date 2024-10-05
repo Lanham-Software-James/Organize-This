@@ -40,9 +40,6 @@ async function refreshTokenHandle({ event, resolve }) {
     const is_api = url.pathname.includes("api")
 
     if (!accessToken && refreshToken && idToken) {
-        console.log(accessToken)
-        console.log(refreshToken)
-        console.log(idToken)
         try {
             const refreshResponse = await fetch(`${API_URL}v1/token`, {
                 method: 'PUT',
