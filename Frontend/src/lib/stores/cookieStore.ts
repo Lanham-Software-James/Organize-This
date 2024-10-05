@@ -15,13 +15,14 @@ function createCookieStore() {
       update(store => ({ ...store, [name]: value }));
       return value;
     },
-    // delete: (cookies: Cookies, name: string, options?: any) => {
-    //   cookies.delete(name, options);
-    //   update(store => {
-    //     const { [name]: _, ...rest } = store;
-    //     return rest;
-    //   });
-    // }
+    delete: (cookies: Cookies, name: string, options?: any) => {
+      cookies.delete(name, options);
+      update(store => {
+        // @ts-ignore
+        const { [name]: _, ...rest } = store;
+        return rest;
+      });
+    }
   };
 }
 

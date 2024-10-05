@@ -23,7 +23,7 @@ export const _signUpUser = async (formData: { userEmail: string; password: strin
     }
 
     if (success) {
-        goto('/login');
+        goto('/signup/confirm');
     }
 
     return success
