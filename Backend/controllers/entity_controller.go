@@ -38,7 +38,7 @@ func (handler Handler) CreateEntity(w http.ResponseWriter, request *http.Request
 
 	claims := request.Context().Value("user_claims").(jwt.MapClaims)
 
-	id, err := handler.createEntityByCategory(claims["username"].(string), category, parsedData)
+	id, err := handler.createEntityByCategory(request.Context(), claims["username"].(string), category, parsedData)
 	if err != nil {
 		logAndRespond(w, err.Error(), nil)
 		return
@@ -60,8 +60,8 @@ func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request)
 
 	claims := request.Context().Value("user_claims").(jwt.MapClaims)
 	userID := claims["username"].(string)
-	response.Entities = handler.Repository.GetAllEntities(userID, offset, limit)
+	response.Entities = handler.Repository.GetAllEntities(request.Context(), userID, offset, limit)
 
-	response.TotalCount = handler.Repository.CountEntities(userID)
+	response.TotalCount = handler.Repository.CountEntities(request.Context(), userID)
 	helpers.SuccessResponse(w, &response)
 }

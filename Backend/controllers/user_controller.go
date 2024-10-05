@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -56,7 +55,7 @@ func (handler Handler) SignUp(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	output, err := handler.CognitoClient.SignUp(context.TODO(), &cognitoidentityprovider.SignUpInput{
+	output, err := handler.CognitoClient.SignUp(request.Context(), &cognitoidentityprovider.SignUpInput{
 		ClientId: aws.String(config.CognitoClientID()),
 		Password: aws.String(password),
 		Username: aws.String(userEmail),
@@ -107,7 +106,7 @@ func (handler Handler) ConfirmSignUp(w http.ResponseWriter, request *http.Reques
 		return
 	}
 
-	output, err := handler.CognitoClient.ConfirmSignUp(context.TODO(), &cognitoidentityprovider.ConfirmSignUpInput{
+	output, err := handler.CognitoClient.ConfirmSignUp(request.Context(), &cognitoidentityprovider.ConfirmSignUpInput{
 		ClientId:         aws.String(config.CognitoClientID()),
 		Username:         aws.String(userEmail),
 		ConfirmationCode: aws.String(confirmationCode),
@@ -147,7 +146,7 @@ func (handler Handler) SignIn(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 	tmp := config.CognitoSecretHash(userEmail)
-	output, err := handler.CognitoClient.InitiateAuth(context.TODO(), &cognitoidentityprovider.InitiateAuthInput{
+	output, err := handler.CognitoClient.InitiateAuth(request.Context(), &cognitoidentityprovider.InitiateAuthInput{
 		AuthFlow: "USER_PASSWORD_AUTH",
 		ClientId: aws.String(config.CognitoClientID()),
 		AuthParameters: map[string]string{
@@ -215,7 +214,7 @@ func (handler Handler) Refresh(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	output, err := handler.CognitoClient.InitiateAuth(context.TODO(), &cognitoidentityprovider.InitiateAuthInput{
+	output, err := handler.CognitoClient.InitiateAuth(request.Context(), &cognitoidentityprovider.InitiateAuthInput{
 		AuthFlow: "REFRESH_TOKEN_AUTH",
 		ClientId: aws.String(config.CognitoClientID()),
 		AuthParameters: map[string]string{

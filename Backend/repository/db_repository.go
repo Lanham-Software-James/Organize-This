@@ -59,13 +59,12 @@ func (repo Repository) Update(model interface{}) interface{} {
 }
 
 // GetAllEntities returns all entities that belong to the user.
-func (repo Repository) GetAllEntities(userID string, offset int, limit int) []models.GetEntitiesResponseData {
+func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset int, limit int) []models.GetEntitiesResponseData {
 	stringOffset := strconv.Itoa(offset)
 	stringLimit := strconv.Itoa(limit)
 	var results []models.GetEntitiesResponseData
 
 	cacheTTL := 5 * time.Minute
-	ctx := context.Background()
 	keyStructured := GetEntitiesCacheKey{
 		CacheKey: cache.CacheKey{
 			User:     "123",
@@ -120,11 +119,10 @@ func (repo Repository) GetAllEntities(userID string, offset int, limit int) []mo
 }
 
 // CountEntities is used to count the total number of entities that belong to a user.
-func (repo Repository) CountEntities(userID string) int {
+func (repo Repository) CountEntities(ctx context.Context, userID string) int {
 	var entityCount int
 
 	cacheTTL := 5 * time.Minute
-	ctx := context.Background()
 	keyStructured := cache.CacheKey{
 		User:     "123",
 		Function: "CountEntities",
@@ -167,8 +165,7 @@ func (repo Repository) CountEntities(userID string) int {
 }
 
 // FlushEntities clears the redis cache of all things relating to entities
-func (repo Repository) FlushEntities() {
-	ctx := context.Background()
+func (repo Repository) FlushEntities(ctx context.Context) {
 
 	getAllEntitiesPattern := `{"CacheKey":{"User":"123","Function":"GetAllEntities"},*`
 	countEntitiesPattern := `{"User":"123","Function":"CountEntities"}`

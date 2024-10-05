@@ -1,12 +1,13 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
 	"organize-this/models"
 )
 
 // createEntityByCategory handles the creation of entities based on their category.
-func (handler Handler) createEntityByCategory(userID string, category string, data map[string]string) (uint, error) {
+func (handler Handler) createEntityByCategory(ctx context.Context, userID string, category string, data map[string]string) (uint, error) {
 	var id uint
 
 	switch category {
@@ -26,7 +27,7 @@ func (handler Handler) createEntityByCategory(userID string, category string, da
 		return 0, fmt.Errorf("invalid category: %v", category)
 	}
 
-	handler.Repository.FlushEntities()
+	handler.Repository.FlushEntities(ctx)
 	return id, nil
 }
 
