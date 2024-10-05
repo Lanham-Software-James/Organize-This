@@ -5,12 +5,12 @@ import { redirect } from '@sveltejs/kit';
 
 const public_paths = [
     '/login',
-    '/signup'
+    '/signup',
 ];
 
 function isPathAllowed(path: string) {
     return public_paths.some(allowedPath =>
-      path === allowedPath || path.startsWith(allowedPath + '/')
+        path === allowedPath || path.startsWith(allowedPath + '/')
     );
 }
 
@@ -22,8 +22,11 @@ async function validatePath({ event, resolve }) {
     const is_user_authed = cookieStore.get(event.cookies, "refreshToken") != undefined;
 
 
-    if(!is_user_authed && !is_path_valid && is_not_api) {
+    if (!is_user_authed && !is_path_valid && is_not_api) {
         redirect(302, '/login')
+    }
+    else if (is_user_authed && is_path_valid && is_not_api) {
+        redirect(302, '/')
     }
     return resolve(event);
 }
