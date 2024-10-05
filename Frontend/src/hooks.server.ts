@@ -4,7 +4,8 @@ import { cookieStore } from '$lib/stores/cookieStore';
 import { redirect } from '@sveltejs/kit';
 
 const public_paths = [
-    '/login'
+    '/login',
+    '/signup'
 ];
 
 function isPathAllowed(path: string) {

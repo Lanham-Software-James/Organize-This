@@ -43,9 +43,7 @@
 	}
 
 	async function onFormSubmit() {
-		console.log('before');
 		const success = await loginUser(formData);
-		console.log('after');
 
 		if (!success) {
 			formError.incorrect = 'Username or Password is incorrect!';
