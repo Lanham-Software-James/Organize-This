@@ -1,4 +1,4 @@
-import { goto } from '$app/navigation';
+import { goto, invalidateAll } from '$app/navigation';
 import { PUBLIC_API_URL } from '$env/static/public';
 
 export const _loginUser = async (formData: { userEmail: string; password: string; }): Promise<boolean> => {
@@ -20,6 +20,7 @@ export const _loginUser = async (formData: { userEmail: string; password: string
     }
 
     if (success) {
+        await invalidateAll();
         goto('/');
     }
 

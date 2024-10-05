@@ -1,4 +1,4 @@
-import { goto } from '$app/navigation';
+import { goto, invalidateAll } from '$app/navigation';
 import { PUBLIC_API_URL } from '$env/static/public';
 
 export const _logoutUser = async (): Promise<boolean> => {
@@ -16,6 +16,7 @@ export const _logoutUser = async (): Promise<boolean> => {
     }
 
     if (success) {
+        await invalidateAll();
         goto('/login');
     }
 

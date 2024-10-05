@@ -52,6 +52,10 @@
 
 	import AddNewModal from '$lib/AddNewModal/AddNewModal.svelte';
 	import { _logoutUser as logoutUser } from './+layout';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/stores'
+	$: isUserAuthed = $page.data.cookieExists satisfies boolean
+
 	const modalStore = getModalStore();
 	const modalRegistry: Record<string, ModalComponent> = {
 		addNewModal: { ref: AddNewModal }
@@ -74,39 +78,60 @@
 
 		var success = await logoutUser();
 	}
+
+	function navigate(route: string) {
+		drawerStore.close();
+		goto(route)
+	}
 </script>
 
 <Drawer>
 	{#if $drawerStore.id === 'navbar'}
 		<div class="p-2">
-			<ul id="pages">
-				<p>Overview</p>
-				<li>
-					<a href="/">
-						<button type="button" class="btn bg-initial">
+			{#if isUserAuthed}
+				<ul id="pages">
+					<p>Overview</p>
+					<li>
+						<button type="button" class="btn bg-initial" on:click={() => navigate("/")}>
 							<span><i class="fa-solid fa-house"></i></span>
 							<span>Home</span>
 						</button>
-					</a>
-				</li>
-			</ul>
-			<ul id="tools" class="pt-4">
-				<p>Tools</p>
+					</li>
+				</ul>
+				<ul id="tools" class="pt-4">
+					<p>Tools</p>
+					<li>
+						<button type="button" class="btn bg-initial" on:click={showModal}>
+							<span><i class="fa-solid fa-plus"></i></span>
+							<span>Add New</span>
+						</button>
+					</li>
+				</ul>
+				<ul id="account" class="pt-4">
+					<p>Account</p>
+
+					<button type="button" class="btn bg-initial" on:click={logout}>
+						<span><i class="fa-solid fa-arrow-right-from-bracket"></i></span>
+						<span>Log Out</span>
+					</button>
+				</ul>
+			{/if}
+			{#if !isUserAuthed}
+			<ul id="account" class="pt-4">
 				<li>
-					<button type="button" class="btn bg-initial" on:click={showModal}>
-						<span><i class="fa-solid fa-plus"></i></span>
-						<span>Add New</span>
+					<button type="button" class="btn bg-initial" on:click={() => navigate("/login")}>
+						<span><i class="fa-solid fa-arrow-right-from-bracket"></i></span>
+						<span>Sign In</span>
+					</button>
+				</li>
+				<li>
+					<button type="button" class="btn bg-initial" on:click={() => navigate("/signup")}>
+						<span><i class="fa-solid fa-user-plus"></i></span>
+						<span>Create Account</span>
 					</button>
 				</li>
 			</ul>
-			<ul id="account" class="pt-4">
-				<p>Account</p>
-
-				<button type="button" class="btn bg-initial" on:click={logout}>
-					<span><i class="fa-solid fa-arrow-right-from-bracket"></i></span>
-					<span>Log Out</span>
-				</button>
-			</ul>
+			{/if}
 		</div>
 	{/if}
 </Drawer>
