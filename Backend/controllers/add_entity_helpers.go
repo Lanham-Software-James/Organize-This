@@ -27,7 +27,7 @@ func (handler Handler) createEntityByCategory(ctx context.Context, userID string
 		return 0, fmt.Errorf("invalid category: %v", category)
 	}
 
-	handler.Repository.FlushEntities(ctx)
+	handler.Repository.FlushEntities(ctx, userID)
 	return id, nil
 }
 

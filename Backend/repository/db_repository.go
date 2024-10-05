@@ -67,7 +67,7 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 	cacheTTL := 5 * time.Minute
 	keyStructured := GetEntitiesCacheKey{
 		CacheKey: cache.CacheKey{
-			User:     "123",
+			User:     userID,
 			Function: "GetAllEntities",
 		},
 		Offset: stringOffset,
@@ -124,7 +124,7 @@ func (repo Repository) CountEntities(ctx context.Context, userID string) int {
 
 	cacheTTL := 5 * time.Minute
 	keyStructured := cache.CacheKey{
-		User:     "123",
+		User:     userID,
 		Function: "CountEntities",
 	}
 	key, _ := json.Marshal(keyStructured)
@@ -165,10 +165,10 @@ func (repo Repository) CountEntities(ctx context.Context, userID string) int {
 }
 
 // FlushEntities clears the redis cache of all things relating to entities
-func (repo Repository) FlushEntities(ctx context.Context) {
+func (repo Repository) FlushEntities(ctx context.Context, userID string) {
 
-	getAllEntitiesPattern := `{"CacheKey":{"User":"123","Function":"GetAllEntities"},*`
-	countEntitiesPattern := `{"User":"123","Function":"CountEntities"}`
+	getAllEntitiesPattern := `{"CacheKey":{"User":"` + userID + `","Function":"GetAllEntities"},*`
+	countEntitiesPattern := `{"User":"` + userID + `","Function":"CountEntities"}`
 
 	keys, err := repo.Cache.Keys(ctx, getAllEntitiesPattern).Result()
 	if err != nil {
