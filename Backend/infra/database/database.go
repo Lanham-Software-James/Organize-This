@@ -2,6 +2,7 @@ package database
 
 import (
 	"log"
+	"sync"
 
 	"github.com/spf13/viper"
 	"gorm.io/driver/postgres"
@@ -11,41 +12,46 @@ import (
 )
 
 var (
-	DB  *gorm.DB
-	err error
+	database *gorm.DB
+	once     sync.Once
+	err      error
 )
 
 // DbConnection create database connection
 func DbConnection(masterDSN, replicaDSN string) error {
-	var db = DB
-	logMode := viper.GetBool("DB_LOG_MODE")
-	debug := viper.GetBool("DEBUG")
+	var db = database
+	var err error
 
-	loglevel := logger.Silent
-	if logMode {
-		loglevel = logger.Info
-	}
+	once.Do(func() {
+		logMode := viper.GetBool("DB_LOG_MODE")
+		debug := viper.GetBool("DEBUG")
 
-	db, err = gorm.Open(postgres.Open(masterDSN), &gorm.Config{
-		Logger: logger.Default.LogMode(loglevel),
+		loglevel := logger.Silent
+		if logMode {
+			loglevel = logger.Info
+		}
+
+		db, err = gorm.Open(postgres.Open(masterDSN), &gorm.Config{
+			Logger: logger.Default.LogMode(loglevel),
+		})
+		if !debug {
+			db.Use(dbresolver.Register(dbresolver.Config{
+				Replicas: []gorm.Dialector{
+					postgres.Open(replicaDSN),
+				},
+				Policy: dbresolver.RandomPolicy{},
+			}))
+		}
+		if err != nil {
+			log.Fatalf("Db connection error: %s", err)
+		}
+		database = db
 	})
-	if !debug {
-		db.Use(dbresolver.Register(dbresolver.Config{
-			Replicas: []gorm.Dialector{
-				postgres.Open(replicaDSN),
-			},
-			Policy: dbresolver.RandomPolicy{},
-		}))
-	}
-	if err != nil {
-		log.Fatalf("Db connection error: %s", err)
-		return err
-	}
-	DB = db
-	return nil
+
+	return err
 }
 
 // GetDB connection
 func GetDB() *gorm.DB {
-	return DB
+	return database
 }

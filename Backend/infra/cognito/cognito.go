@@ -4,6 +4,7 @@ package cognito
 import (
 	"context"
 	"log"
+	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
@@ -12,18 +13,22 @@ import (
 var (
 	// Client is a singleton redis client connection
 	client *cognitoidentityprovider.Client
+	once   sync.Once
 	err    error
 )
 
 func CognitoClient() error {
-	cfg, err := config.LoadDefaultConfig(context.TODO())
-	if err != nil {
-		log.Fatal(err)
-		return err
-	}
+	var err error
+	once.Do(func() {
+		cfg, err := config.LoadDefaultConfig(context.TODO())
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	client = cognitoidentityprovider.NewFromConfig(cfg)
-	return nil
+		client = cognitoidentityprovider.NewFromConfig(cfg)
+	})
+
+	return err
 }
 
 func GetClient() *cognitoidentityprovider.Client {
