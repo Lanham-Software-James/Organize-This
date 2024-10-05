@@ -51,6 +51,7 @@
 	}
 
 	import AddNewModal from '$lib/AddNewModal/AddNewModal.svelte';
+	import { _logoutUser as logoutUser } from './+layout';
 	const modalStore = getModalStore();
 	const modalRegistry: Record<string, ModalComponent> = {
 		addNewModal: { ref: AddNewModal }
@@ -66,6 +67,12 @@
 			body: 'Please complete the form to add a new item, container, shelf, shelving unit, room, or building.'
 		};
 		modalStore.trigger(modal);
+	}
+
+	async function logout() {
+		drawerStore.close();
+
+		var success = await logoutUser();
 	}
 </script>
 
@@ -94,6 +101,11 @@
 			</ul>
 			<ul id="account" class="pt-4">
 				<p>Account</p>
+
+				<button type="button" class="btn bg-initial" on:click={logout}>
+					<span><i class="fa-solid fa-arrow-right-from-bracket"></i></span>
+					<span>Log Out</span>
+				</button>
 			</ul>
 		</div>
 	{/if}

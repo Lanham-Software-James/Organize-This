@@ -48,3 +48,39 @@ export async function POST({ request, cookies }) {
     }
     return proxyResponse
 }
+
+//@ts-ignore
+export async function DELETE({ cookies }) {
+    let proxyResponse = new Response()
+    try {
+        proxyResponse = await fetch(`${API_URL}v1/token`, {
+            method: 'DELETE',
+            headers: new Headers({ 'content-type': 'application/json' }),
+            body: JSON.stringify({
+                refreshToken: cookieStore.get(cookies, "refreshToken"),
+            })
+        });
+
+        if (proxyResponse.status == 200) {
+            const data = await proxyResponse.json()
+
+            cookieStore.delete(cookies, 'accessToken', {
+                path: '/',
+            });
+
+            cookieStore.delete(cookies, 'idToken', {
+                path: '/',
+            });
+
+            cookieStore.delete(cookies, 'refreshToken', {
+                path: '/',
+            });
+
+            proxyResponse = new Response()
+        }
+
+    } catch (error) {
+        console.error(error);
+    }
+    return proxyResponse
+}
