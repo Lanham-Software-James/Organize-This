@@ -33,7 +33,7 @@ func RegisterRoutes(r *chi.Mux) {
 
 		// Users
 		r.Post("/user", handler.SignUp)
-		r.Post("/user/{email}", handler.ConfirmSignUp)
+		r.Put("/user", handler.ConfirmSignUp)
 		r.Post("/token", handler.SignIn)
 		r.Put("/token", handler.Refresh)
 

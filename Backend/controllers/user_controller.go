@@ -12,7 +12,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider/types"
-	"github.com/go-chi/chi/v5"
 )
 
 // SignUp signs up a user with Amazon Cognito.
@@ -82,12 +81,6 @@ func (handler Handler) SignUp(w http.ResponseWriter, request *http.Request) {
 
 // ConfirmSignUp signs up a user with Amazon Cognito.
 func (handler Handler) ConfirmSignUp(w http.ResponseWriter, request *http.Request) {
-	userEmail := chi.URLParam(request, "email")
-	if userEmail == "" {
-		logAndRespond(w, "Missing user name", nil)
-		return
-	}
-
 	byteData, err := io.ReadAll(request.Body)
 	if err != nil {
 		logAndRespond(w, "Error parsing request", err)
@@ -103,6 +96,12 @@ func (handler Handler) ConfirmSignUp(w http.ResponseWriter, request *http.Reques
 	confirmationCode := parsedData["confirmationCode"]
 	if confirmationCode == "" {
 		logAndRespond(w, "Missing confirmation code", nil)
+		return
+	}
+
+	userEmail := parsedData["userEmail"]
+	if confirmationCode == "" {
+		logAndRespond(w, "Missing user email", nil)
 		return
 	}
 
