@@ -37,7 +37,7 @@ type testCase struct {
 
 var endpoint = "/v1/entity"
 
-func setupTest(t *testing.T, userName string) (*http.Client, *httptest.Server, sqlmock.Sqlmock, redismock.ClientMock) {
+func setupCreateEntityTest(t *testing.T, userName string) (*http.Client, *httptest.Server, sqlmock.Sqlmock, redismock.ClientMock) {
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
 
@@ -58,7 +58,7 @@ func setupTest(t *testing.T, userName string) (*http.Client, *httptest.Server, s
 	return &http.Client{}, srv, mockDB, mockCache
 }
 
-func setupMockExpectations(mockDB *sqlmock.Sqlmock, mockCache redismock.ClientMock, category string, args ...string) {
+func setupCreateEntityMockExpectations(mockDB *sqlmock.Sqlmock, mockCache redismock.ClientMock, category string, args ...string) {
 	(*mockDB).ExpectBegin()
 
 	testName := args[0]
@@ -99,7 +99,7 @@ func setupMockExpectations(mockDB *sqlmock.Sqlmock, mockCache redismock.ClientMo
 	mockCache.ExpectDel(`{"User":"` + testUser + `","Function":"CountEntities"}`).SetVal(1)
 }
 
-func validateSuccessResponse(t *testing.T, res *http.Response, mockDB sqlmock.Sqlmock, mockCache redismock.ClientMock, testID uint) {
+func validateCreateEntitySuccessResponse(t *testing.T, res *http.Response, mockDB sqlmock.Sqlmock, mockCache redismock.ClientMock, testID uint) {
 	if res.StatusCode != http.StatusOK {
 		t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusOK, res.StatusCode)
 	}
@@ -132,7 +132,7 @@ func validateSuccessResponse(t *testing.T, res *http.Response, mockDB sqlmock.Sq
 	}
 }
 
-func TestInvalidCreatEntity(t *testing.T) {
+func TestInvalidCreateEntity(t *testing.T) {
 	cases := []testCase{
 		{
 			testName:       "BEUT-1: Create Entity Missing Name",
@@ -148,12 +148,12 @@ func TestInvalidCreatEntity(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		client, srv, mockDB, mockCache := setupTest(t, tc.entityUser)
+		client, srv, mockDB, mockCache := setupCreateEntityTest(t, tc.entityUser)
 		t.Run(tc.testName, func(t *testing.T) {
 			if tc.entityCategory == "building" {
-				setupMockExpectations(&mockDB, mockCache, tc.entityCategory, tc.entityName, tc.entityNotes, tc.entityUser, strconv.Itoa(int(tc.entityID)), tc.entityAddress)
+				setupCreateEntityMockExpectations(&mockDB, mockCache, tc.entityCategory, tc.entityName, tc.entityNotes, tc.entityUser, strconv.Itoa(int(tc.entityID)), tc.entityAddress)
 			} else {
-				setupMockExpectations(&mockDB, mockCache, tc.entityCategory, tc.entityName, tc.entityNotes, tc.entityUser, strconv.Itoa(int(tc.entityID)))
+				setupCreateEntityMockExpectations(&mockDB, mockCache, tc.entityCategory, tc.entityName, tc.entityNotes, tc.entityUser, strconv.Itoa(int(tc.entityID)))
 			}
 
 			values := map[string]string{"name": tc.entityName, "notes": tc.entityNotes, "category": tc.entityCategory}
@@ -301,12 +301,12 @@ func TestValidCreateEntity(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		client, srv, mockDB, mockCache := setupTest(t, tc.entityUser)
+		client, srv, mockDB, mockCache := setupCreateEntityTest(t, tc.entityUser)
 		t.Run(tc.testName, func(t *testing.T) {
 			if tc.entityCategory == "building" {
-				setupMockExpectations(&mockDB, mockCache, tc.entityCategory, tc.entityName, tc.entityNotes, tc.entityUser, strconv.Itoa(int(tc.entityID)), tc.entityAddress)
+				setupCreateEntityMockExpectations(&mockDB, mockCache, tc.entityCategory, tc.entityName, tc.entityNotes, tc.entityUser, strconv.Itoa(int(tc.entityID)), tc.entityAddress)
 			} else {
-				setupMockExpectations(&mockDB, mockCache, tc.entityCategory, tc.entityName, tc.entityNotes, tc.entityUser, strconv.Itoa(int(tc.entityID)))
+				setupCreateEntityMockExpectations(&mockDB, mockCache, tc.entityCategory, tc.entityName, tc.entityNotes, tc.entityUser, strconv.Itoa(int(tc.entityID)))
 			}
 
 			values := map[string]string{"name": tc.entityName, "notes": tc.entityNotes, "category": tc.entityCategory}
@@ -325,7 +325,7 @@ func TestValidCreateEntity(t *testing.T) {
 			}
 			defer res.Body.Close()
 
-			validateSuccessResponse(t, res, mockDB, mockCache, tc.entityID)
+			validateCreateEntitySuccessResponse(t, res, mockDB, mockCache, tc.entityID)
 		})
 	}
 }
