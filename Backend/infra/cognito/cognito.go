@@ -12,12 +12,19 @@ import (
 
 var (
 	// Client is a singleton redis client connection
-	client *cognitoidentityprovider.Client
+	client CognitoClient
 	once   sync.Once
 	err    error
 )
 
-func CognitoClient() error {
+type CognitoClient interface {
+	SignUp(ctx context.Context, params *cognitoidentityprovider.SignUpInput, optFns ...func(*cognitoidentityprovider.Options)) (*cognitoidentityprovider.SignUpOutput, error)
+	ConfirmSignUp(ctx context.Context, params *cognitoidentityprovider.ConfirmSignUpInput, optFns ...func(*cognitoidentityprovider.Options)) (*cognitoidentityprovider.ConfirmSignUpOutput, error)
+	InitiateAuth(ctx context.Context, params *cognitoidentityprovider.InitiateAuthInput, optFns ...func(*cognitoidentityprovider.Options)) (*cognitoidentityprovider.InitiateAuthOutput, error)
+	RevokeToken(ctx context.Context, params *cognitoidentityprovider.RevokeTokenInput, optFns ...func(*cognitoidentityprovider.Options)) (*cognitoidentityprovider.RevokeTokenOutput, error)
+}
+
+func CognitoClientInit() error {
 	var err error
 	once.Do(func() {
 		cfg, err := config.LoadDefaultConfig(context.TODO())
@@ -31,6 +38,6 @@ func CognitoClient() error {
 	return err
 }
 
-func GetClient() *cognitoidentityprovider.Client {
+func GetClient() CognitoClient {
 	return client
 }

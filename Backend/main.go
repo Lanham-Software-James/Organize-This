@@ -37,7 +37,7 @@ func main() {
 		logger.Fatalf("redis ClientConnection error: %s", err)
 	}
 
-	if err := cognito.CognitoClient(); err != nil {
+	if err := cognito.CognitoClientInit(); err != nil {
 		logger.Fatalf("redis CognitoConnection error: %s", err)
 	}
 
