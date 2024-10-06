@@ -35,8 +35,6 @@ type testCase struct {
 	entityAddress  string
 }
 
-var postgres, mockDB = mocks.NewMockDB()
-var redis, mockCache = redismock.NewClientMock()
 var endpoint = "/v1/entity"
 
 func setupTest(t *testing.T, userName string) (*http.Client, *httptest.Server, sqlmock.Sqlmock, redismock.ClientMock) {
@@ -101,7 +99,7 @@ func setupMockExpectations(mockDB *sqlmock.Sqlmock, mockCache redismock.ClientMo
 	mockCache.ExpectDel(`{"User":"` + testUser + `","Function":"CountEntities"}`).SetVal(1)
 }
 
-func validateSuccessResponse(t *testing.T, res *http.Response, testID uint) {
+func validateSuccessResponse(t *testing.T, res *http.Response, mockDB sqlmock.Sqlmock, mockCache redismock.ClientMock, testID uint) {
 	if res.StatusCode != http.StatusOK {
 		t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusOK, res.StatusCode)
 	}
@@ -131,12 +129,6 @@ func validateSuccessResponse(t *testing.T, res *http.Response, testID uint) {
 
 	if err := mockCache.ExpectationsWereMet(); err != nil {
 		t.Errorf("Redis expectations were not met: %v", err)
-	}
-}
-
-func validateBadResponse(t *testing.T, res *http.Response) {
-	if res.StatusCode != http.StatusBadRequest {
-		t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusBadRequest, res.StatusCode)
 	}
 }
 
@@ -333,7 +325,7 @@ func TestValidCreateEntity(t *testing.T) {
 			}
 			defer res.Body.Close()
 
-			validateSuccessResponse(t, res, tc.entityID)
+			validateSuccessResponse(t, res, mockDB, mockCache, tc.entityID)
 		})
 	}
 }
