@@ -1,5 +1,5 @@
 // Package tests is where all of out unit tests are described.
-package tests
+package mocks
 
 import (
 	"organize-this/infra/logger"
