@@ -25,7 +25,7 @@ type createSingleResponse struct {
 	Data    uint   `json:"ID"`
 }
 
-type testCase struct {
+type createEntityTestCase struct {
 	testName       string
 	entityName     string
 	entityNotes    string
@@ -132,8 +132,9 @@ func validateCreateEntitySuccessResponse(t *testing.T, res *http.Response, mockD
 	}
 }
 
-func TestInvalidCreateEntity(t *testing.T) {
-	cases := []testCase{
+// TestCreateEntityInvalid runs the unit tests for invalid cases.
+func TestCreateEntityInvalid(t *testing.T) {
+	cases := []createEntityTestCase{
 		{
 			testName:       "BEUT-1: Create Entity Missing Name",
 			entityCategory: "item",
@@ -179,9 +180,9 @@ func TestInvalidCreateEntity(t *testing.T) {
 	}
 }
 
-// TestValidCreateEntity runs the unit tests for the CreateEntity function with valid parameters.
-func TestValidCreateEntity(t *testing.T) {
-	cases := []testCase{
+// TestCreateEntityValid runs the unit tests for the CreateEntity function with valid parameters.
+func TestCreateEntityValid(t *testing.T) {
+	cases := []createEntityTestCase{
 		{
 			testName:       "BEUT-4: Create Entity Item Valid All Fields",
 			entityName:     "Test Item 1",
