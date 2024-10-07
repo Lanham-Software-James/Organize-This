@@ -37,7 +37,7 @@ describe("Unit Tests for createEntity()", () => {
         const [message, id] = await createEntity(formData);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}v1/entity`,
+            `${PUBLIC_API_URL}api/v1/entity`,
             {
                 method: 'POST',
                 body: JSON.stringify({
@@ -70,7 +70,7 @@ describe("Unit Tests for createEntity()", () => {
         const [message, id] = await createEntity(formData);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}v1/entity`,
+            `${PUBLIC_API_URL}api/v1/entity`,
             {
                 method: 'POST',
                 body: JSON.stringify({
@@ -103,7 +103,7 @@ describe("Unit Tests for createEntity()", () => {
         const [message, id] = await createEntity(formData);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}v1/entity`,
+            `${PUBLIC_API_URL}api/v1/entity`,
             {
                 method: 'POST',
                 body: JSON.stringify({
@@ -136,7 +136,7 @@ describe("Unit Tests for createEntity()", () => {
         const [message, id] = await createEntity(formData);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}v1/entity`,
+            `${PUBLIC_API_URL}api/v1/entity`,
             {
                 method: 'POST',
                 body: JSON.stringify({
@@ -169,7 +169,7 @@ describe("Unit Tests for createEntity()", () => {
         const [message, id] = await createEntity(formData);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}v1/entity`,
+            `${PUBLIC_API_URL}api/v1/entity`,
             {
                 method: 'POST',
                 body: JSON.stringify({
@@ -202,7 +202,7 @@ describe("Unit Tests for createEntity()", () => {
         const [message, id] = await createEntity(formData);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}v1/entity`,
+            `${PUBLIC_API_URL}api/v1/entity`,
             {
                 method: 'POST',
                 body: JSON.stringify({
@@ -234,7 +234,7 @@ describe("Unit Tests for createEntity()", () => {
         const [message, id] = await createEntity(formData);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}v1/entity`,
+            `${PUBLIC_API_URL}api/v1/entity`,
             {
                 method: 'POST',
                 body: JSON.stringify({

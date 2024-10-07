@@ -80,7 +80,7 @@ describe("Unit Tests for _getEntities()", () => {
         let [entities, size] = await getEntities(offset, limit);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}v1/entities?offset=${offset}&limit=${limit}`
+            `${PUBLIC_API_URL}api/v1/entities?offset=${offset}&limit=${limit}`
         );
 
         expect(size).toEqual(getEntitiesResponse.data.TotalCount)
@@ -103,7 +103,7 @@ describe("Unit Tests for _getEntities()", () => {
         let [entities, size] = await getEntities(offset, limit);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}v1/entities?offset=${offset}&limit=${limit}`
+            `${PUBLIC_API_URL}api/v1/entities?offset=${offset}&limit=${limit}`
         );
 
         expect(size).toEqual(0)
