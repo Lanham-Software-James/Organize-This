@@ -141,7 +141,7 @@ func (handler Handler) SignIn(w http.ResponseWriter, request *http.Request) {
 
 	userEmail, password := parsedData["userEmail"], parsedData["password"]
 	if userEmail == "" {
-		logAndRespond(w, "Missing user name", nil)
+		logAndRespond(w, "Missing user email", nil)
 		return
 	}
 
@@ -149,14 +149,14 @@ func (handler Handler) SignIn(w http.ResponseWriter, request *http.Request) {
 		logAndRespond(w, "Missing password", nil)
 		return
 	}
-	tmp := config.CognitoSecretHash(userEmail)
+
 	output, err := handler.CognitoClient.InitiateAuth(request.Context(), &cognitoidentityprovider.InitiateAuthInput{
 		AuthFlow: "USER_PASSWORD_AUTH",
 		ClientId: aws.String(config.CognitoClientID()),
 		AuthParameters: map[string]string{
 			"USERNAME":    userEmail,
 			"PASSWORD":    password,
-			"SECRET_HASH": tmp,
+			"SECRET_HASH": config.CognitoSecretHash(userEmail),
 		},
 	})
 	if err != nil {
