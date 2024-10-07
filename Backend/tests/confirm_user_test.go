@@ -114,7 +114,7 @@ func validateConfirmUserResponse(t *testing.T, res *http.Response, expectedHTTP 
 func TestConfirmUser(t *testing.T) {
 	cases := []confirmUserTestCase{
 		{
-			testName:         "BEUT-33: Confirm User Valid Data",
+			testName:         "BEUT-39: Confirm User Valid Data",
 			validData:        true,
 			incorrectCode:    false,
 			expectedHTTP:     http.StatusOK,
@@ -124,7 +124,7 @@ func TestConfirmUser(t *testing.T) {
 			ConfirmationCode: "XXXXXXX",
 		},
 		{
-			testName:         "BEUT-34: Confirm User Incorrect Code",
+			testName:         "BEUT-40: Confirm User Incorrect Code",
 			validData:        true,
 			incorrectCode:    true,
 			expectedHTTP:     http.StatusBadRequest,
@@ -134,7 +134,7 @@ func TestConfirmUser(t *testing.T) {
 			ConfirmationCode: "XXXXXXX",
 		},
 		{
-			testName:         "BEUT-35: Confirm User Missing Email",
+			testName:         "BEUT-41: Confirm User Missing Email",
 			validData:        false,
 			expectedHTTP:     http.StatusBadRequest,
 			expectedMessage:  "data validation failed",
@@ -143,7 +143,7 @@ func TestConfirmUser(t *testing.T) {
 			ConfirmationCode: "152634",
 		},
 		{
-			testName:         "BEUT-36: Confirm User Missing Email",
+			testName:         "BEUT-42: Confirm User Missing Email",
 			validData:        false,
 			expectedHTTP:     http.StatusBadRequest,
 			expectedMessage:  "data validation failed",

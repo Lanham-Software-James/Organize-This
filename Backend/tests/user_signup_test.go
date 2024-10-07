@@ -30,6 +30,7 @@ type userSignUpResponse struct {
 type userSignUpTestCase struct {
 	testName        string
 	validData       bool
+	badPassword     bool
 	expectedHTTP    int
 	expectedMessage string
 	expectedBody    string
@@ -63,19 +64,36 @@ func setupUserSignUpTest(t *testing.T) (*http.Client, *httptest.Server, *mocks.M
 	return &http.Client{}, srv, cognito
 }
 
-func setupUserSignUpMockExpectations(cognito *mocks.MockCognitoClient, userEmail string, password string, firstName string, lastName string, birthday string) {
-	cognito.EXPECT().SignUp(gomock.All(), &cognitoidentityprovider.SignUpInput{
-		ClientId: aws.String(config.CognitoClientID()),
-		Password: aws.String(password),
-		Username: aws.String(userEmail),
-		UserAttributes: []types.AttributeType{
-			{Name: aws.String("given_name"), Value: aws.String(firstName)},
-			{Name: aws.String("family_name"), Value: aws.String(lastName)},
-			{Name: aws.String("birthdate"), Value: aws.String(birthday)},
-		},
-		SecretHash: aws.String(config.CognitoSecretHash(userEmail)),
-	})
-
+func setupUserSignUpMockExpectations(cognito *mocks.MockCognitoClient, userEmail string, password string, firstName string, lastName string, birthday string, baddpassword bool) {
+	if baddpassword {
+		cognito.EXPECT().SignUp(gomock.All(), &cognitoidentityprovider.SignUpInput{
+			ClientId: aws.String(config.CognitoClientID()),
+			Password: aws.String(password),
+			Username: aws.String(userEmail),
+			UserAttributes: []types.AttributeType{
+				{Name: aws.String("given_name"), Value: aws.String(firstName)},
+				{Name: aws.String("family_name"), Value: aws.String(lastName)},
+				{Name: aws.String("birthdate"), Value: aws.String(birthday)},
+			},
+			SecretHash: aws.String(config.CognitoSecretHash(userEmail)),
+		}).Return(nil,
+			&types.InvalidPasswordException{
+				Message: aws.String("Invalid password configuration, please try again."),
+			},
+		)
+	} else {
+		cognito.EXPECT().SignUp(gomock.All(), &cognitoidentityprovider.SignUpInput{
+			ClientId: aws.String(config.CognitoClientID()),
+			Password: aws.String(password),
+			Username: aws.String(userEmail),
+			UserAttributes: []types.AttributeType{
+				{Name: aws.String("given_name"), Value: aws.String(firstName)},
+				{Name: aws.String("family_name"), Value: aws.String(lastName)},
+				{Name: aws.String("birthdate"), Value: aws.String(birthday)},
+			},
+			SecretHash: aws.String(config.CognitoSecretHash(userEmail)),
+		})
+	}
 }
 
 func validateUserSignUpResponse(t *testing.T, res *http.Response, expectedHTTP int, expectedMessage string, expectedData string) {
@@ -119,7 +137,20 @@ func TestUserSignUp(t *testing.T) {
 			Birthday:        "06/06/06",
 		},
 		{
-			testName:        "BEUT-33: User Sign Up Missing Email",
+			testName:        "BEUT-33: User Sign Up Invalid Password",
+			validData:       true,
+			badPassword:     true,
+			expectedHTTP:    http.StatusBadRequest,
+			expectedMessage: "data validation failed",
+			expectedBody:    "Invalid password configuration, please try again.",
+			UserEmail:       "test@test.gmail.com",
+			Password:        "password",
+			FirstName:       "test",
+			LastName:        "test",
+			Birthday:        "06/06/06",
+		},
+		{
+			testName:        "BEUT-34: User Sign Up Missing Email",
 			validData:       false,
 			expectedHTTP:    http.StatusBadRequest,
 			expectedMessage: "data validation failed",
@@ -131,7 +162,7 @@ func TestUserSignUp(t *testing.T) {
 			Birthday:        "06/06/06",
 		},
 		{
-			testName:        "BEUT-34: User Sign Up Missing Password",
+			testName:        "BEUT-35: User Sign Up Missing Password",
 			validData:       false,
 			expectedHTTP:    http.StatusBadRequest,
 			expectedMessage: "data validation failed",
@@ -143,7 +174,7 @@ func TestUserSignUp(t *testing.T) {
 			Birthday:        "06/06/06",
 		},
 		{
-			testName:        "BEUT-35: User Sign Up Missing First Name",
+			testName:        "BEUT-36: User Sign Up Missing First Name",
 			validData:       false,
 			expectedHTTP:    http.StatusBadRequest,
 			expectedMessage: "data validation failed",
@@ -155,7 +186,7 @@ func TestUserSignUp(t *testing.T) {
 			Birthday:        "06/06/06",
 		},
 		{
-			testName:        "BEUT-36: User Sign Up Missing Last Name",
+			testName:        "BEUT-37: User Sign Up Missing Last Name",
 			validData:       false,
 			expectedHTTP:    http.StatusBadRequest,
 			expectedMessage: "data validation failed",
@@ -167,7 +198,7 @@ func TestUserSignUp(t *testing.T) {
 			Birthday:        "06/06/06",
 		},
 		{
-			testName:        "BEUT-36: User Sign Up Missing Birthday",
+			testName:        "BEUT-38: User Sign Up Missing Birthday",
 			validData:       false,
 			expectedHTTP:    http.StatusBadRequest,
 			expectedMessage: "data validation failed",
@@ -185,7 +216,7 @@ func TestUserSignUp(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 
 			if tc.validData {
-				setupUserSignUpMockExpectations(cognito, tc.UserEmail, tc.Password, tc.FirstName, tc.LastName, tc.Birthday)
+				setupUserSignUpMockExpectations(cognito, tc.UserEmail, tc.Password, tc.FirstName, tc.LastName, tc.Birthday, tc.badPassword)
 			}
 
 			url := fmt.Sprintf("%s%s", srv.URL, userSignUpEndpoint)
