@@ -100,7 +100,7 @@ func (handler Handler) ConfirmSignUp(w http.ResponseWriter, request *http.Reques
 	}
 
 	userEmail := parsedData["userEmail"]
-	if confirmationCode == "" {
+	if userEmail == "" {
 		logAndRespond(w, "Missing user email", nil)
 		return
 	}
@@ -112,6 +112,11 @@ func (handler Handler) ConfirmSignUp(w http.ResponseWriter, request *http.Reques
 		SecretHash:       aws.String(config.CognitoSecretHash(userEmail)),
 	})
 	if err != nil {
+		var invalidCode *types.CodeMismatchException
+		if errors.As(err, &invalidCode) {
+			logAndRespond(w, "Incorrect confirmation code", nil)
+			return
+		}
 
 		logAndRespond(w, "Error confirming user", err)
 		return
