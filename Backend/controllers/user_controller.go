@@ -227,9 +227,7 @@ func (handler Handler) Refresh(w http.ResponseWriter, request *http.Request) {
 		},
 	})
 	if err != nil {
-
-		logAndRespond(w, "Couldn't sign in user", err)
-
+		logAndRespond(w, "Couldn't refresh user", err)
 		return
 	}
 
