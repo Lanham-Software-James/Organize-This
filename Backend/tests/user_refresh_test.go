@@ -129,7 +129,7 @@ func validateUserRefreshResponse(t *testing.T, res *http.Response, expectedHTTP 
 func TestUserRefresh(t *testing.T) {
 	cases := []userRefreshTestCase{
 		{
-			testName:        "BEUT-49: User Refresh Valid Data",
+			testName:        "BEUT-50: User Refresh Valid Data",
 			validData:       true,
 			badRequest:      false,
 			expectedHTTP:    http.StatusOK,
@@ -140,7 +140,7 @@ func TestUserRefresh(t *testing.T) {
 			IDToken:         "eyJraWQiOiJQNW",
 		},
 		{
-			testName:        "BEUT-50: User Refresh Bad Data",
+			testName:        "BEUT-51: User Refresh Bad Data",
 			validData:       true,
 			badRequest:      true,
 			expectedHTTP:    http.StatusBadRequest,
@@ -151,7 +151,7 @@ func TestUserRefresh(t *testing.T) {
 			IDToken:         "eyJraWQiOiJQNW",
 		},
 		{
-			testName:        "BEUT-51: User Refresh Missing Refresh Token",
+			testName:        "BEUT-52: User Refresh Missing Refresh Token",
 			validData:       false,
 			badRequest:      false,
 			expectedHTTP:    http.StatusBadRequest,
@@ -162,7 +162,7 @@ func TestUserRefresh(t *testing.T) {
 			IDToken:         "eyJraWQiOiJQNW",
 		},
 		{
-			testName:        "BEUT-52: User Refresh Missing ID Token",
+			testName:        "BEUT-53: User Refresh Missing ID Token",
 			validData:       false,
 			badRequest:      false,
 			expectedHTTP:    http.StatusBadRequest,

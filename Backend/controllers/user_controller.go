@@ -68,8 +68,11 @@ func (handler Handler) SignUp(w http.ResponseWriter, request *http.Request) {
 	})
 	if err != nil {
 		var invalidPassword *types.InvalidPasswordException
+		var userExists *types.UsernameExistsException
 		if errors.As(err, &invalidPassword) {
 			logAndRespond(w, *invalidPassword.Message, err)
+		} else if errors.As(err, &userExists) {
+			logAndRespond(w, *userExists.Message, err)
 		} else {
 			logAndRespond(w, "Couldn't sign up user", err)
 		}
