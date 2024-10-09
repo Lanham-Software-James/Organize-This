@@ -9,7 +9,14 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func VerifyToken(tokenString string, performValidation bool) (*jwt.Token, error) {
+type TokenHelper interface {
+	VerifyToken(tokenString string, performValidation bool) (*jwt.Token, error)
+	ExtractClaims(token *jwt.Token) (jwt.MapClaims, error)
+}
+
+type DefaultTokenHelper struct{}
+
+func (h *DefaultTokenHelper) VerifyToken(tokenString string, performValidation bool) (*jwt.Token, error) {
 	region := config.CognitoRegion()
 	userPool := config.CognitoUserPoolID()
 	jwksURL := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s/.well-known/jwks.json", region, userPool)
@@ -47,7 +54,7 @@ func VerifyToken(tokenString string, performValidation bool) (*jwt.Token, error)
 	return token, nil
 }
 
-func ExtractClaims(token *jwt.Token) (jwt.MapClaims, error) {
+func (h *DefaultTokenHelper) ExtractClaims(token *jwt.Token) (jwt.MapClaims, error) {
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		return nil, errors.New("Invalid Token Claims")

@@ -22,6 +22,7 @@ func RegisterRoutes(r *chi.Mux) {
 			Cache:    cache.GetClient(),
 		},
 		CognitoClient: cognito.GetClient(),
+		TokenHelper:   &helpers.DefaultTokenHelper{},
 	}
 
 	r.Get("/", func(w http.ResponseWriter, _ *http.Request) {
@@ -40,7 +41,7 @@ func RegisterRoutes(r *chi.Mux) {
 
 		// Protected endpoints
 		r.Group(func(r chi.Router) {
-			r.Use(middlewares.JWTAuth())
+			r.Use(middlewares.JWTAuth(handler))
 
 			// Entities
 			r.Post("/entity", handler.CreateEntity)

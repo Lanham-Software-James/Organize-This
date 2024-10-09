@@ -46,6 +46,7 @@ func setupCreateEntityTest(t *testing.T, userName string) (*http.Client, *httpte
 	handler := controllers.Handler{
 		Repository:    &repository.Repository{Database: postgres, Cache: redis},
 		CognitoClient: mocks.NewMockCognitoClient(ctrl),
+		TokenHelper:   mocks.NewMockTokenHelper(ctrl),
 	}
 
 	r := chi.NewRouter()

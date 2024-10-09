@@ -206,13 +206,13 @@ func (handler Handler) Refresh(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	token, err := helpers.VerifyToken(idToken, false)
+	token, err := handler.TokenHelper.VerifyToken(idToken, false)
 	if err != nil {
 		helpers.BadRequest(w, err)
 		return
 	}
 
-	claims, err := helpers.ExtractClaims(token)
+	claims, err := handler.TokenHelper.ExtractClaims(token)
 	if err != nil {
 		helpers.BadRequest(w, err)
 		return

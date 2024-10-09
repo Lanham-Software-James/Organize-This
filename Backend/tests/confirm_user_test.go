@@ -50,6 +50,7 @@ func setupConfirmUserTest(t *testing.T) (*http.Client, *httptest.Server, *mocks.
 	handler := controllers.Handler{
 		Repository:    &repository.Repository{Database: postgres, Cache: redis},
 		CognitoClient: cognito,
+		TokenHelper:   mocks.NewMockTokenHelper(ctrl),
 	}
 
 	r := chi.NewRouter()

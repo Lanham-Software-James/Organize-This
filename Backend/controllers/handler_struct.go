@@ -2,6 +2,7 @@
 package controllers
 
 import (
+	"organize-this/helpers"
 	"organize-this/infra/cognito"
 	"organize-this/repository"
 )
@@ -10,4 +11,5 @@ import (
 type Handler struct {
 	Repository    *repository.Repository
 	CognitoClient cognito.CognitoClient
+	TokenHelper   helpers.TokenHelper
 }

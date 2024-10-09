@@ -3,12 +3,13 @@ package middlewares
 import (
 	"context"
 	"net/http"
+	"organize-this/controllers"
 	"organize-this/helpers"
 	"strings"
 	"time"
 )
 
-func JWTAuth() func(http.Handler) http.Handler {
+func JWTAuth(handler controllers.Handler) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Get the JWT from the Authorization header
@@ -24,7 +25,7 @@ func JWTAuth() func(http.Handler) http.Handler {
 				return
 			}
 
-			token, err := helpers.VerifyToken(tokenString, true)
+			token, err := handler.TokenHelper.VerifyToken(tokenString, true)
 			if err != nil && strings.Contains(err.Error(), "Failed to get JWKS") {
 				helpers.BadRequest(w, err)
 				return
@@ -33,7 +34,7 @@ func JWTAuth() func(http.Handler) http.Handler {
 				return
 			}
 
-			claims, err := helpers.ExtractClaims(token)
+			claims, err := handler.TokenHelper.ExtractClaims(token)
 			if err != nil {
 				helpers.UnaunthorizedRequest(w, err)
 				return
