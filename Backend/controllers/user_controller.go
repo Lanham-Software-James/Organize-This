@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"organize-this/config"
 	"organize-this/helpers"
+	"organize-this/infra/logger"
 	"strconv"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -162,7 +163,8 @@ func (handler Handler) SignIn(w http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		var invalidPassword *types.NotAuthorizedException
 		if errors.As(err, &invalidPassword) {
-			logAndRespond(w, *invalidPassword.Message, err)
+			logger.Errorf("Unauthorized Access: User entered bad username or password.")
+			helpers.UnaunthorizedRequest(w, *invalidPassword.Message)
 		} else {
 			logAndRespond(w, "Couldn't sign in user", err)
 		}
