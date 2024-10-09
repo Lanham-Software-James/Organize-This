@@ -29,10 +29,10 @@
 	}
 
 	async function onFormSubmit() {
-		const success = await signUpUser(formData);
+		const [success, message] = await signUpUser(formData);
 
 		if (!success) {
-			formError.error = 'Invalid Confirmation Code!';
+			formError.error = message;
 			formErrorClass.error = 'input-error';
 		}
 	}

@@ -93,10 +93,10 @@
 	}
 
 	async function onFormSubmit() {
-		const success = await signUpUser(formData);
+		const [success, message] = await signUpUser(formData);
 
 		if (!success) {
-			formError.incorrect = 'Invalid Password!';
+			formError.incorrect = message;
 			formErrorClass.incorrect = 'input-error';
 		}
 	}

@@ -8,9 +8,9 @@ export async function POST({ request, cookies }) {
         password,
     } = await request.json();
 
-    let proxyResponse = new Response()
+    let response = new Response()
     try {
-        proxyResponse = await fetch(`${API_URL}v1/token`, {
+        const proxyResponse = await fetch(`${API_URL}v1/token`, {
             method: 'POST',
             headers: new Headers({ 'content-type': 'application/json' }),
             body: JSON.stringify({
@@ -19,9 +19,16 @@ export async function POST({ request, cookies }) {
             })
         });
 
-        if (proxyResponse.status == 200) {
-            const data = await proxyResponse.json()
+        const data = await proxyResponse.json()
 
+        response = new Response(JSON.stringify(data), {
+            status: proxyResponse.status,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (proxyResponse.status == 200) {
             cookieStore.set(cookies, 'accessToken', data.data.AccessToken, {
                 path: '/',
                 maxAge: data.data.ExpiresIn,
@@ -39,26 +46,34 @@ export async function POST({ request, cookies }) {
                 maxAge: 60 * 60 * 24 * 30, // Refresh Tokens expire in 30 days from cognito
                 httpOnly: true,
             });
-
-            proxyResponse = new Response()
         }
 
     } catch (error) {
         console.error(error);
     }
-    return proxyResponse
+    return response
 }
 
 //@ts-ignore
 export async function DELETE({ cookies }) {
-    let proxyResponse = new Response()
+    let response = new Response()
+
     try {
-        proxyResponse = await fetch(`${API_URL}v1/token`, {
+        const proxyResponse = await fetch(`${API_URL}v1/token`, {
             method: 'DELETE',
             headers: new Headers({ 'content-type': 'application/json' }),
             body: JSON.stringify({
                 refreshToken: cookieStore.get(cookies, "refreshToken"),
             })
+        });
+
+        const data = await proxyResponse.json()
+
+        response = new Response(JSON.stringify(data), {
+            status: proxyResponse.status,
+            headers: {
+                'Content-Type': 'application/json'
+            }
         });
 
         if (proxyResponse.status == 200) {
@@ -75,12 +90,10 @@ export async function DELETE({ cookies }) {
             cookieStore.delete(cookies, 'refreshToken', {
                 path: '/',
             });
-
-            proxyResponse = new Response()
         }
 
     } catch (error) {
         console.error(error);
     }
-    return proxyResponse
+    return response
 }

@@ -43,10 +43,10 @@
 	}
 
 	async function onFormSubmit() {
-		const success = await loginUser(formData);
+		const [success, message] = await loginUser(formData);
 
 		if (!success) {
-			formError.incorrect = 'Username or Password is incorrect!';
+			formError.incorrect = message;
 			formErrorClass.incorrect = 'input-error';
 		}
 	}
