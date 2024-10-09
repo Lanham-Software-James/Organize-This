@@ -40,24 +40,6 @@ func (repo Repository) Save(model interface{}) interface{} {
 	return err
 }
 
-// Get is used to get multiple records from the DB
-func (repo Repository) Get(model interface{}) interface{} {
-	err := repo.Database.Find(model).Error
-	return err
-}
-
-// GetOne is used to get a single record from the DB
-func (repo Repository) GetOne(model interface{}) interface{} {
-	err := repo.Database.Last(model).Error
-	return err
-}
-
-// Update is used to update a record in the DB
-func (repo Repository) Update(model interface{}) interface{} {
-	err := repo.Database.Find(model).Error
-	return err
-}
-
 // GetAllEntities returns all entities that belong to the user.
 func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset int, limit int) []models.GetEntitiesResponseData {
 	stringOffset := strconv.Itoa(offset)
