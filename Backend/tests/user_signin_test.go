@@ -180,11 +180,6 @@ func TestUserSignIn(t *testing.T) {
 				t.Fatalf("Error marshalling json: %v", err)
 			}
 
-			// req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(jsonBody))
-			// if err != nil {
-			// 	t.Fatalf("Failed to build request: %v", err)
-			// }
-
 			res, err := client.Post(url, "application/json", bytes.NewBuffer(jsonBody))
 			if err != nil {
 				t.Fatalf("Failed to send request: %v", err)
