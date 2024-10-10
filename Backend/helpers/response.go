@@ -14,6 +14,15 @@ func SuccessResponse(w http.ResponseWriter, data interface{}) interface{} {
 	})
 }
 
+func UnaunthorizedRequest(w http.ResponseWriter, data interface{}) interface{} {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusUnauthorized)
+	return json.NewEncoder(w).Encode(map[string]interface{}{
+		"message": "unauthorized",
+		"data":    &data,
+	})
+}
+
 func BadRequest(w http.ResponseWriter, data interface{}) interface{} {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusBadRequest)

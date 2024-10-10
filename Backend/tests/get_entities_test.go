@@ -3,18 +3,22 @@ package tests
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"organize-this/controllers"
 	"organize-this/models"
 	"organize-this/repository"
-	"organize-this/routers"
+	"organize-this/tests/mocks"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-redis/redismock/v9"
+	"github.com/golang/mock/gomock"
 )
 
 type getEntitiesSingleResponse struct {
@@ -22,10 +26,124 @@ type getEntitiesSingleResponse struct {
 	Data    models.GetEntitiesResponse `json:"data"`
 }
 
-func processResponse(t *testing.T, w *httptest.ResponseRecorder) (contents getEntitiesSingleResponse) {
-	res := w.Result()
-	defer res.Body.Close()
+type getEntitiesTestCase struct {
+	testName       string
+	testUser       string
+	testCacheHit   bool
+	testValidInput bool
+	offset         string
+	limit          string
+}
 
+var getEntityEndpoint = "/v1/entities"
+
+func setupGetEntitiesTest(t *testing.T, userName string) (*http.Client, *httptest.Server, sqlmock.Sqlmock, redismock.ClientMock) {
+	ctrl := gomock.NewController(t)
+	t.Cleanup(ctrl.Finish)
+
+	postgres, mockDB := mocks.NewMockDB()
+	redis, mockCache := redismock.NewClientMock()
+	handler := controllers.Handler{
+		Repository:    &repository.Repository{Database: postgres, Cache: redis},
+		CognitoClient: mocks.NewMockCognitoClient(ctrl),
+		TokenHelper:   mocks.NewMockTokenHelper(ctrl),
+	}
+
+	r := chi.NewRouter()
+	r.Use(mocks.MockJWTMiddleware(userName))
+	r.Get(getEntityEndpoint, handler.GetEntities)
+
+	srv := httptest.NewServer(r)
+	t.Cleanup(srv.Close)
+
+	return &http.Client{}, srv, mockDB, mockCache
+}
+
+func setupGetEntitiesCacheMissMockExpectations(mockDB *sqlmock.Sqlmock, mockCache redismock.ClientMock, userName string, offset string, limit string) {
+	if offset == "" {
+		offset = "0"
+	}
+
+	if limit == "" {
+		limit = "20"
+	}
+
+	cacheKey := fmt.Sprintf(`{"CacheKey":{"User":"%s","Function":"GetAllEntities"},"Offset":"%s","Limit":"%s"}`, userName, offset, limit)
+	countCacheKey := fmt.Sprintf(`{"User":"%s","Function":"CountEntities"}`, userName)
+
+	expectedMainSQL := fmt.Sprintf(`\(SELECT 'building' AS category, id, name, notes, ' ' as location FROM buildings WHERE user_id = \$1 LIMIT %s\)
+                        UNION ALL
+                        \(SELECT 'room' AS category, id, name, notes, ' ' as location FROM rooms WHERE user_id = \$2 LIMIT %s\)
+                        UNION ALL
+                        \(SELECT 'shelving_unit' AS category, id, name, notes, ' ' as location FROM shelving_units WHERE user_id = \$3 LIMIT %s\)
+                        UNION ALL
+                        \(SELECT 'shelf' AS category, id, name, notes, ' ' as location FROM shelves WHERE user_id = \$4 LIMIT %s\)
+                        UNION ALL
+                        \(SELECT 'container' AS category, id, name, notes, ' ' as location FROM containers WHERE user_id = \$5 LIMIT %s\)
+                        UNION ALL
+                        \(SELECT 'item' AS category, id, name, notes, ' ' as location FROM items WHERE user_id = \$6 LIMIT %s\)
+                        OFFSET %s LIMIT %s`, limit, limit, limit, limit, limit, limit, offset, limit)
+
+	expectedCountSQL := `SELECT \(SELECT COUNT\(\*\) FROM buildings WHERE user_id = \$1\) \+
+						\(SELECT COUNT\(\*\) FROM rooms WHERE user_id = \$2\) \+
+						\(SELECT COUNT\(\*\) FROM shelving_units WHERE user_id = \$3\) \+
+						\(SELECT COUNT\(\*\) FROM shelves WHERE user_id = \$4\) \+
+						\(SELECT COUNT\(\*\) FROM containers WHERE user_id = \$5\) \+
+						\(SELECT COUNT\(\*\) FROM items WHERE user_id = \$6\) AS EntityCount`
+
+	(*mockDB).ExpectQuery(expectedMainSQL).
+		WithArgs(userName, userName, userName, userName, userName, userName).
+		WillReturnRows(sqlmock.NewRows([]string{"category", "id", "name", "notes", "location"}).
+			AddRow("building", 1, "Building 1", "", " ").
+			AddRow("building", 2, "Building 2", "", " ").
+			AddRow("room", 1, "Room 1", "", " ").
+			AddRow("room", 2, "Room 2", "", " ").
+			AddRow("shelving_unit", 1, "Shelving Unit 1", "", " ").
+			AddRow("shelving_unit", 2, "Shelving Unit 2", "", " ").
+			AddRow("shelf", 1, "Shelf 1", "", " ").
+			AddRow("shelf", 2, "Shelf 2", "", " ").
+			AddRow("container", 1, "Container 1", "", " ").
+			AddRow("container", 2, "Container 2", "", " ").
+			AddRow("item", 1, "Item 1", "", " ").
+			AddRow("item", 2, "Item 2", "", " "))
+
+	(*mockDB).ExpectQuery(expectedCountSQL).
+		WithArgs(userName, userName, userName, userName, userName, userName).
+		WillReturnRows(sqlmock.NewRows([]string{"EntityCount"}).AddRow(12))
+
+	mockCache.ExpectGet(cacheKey).RedisNil()
+	mockCache.Regexp().ExpectSet(cacheKey, ".*", 5*time.Minute).SetVal("OK")
+
+	mockCache.ExpectGet(countCacheKey).RedisNil()
+	mockCache.Regexp().ExpectSet(countCacheKey, ".*", 5*time.Minute).SetVal("OK")
+
+}
+
+func setupGetEntitiesCacheHitMockExpectations(mockCache redismock.ClientMock, userName string, offset string, limit string) {
+	if offset == "" {
+		offset = "0"
+	}
+
+	if limit == "" {
+		limit = "20"
+	}
+
+	cacheKey := fmt.Sprintf(`{"CacheKey":{"User":"%s","Function":"GetAllEntities"},"Offset":"%s","Limit":"%s"}`, userName, offset, limit)
+	countCacheKey := fmt.Sprintf(`{"User":"%s","Function":"CountEntities"}`, userName)
+
+	mockCache.ExpectGet(cacheKey).SetVal(`[
+											{"ID":36,"Name":"Home","Category":"building","Location":" ","Notes":"Some test notes for the building."},
+											{"ID":11,"Name":"Another Test Room","Category":"room","Location":" ","Notes":""},
+											{"ID":13,"Name":"Test Unit","Category":"shelving_unit","Location":" ","Notes":""},
+											{"ID":10,"Name":"Test Shelf","Category":"shelf","Location":" ","Notes":"Just some test notes for the test shelf."},
+											{"ID":11,"Name":"Test Container","Category":"container","Location":" ","Notes":"Just a test container notes."},
+											{"ID":85,"Name":"Test Entity","Category":"item","Location":" ","Notes":"Maybe."}
+										]`)
+
+	mockCache.ExpectGet(countCacheKey).SetVal("6")
+}
+
+func validateGetEntitiesSuccessResponse(t *testing.T, res *http.Response, mockDB sqlmock.Sqlmock, mockCache redismock.ClientMock) {
 	if res.StatusCode != http.StatusOK {
 		t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusOK, res.StatusCode)
 	}
@@ -35,13 +153,12 @@ func processResponse(t *testing.T, w *httptest.ResponseRecorder) (contents getEn
 		t.Errorf("Expected error to be nil. Got: %v", err)
 	}
 
-	contents = getEntitiesSingleResponse{}
+	contents := getEntitiesSingleResponse{}
 	err = json.Unmarshal(data, &contents)
+	if err != nil {
+		t.Errorf("Expected error to be nil. Got: %v", err)
+	}
 
-	return contents
-}
-
-func isValidResponse(t *testing.T, contents getEntitiesSingleResponse) {
 	if contents.Message != "success" {
 		t.Errorf("Expected message to be 'success'. Got: %s", contents.Message)
 	}
@@ -60,287 +177,137 @@ func isValidResponse(t *testing.T, contents getEntitiesSingleResponse) {
 	if dataType != "[]models.GetEntitiesResponseData" {
 		t.Errorf("Expected TotalCount to be type []models.GetEntitiesResponseData. Got: %v", dataType)
 	}
+
+	if err := mockDB.ExpectationsWereMet(); err != nil {
+		t.Errorf("PostGres expectations were not met: %v", err)
+	}
+
+	if err := mockCache.ExpectationsWereMet(); err != nil {
+		t.Errorf("Redis expectations were not met: %v", err)
+	}
 }
 
-// TestCreateEntityAll runs our unit tests for the CreateEntity function that apply to all categories.
-func TestGetEntities(t *testing.T) {
-	mockDB, mock := NewMockDB()
+// TestCreateEntity runs the unit tests for invalid cases.
+func TestGetEntitites(t *testing.T) {
+	cases := []getEntitiesTestCase{
+		{
+			testName:       "BEUT-18: Get Entities Valid URL Param Cache Miss",
+			testUser:       "testuser0",
+			testCacheHit:   false,
+			testValidInput: true,
+			offset:         "25",
+			limit:          "25",
+		},
+		{
+			testName:       "BEUT-19: Get Entities Valid URL Param Cache Hit",
+			testUser:       "testuser0",
+			testCacheHit:   true,
+			testValidInput: true,
+			offset:         "60",
+			limit:          "30",
+		},
+		{
+			testName:       "BEUT-20: Get Entities No Offset Param Cache Miss",
+			testUser:       "testuser1",
+			testCacheHit:   false,
+			testValidInput: true,
+			limit:          "15",
+		},
+		{
+			testName:       "BEUT-21: Get Entities No Offset Param Cache Hit",
+			testUser:       "testuser1",
+			testCacheHit:   true,
+			testValidInput: true,
+			limit:          "60",
+		},
+		{
+			testName:       "BEUT-22: Get Entities No Limit Param Cache Miss",
+			testUser:       "testuser2",
+			testCacheHit:   false,
+			testValidInput: true,
+			offset:         "15",
+		},
+		{
+			testName:       "BEUT-23: Get Entities No Limit Param Cache Hit",
+			testUser:       "testuser2",
+			testCacheHit:   true,
+			testValidInput: true,
+			offset:         "20",
+		},
+		{
+			testName:       "BEUT-24: Get Entities No Params Cache Miss",
+			testUser:       "testuser3",
+			testCacheHit:   false,
+			testValidInput: true,
+		},
+		{
+			testName:       "BEUT-25: Get Entities No Params Cache Hit",
+			testUser:       "testuser3",
+			testCacheHit:   true,
+			testValidInput: true,
+		},
+		{
+			testName:       "BEUT-26: Get Entities Invalid Offset Non-Integer",
+			testUser:       "testuser4",
+			testValidInput: false,
+			offset:         "not int",
+		},
+		{
+			testName:       "BEUT-27: Get Entities Invalid Limit Non-Integer",
+			testUser:       "testuser5",
+			testValidInput: false,
+			limit:          "not int",
+		},
+		{
+			testName:       "BEUT-28: Get Entities Invalid Params Non-Integer",
+			testUser:       "testuser6",
+			testValidInput: false,
+			offset:         "not int",
+			limit:          "not int also",
+		},
+		{
+			testName:       "BEUT-29: Get Entities Invalid Offset Negative Integer",
+			testUser:       "testuser7",
+			testValidInput: false,
+			offset:         "-15",
+		},
+		{
+			testName:       "BEUT-30: Get Entities Invalid Limit Negative Integer",
+			testUser:       "testuser8",
+			testValidInput: false,
+			limit:          "-20",
+		},
+		{
+			testName:       "BEUT-31: Get Entities Invalid Params Negative Integer",
+			testUser:       "testuser9",
+			testValidInput: false,
+			offset:         "-10",
+			limit:          "-20",
+		},
+	}
 
-	mockCache, _ := redismock.NewClientMock()
-	handler := controllers.Handler{Repository: &repository.Repository{Database: mockDB, Cache: mockCache}}
+	for _, tc := range cases {
+		client, srv, mockDB, mockCache := setupGetEntitiesTest(t, tc.testUser)
+		t.Run(tc.testName, func(t *testing.T) {
 
-	r := routers.SetupRoute()
+			if tc.testCacheHit {
+				setupGetEntitiesCacheHitMockExpectations(mockCache, tc.testUser, tc.offset, tc.limit)
+			} else if !tc.testCacheHit {
+				setupGetEntitiesCacheMissMockExpectations(&mockDB, mockCache, tc.testUser, tc.offset, tc.limit)
+			}
 
-	srv := httptest.NewServer(r)
-	defer srv.Close()
+			res, err := client.Get(fmt.Sprintf("%s%s?offset=%s&limit=%s", srv.URL, getEntityEndpoint, tc.offset, tc.limit))
+			if err != nil {
+				t.Fatalf("Failed to send request: %v", err)
+			}
+			defer res.Body.Close()
 
-	endpoint := "/v1/entities"
-	getEntitiesQueryBase := `SELECT 'building' AS category, id, name, notes, ' ' as location FROM buildings
-							UNION ALL
-							SELECT 'room' AS category, id, name, notes, ' ' as location FROM rooms
-							UNION ALL
-							SELECT 'shelving_unit' AS category, id, name, notes, ' ' as location FROM shelving_units
-							UNION ALL
-							SELECT 'shelf' AS category, id, name, notes, ' ' as location FROM shelves
-							UNION ALL
-							SELECT 'container' AS category, id, name, notes, ' ' as location FROM containers
-							UNION ALL
-							SELECT 'item' AS category, id, name, notes, ' ' as location FROM items`
+			if tc.testValidInput {
+				validateGetEntitiesSuccessResponse(t, res, mockDB, mockCache)
+			} else if (!tc.testValidInput) && (res.StatusCode != http.StatusBadRequest) {
+				t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusBadRequest, res.StatusCode)
+			}
 
-	countQuery := `(?i)SELECT\s*\(\s*SELECT\s+COUNT\(\*\)\s+FROM\s+buildings\s*\)\s*\+\s*\(\s*SELECT\s+COUNT\(\*\)\s+FROM\s+rooms\s*\)\s*\+\s*\(\s*SELECT\s+COUNT\(\*\)\s+FROM\s+shelving_units\s*\)\s*\+\s*\(\s*SELECT\s+COUNT\(\*\)\s+FROM\s+shelves\s*\)\s*\+\s*\(\s*SELECT\s+COUNT\(\*\)\s+FROM\s+containers\s*\)\s*\+\s*\(\s*SELECT\s+COUNT\(\*\)\s+FROM\s+items\s*\)\s+AS\s+EntityCount`
-
-	t.Run("BEUT-18: Get Entities Valid URL Params", func(t *testing.T) {
-		offset := "0"
-		limit := "20"
-
-		mock.ExpectQuery(getEntitiesQueryBase + " OFFSET " + offset + " LIMIT " + limit).
-			WillReturnRows(sqlmock.NewRows([]string{"category", "id", "name", "notes", "location"}).
-				AddRow("building", 1, "Building 1", "", " ").
-				AddRow("building", 2, "Building 2", "", " ").
-				AddRow("room", 1, "Room 1", "", " ").
-				AddRow("room", 2, "Room 2", "", " ").
-				AddRow("shelving_unit", 1, "Shelving Unit 1", "", " ").
-				AddRow("shelving_unit", 2, "Shelving Unit 2", "", " ").
-				AddRow("shelf", 1, "Shelf 1", "", " ").
-				AddRow("shelf", 2, "Shelf 2", "", " ").
-				AddRow("container", 1, "Container 1", "", " ").
-				AddRow("container", 2, "Container 2", "", " ").
-				AddRow("item", 1, "Item 1", "", " ").
-				AddRow("item", 2, "Item 2", "", " "))
-
-		mock.ExpectQuery(countQuery).
-			WillReturnRows(sqlmock.NewRows([]string{"EntityCount"}).AddRow(6))
-
-		params := "?offset=" + offset + "&limit=" + limit
-		req := httptest.NewRequest(http.MethodGet, srv.URL+endpoint+params, nil)
-		w := httptest.NewRecorder()
-
-		handler.GetEntities(w, req)
-
-		contents := processResponse(t, w)
-
-		isValidResponse(t, contents)
-	})
-
-	t.Run("BEUT-19: Get Entities No Offset Param", func(t *testing.T) {
-		limit := "20"
-
-		mock.ExpectQuery(getEntitiesQueryBase + " OFFSET 0" + " LIMIT " + limit).
-			WillReturnRows(sqlmock.NewRows([]string{"category", "id", "name", "notes", "location"}).
-				AddRow("building", 1, "Building 1", "", " ").
-				AddRow("building", 2, "Building 2", "", " ").
-				AddRow("room", 1, "Room 1", "", " ").
-				AddRow("room", 2, "Room 2", "", " ").
-				AddRow("shelving_unit", 1, "Shelving Unit 1", "", " ").
-				AddRow("shelving_unit", 2, "Shelving Unit 2", "", " ").
-				AddRow("shelf", 1, "Shelf 1", "", " ").
-				AddRow("shelf", 2, "Shelf 2", "", " ").
-				AddRow("container", 1, "Container 1", "", " ").
-				AddRow("container", 2, "Container 2", "", " ").
-				AddRow("item", 1, "Item 1", "", " ").
-				AddRow("item", 2, "Item 2", "", " "))
-
-		mock.ExpectQuery(countQuery).
-			WillReturnRows(sqlmock.NewRows([]string{"EntityCount"}).AddRow(6))
-
-		params := "?limit=20"
-		req := httptest.NewRequest(http.MethodGet, srv.URL+endpoint+params, nil)
-		w := httptest.NewRecorder()
-
-		handler.GetEntities(w, req)
-
-		contents := processResponse(t, w)
-
-		isValidResponse(t, contents)
-	})
-
-	t.Run("BEUT-20: Get Entities No Limit Param", func(t *testing.T) {
-		offset := "0"
-
-		mock.ExpectQuery(getEntitiesQueryBase + " OFFSET " + offset + " LIMIT 20").
-			WillReturnRows(sqlmock.NewRows([]string{"category", "id", "name", "notes", "location"}).
-				AddRow("building", 1, "Building 1", "", " ").
-				AddRow("building", 2, "Building 2", "", " ").
-				AddRow("room", 1, "Room 1", "", " ").
-				AddRow("room", 2, "Room 2", "", " ").
-				AddRow("shelving_unit", 1, "Shelving Unit 1", "", " ").
-				AddRow("shelving_unit", 2, "Shelving Unit 2", "", " ").
-				AddRow("shelf", 1, "Shelf 1", "", " ").
-				AddRow("shelf", 2, "Shelf 2", "", " ").
-				AddRow("container", 1, "Container 1", "", " ").
-				AddRow("container", 2, "Container 2", "", " ").
-				AddRow("item", 1, "Item 1", "", " ").
-				AddRow("item", 2, "Item 2", "", " "))
-
-		mock.ExpectQuery(countQuery).
-			WillReturnRows(sqlmock.NewRows([]string{"EntityCount"}).AddRow(6))
-
-		params := "?offset=0"
-		req := httptest.NewRequest(http.MethodGet, srv.URL+endpoint+params, nil)
-		w := httptest.NewRecorder()
-
-		handler.GetEntities(w, req)
-		res := w.Result()
-		defer res.Body.Close()
-
-		if res.StatusCode != http.StatusOK {
-			t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusOK, res.StatusCode)
-		}
-
-		data, err := io.ReadAll(res.Body)
-		if err != nil {
-			t.Errorf("Expected error to be nil. Got: %v", err)
-		}
-
-		contents := getEntitiesSingleResponse{}
-		err = json.Unmarshal(data, &contents)
-
-		isValidResponse(t, contents)
-	})
-
-	t.Run("BEUT-21: Get Entities No Params", func(t *testing.T) {
-		mock.ExpectQuery(getEntitiesQueryBase + " OFFSET 0 LIMIT 20").
-			WillReturnRows(sqlmock.NewRows([]string{"category", "id", "name", "notes", "location"}).
-				AddRow("building", 1, "Building 1", "", " ").
-				AddRow("building", 2, "Building 2", "", " ").
-				AddRow("room", 1, "Room 1", "", " ").
-				AddRow("room", 2, "Room 2", "", " ").
-				AddRow("shelving_unit", 1, "Shelving Unit 1", "", " ").
-				AddRow("shelving_unit", 2, "Shelving Unit 2", "", " ").
-				AddRow("shelf", 1, "Shelf 1", "", " ").
-				AddRow("shelf", 2, "Shelf 2", "", " ").
-				AddRow("container", 1, "Container 1", "", " ").
-				AddRow("container", 2, "Container 2", "", " ").
-				AddRow("item", 1, "Item 1", "", " ").
-				AddRow("item", 2, "Item 2", "", " "))
-
-		mock.ExpectQuery(countQuery).
-			WillReturnRows(sqlmock.NewRows([]string{"EntityCount"}).AddRow(6))
-
-		req := httptest.NewRequest(http.MethodGet, srv.URL+endpoint, nil)
-		w := httptest.NewRecorder()
-
-		handler.GetEntities(w, req)
-
-		contents := processResponse(t, w)
-
-		isValidResponse(t, contents)
-	})
-
-	t.Run("BEUT-22: Get Entities Non-Zero Offset", func(t *testing.T) {
-		offset := "20"
-		limit := "20"
-
-		mock.ExpectQuery(getEntitiesQueryBase + " OFFSET " + offset + " LIMIT " + limit).
-			WillReturnRows(sqlmock.NewRows([]string{"category", "id", "name", "notes", "location"}).
-				AddRow("building", 1, "Building 1", "", " ").
-				AddRow("building", 2, "Building 2", "", " ").
-				AddRow("room", 1, "Room 1", "", " ").
-				AddRow("room", 2, "Room 2", "", " ").
-				AddRow("shelving_unit", 1, "Shelving Unit 1", "", " ").
-				AddRow("shelving_unit", 2, "Shelving Unit 2", "", " ").
-				AddRow("shelf", 1, "Shelf 1", "", " ").
-				AddRow("shelf", 2, "Shelf 2", "", " ").
-				AddRow("container", 1, "Container 1", "", " ").
-				AddRow("container", 2, "Container 2", "", " ").
-				AddRow("item", 1, "Item 1", "", " ").
-				AddRow("item", 2, "Item 2", "", " "))
-
-		mock.ExpectQuery(countQuery).
-			WillReturnRows(sqlmock.NewRows([]string{"EntityCount"}).AddRow(6))
-
-		params := "?offset=20&limit=20"
-		req := httptest.NewRequest(http.MethodGet, srv.URL+endpoint+params, nil)
-		w := httptest.NewRecorder()
-
-		handler.GetEntities(w, req)
-
-		contents := processResponse(t, w)
-
-		isValidResponse(t, contents)
-	})
-
-	t.Run("BEUT-23: Get Entities Invalid Offset Non-Integer", func(t *testing.T) {
-		params := "?offset=test&limit=20"
-		req := httptest.NewRequest(http.MethodGet, srv.URL+endpoint+params, nil)
-		w := httptest.NewRecorder()
-
-		handler.GetEntities(w, req)
-		res := w.Result()
-		defer res.Body.Close()
-
-		if res.StatusCode != http.StatusBadRequest {
-			t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusBadRequest, res.StatusCode)
-		}
-	})
-
-	t.Run("BEUT-24: Get Entities Invalid Limit Non-Integer", func(t *testing.T) {
-		params := "?offset=0&limit=test"
-		req := httptest.NewRequest(http.MethodGet, srv.URL+endpoint+params, nil)
-		w := httptest.NewRecorder()
-
-		handler.GetEntities(w, req)
-		res := w.Result()
-		defer res.Body.Close()
-
-		if res.StatusCode != http.StatusBadRequest {
-			t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusBadRequest, res.StatusCode)
-		}
-	})
-
-	t.Run("BEUT-25: Get Entities Invalid Params Non-Integer", func(t *testing.T) {
-		params := "?offset=test&limit=tests"
-		req := httptest.NewRequest(http.MethodGet, srv.URL+endpoint+params, nil)
-		w := httptest.NewRecorder()
-
-		handler.GetEntities(w, req)
-		res := w.Result()
-		defer res.Body.Close()
-
-		if res.StatusCode != http.StatusBadRequest {
-			t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusBadRequest, res.StatusCode)
-		}
-	})
-
-	t.Run("BEUT-26: Get Entities Invalid Offset Negative Integer", func(t *testing.T) {
-		params := "?offset=-20&limit=20"
-		req := httptest.NewRequest(http.MethodGet, srv.URL+endpoint+params, nil)
-		w := httptest.NewRecorder()
-
-		handler.GetEntities(w, req)
-		res := w.Result()
-		defer res.Body.Close()
-
-		if res.StatusCode != http.StatusBadRequest {
-			t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusBadRequest, res.StatusCode)
-		}
-	})
-
-	t.Run("BEUT-27: Get Entities Invalid Limit Negative Integer", func(t *testing.T) {
-		params := "?offset=0&limit=-20"
-		req := httptest.NewRequest(http.MethodGet, srv.URL+endpoint+params, nil)
-		w := httptest.NewRecorder()
-
-		handler.GetEntities(w, req)
-		res := w.Result()
-		defer res.Body.Close()
-
-		if res.StatusCode != http.StatusBadRequest {
-			t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusBadRequest, res.StatusCode)
-		}
-	})
-
-	t.Run("BEUT-28: Get Entities Invalid Params Negative Integer", func(t *testing.T) {
-		params := "?offset=-20&limit=-20"
-		req := httptest.NewRequest(http.MethodGet, srv.URL+endpoint+params, nil)
-		w := httptest.NewRecorder()
-
-		handler.GetEntities(w, req)
-		res := w.Result()
-		defer res.Body.Close()
-
-		if res.StatusCode != http.StatusBadRequest {
-			t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusBadRequest, res.StatusCode)
-		}
-	})
+		})
+	}
 }

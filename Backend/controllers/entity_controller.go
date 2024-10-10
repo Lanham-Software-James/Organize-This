@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"organize-this/helpers"
 	"organize-this/models"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // CreateEntity returns void but sends a success message or error message back to the client.
@@ -34,7 +36,9 @@ func (handler Handler) CreateEntity(w http.ResponseWriter, request *http.Request
 		return
 	}
 
-	id, err := handler.createEntityByCategory(category, parsedData)
+	claims := request.Context().Value("user_claims").(jwt.MapClaims)
+
+	id, err := handler.createEntityByCategory(request.Context(), claims["username"].(string), category, parsedData)
 	if err != nil {
 		logAndRespond(w, err.Error(), nil)
 		return
@@ -54,8 +58,10 @@ func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request)
 		return
 	}
 
-	response.Entities = handler.Repository.GetAllEntities(offset, limit)
+	claims := request.Context().Value("user_claims").(jwt.MapClaims)
+	userID := claims["username"].(string)
+	response.Entities = handler.Repository.GetAllEntities(request.Context(), userID, offset, limit)
 
-	response.TotalCount = handler.Repository.CountEntities()
+	response.TotalCount = handler.Repository.CountEntities(request.Context(), userID)
 	helpers.SuccessResponse(w, &response)
 }

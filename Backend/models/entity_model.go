@@ -10,6 +10,7 @@ type Entity struct {
 	ID        uint64
 	Name      string
 	Notes     *string
+	UserID    string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

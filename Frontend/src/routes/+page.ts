@@ -18,7 +18,7 @@ export const _getEntities = async (offset: number, limit: number): Promise<[GetE
     let size: number = 0
 
     try{
-        const response = await fetch(`${PUBLIC_API_URL}v1/entities?offset=${offset}&limit=${limit}`);
+        const response = await fetch(`${PUBLIC_API_URL}api/v1/entities?offset=${offset}&limit=${limit}`);
         const data = await response.json()
 
         if (data.message == "success") {
