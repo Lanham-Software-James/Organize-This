@@ -6,8 +6,8 @@
 		password: '',
 		confirmPassword: '',
 		firstName: '',
-        lastName: '',
-        birthday: '',
+		lastName: '',
+		birthday: ''
 	};
 
 	var isFormInvalid = true;
@@ -15,16 +15,16 @@
 		username: '',
 		password: '',
 		firstName: '',
-        lastName: '',
-        birthday: '',
+		lastName: '',
+		birthday: '',
 		incorrect: ''
 	};
 	var formErrorClass = {
 		username: '',
 		password: '',
 		firstName: '',
-        lastName: '',
-        birthday: '',
+		lastName: '',
+		birthday: '',
 		incorrect: ''
 	};
 
@@ -45,11 +45,11 @@
 			isFormInvalid = true;
 			formError.password = 'Password is required!';
 			formErrorClass.password = 'input-error';
-		}else if(formData.password != formData.confirmPassword) {
+		} else if (formData.password != formData.confirmPassword) {
 			isFormInvalid = true;
 			formError.password = 'Passwords must match!';
 			formErrorClass.password = 'input-error';
-		}else {
+		} else {
 			isFormInvalid = false;
 			formError.password = '';
 			formErrorClass.password = '';
@@ -101,6 +101,8 @@
 		}
 	}
 </script>
+
+<h2 class="text-center text-xl">Sign Up</h2>
 
 <form class="w-3/6 p-8 my-0 mx-auto flex flex-col justify-center">
 	<label for="username" class="label">Username:</label>

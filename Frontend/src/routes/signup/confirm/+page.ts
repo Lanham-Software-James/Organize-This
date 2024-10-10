@@ -1,7 +1,7 @@
 import { goto } from '$app/navigation';
 import { PUBLIC_API_URL } from '$env/static/public';
 
-export const _signUpUser = async (formData: { confirmationCode: string; }): Promise<[boolean, string]> => {
+export const _confirmUser = async (formData: { confirmationCode: string; }): Promise<[boolean, string]> => {
 
     let success = false;
     let message = "Error";
@@ -16,7 +16,7 @@ export const _signUpUser = async (formData: { confirmationCode: string; }): Prom
 
         success = response.ok
 
-        if(!success) {
+        if (!success) {
             const data = await response.json()
             message = data.data
         }

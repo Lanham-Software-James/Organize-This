@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { _signUpUser as signUpUser } from './+page';
+	import { _confirmUser as ConfirmUser } from './+page';
 
 	const formData = {
 		confirmationCode: ''
@@ -29,7 +29,7 @@
 	}
 
 	async function onFormSubmit() {
-		const [success, message] = await signUpUser(formData);
+		const [success, message] = await ConfirmUser(formData);
 
 		if (!success) {
 			formError.error = message;
@@ -38,6 +38,7 @@
 	}
 </script>
 
+<h2 class="text-center text-xl">Confirm User Account</h2>
 <form class="w-3/6 p-8 my-0 mx-auto flex flex-col justify-center">
 	<label for="confirmation" class="label">Confirmation Code:</label>
 	<input

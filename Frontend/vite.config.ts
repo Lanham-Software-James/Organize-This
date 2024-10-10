@@ -7,12 +7,14 @@ export default defineConfig({
 	plugins: [sveltekit(), purgeCss()],
 	test: {
 		exclude: [
-			 ...configDefaults.exclude,
-      		'playwright-tests/*'
+			...configDefaults.exclude,
+			'playwright-tests/*'
 		],
 		coverage: {
 			provider: 'istanbul',
 			exclude: ['*.config*', ...coverageConfigDefaults.exclude]
-		  },
+		},
+		globals: true,
+		environment: 'jsdom',
 	}
 });

@@ -52,6 +52,8 @@
 	}
 </script>
 
+<h2 class="text-center text-xl">Login</h2>
+
 <form class="w-3/6 p-8 my-0 mx-auto flex flex-col justify-center">
 	<label for="username" class="label">Username:</label>
 	<input

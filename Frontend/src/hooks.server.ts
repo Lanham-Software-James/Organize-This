@@ -8,14 +8,14 @@ const public_paths = [
     '/signup',
 ];
 
-function isPathAllowed(path: string) {
+export function isPathAllowed(path: string) {
     return public_paths.some(allowedPath =>
         path === allowedPath || path.startsWith(allowedPath + '/')
     );
 }
 
 //@ts-ignore
-async function validatePath({ event, resolve }) {
+export async function validatePath({ event, resolve }) {
     const url = new URL(event.request.url);
     const is_path_valid = isPathAllowed(url.pathname)
     const is_not_api = !url.pathname.includes("api")
@@ -32,7 +32,7 @@ async function validatePath({ event, resolve }) {
 }
 
 //@ts-ignore
-async function refreshTokenHandle({ event, resolve }) {
+export async function refreshTokenHandle({ event, resolve }) {
     const accessToken = cookieStore.get(event.cookies, "accessToken");
     const idToken = cookieStore.get(event.cookies, "idToken");
     const refreshToken = cookieStore.get(event.cookies, "refreshToken");
