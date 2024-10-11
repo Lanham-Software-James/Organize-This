@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"organize-this/helpers"
+	"organize-this/infra/logger"
 	"organize-this/models"
 	"strconv"
 
@@ -84,42 +85,34 @@ func (handler Handler) GetEntity(w http.ResponseWriter, request *http.Request) {
 
 	var model interface{}
 
+	entity := models.Entity{
+		ID: id,
+	}
+
 	switch category {
 	case "item":
 		model = &models.Item{
-			Entity: models.Entity{
-				ID: id,
-			},
+			Entity: entity,
 		}
 	case "container":
 		model = &models.Container{
-			Entity: models.Entity{
-				ID: id,
-			},
+			Entity: entity,
 		}
 	case "shelf":
 		model = &models.Shelf{
-			Entity: models.Entity{
-				ID: id,
-			},
+			Entity: entity,
 		}
 	case "shelvingunit":
 		model = &models.ShelvingUnit{
-			Entity: models.Entity{
-				ID: id,
-			},
+			Entity: entity,
 		}
 	case "room":
 		model = &models.Room{
-			Entity: models.Entity{
-				ID: id,
-			},
+			Entity: entity,
 		}
 	case "building":
 		model = &models.Building{
-			Entity: models.Entity{
-				ID: id,
-			},
+			Entity: entity,
 		}
 	default:
 		logAndRespond(w, fmt.Sprintf("Invalid Category: %v", category), nil)
@@ -127,6 +120,96 @@ func (handler Handler) GetEntity(w http.ResponseWriter, request *http.Request) {
 
 	dberr := handler.Repository.GetOne(model, userID)
 	if dberr != nil {
+		logAndRespond(w, fmt.Sprintf("Entity category of %v with id %v not found.", category, id), nil)
+		return
+	}
+
+	helpers.SuccessResponse(w, model)
+}
+
+// EditEntity returns void, but sends a success message or error message back to the client.
+func (handler Handler) EditEntity(w http.ResponseWriter, request *http.Request) {
+	byteData, err := io.ReadAll(request.Body)
+	if err != nil {
+		logAndRespond(w, "Error parsing request", err)
+		return
+	}
+
+	var parsedData map[string]string
+	if err = json.Unmarshal(byteData, &parsedData); err != nil {
+		logAndRespond(w, "Error parsing json", err)
+		return
+	}
+
+	idParam, name, category := parsedData["id"], parsedData["name"], parsedData["category"]
+	if idParam == "" {
+		logAndRespond(w, "Missing id", nil)
+		return
+	}
+
+	if name == "" {
+		logAndRespond(w, "Missing name", nil)
+		return
+	}
+
+	if category == "" {
+		logAndRespond(w, "Missing category", nil)
+		return
+	}
+
+	id, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		logAndRespond(w, fmt.Sprintf("ID must be type integer: %v", idParam), nil)
+	}
+
+	claims := request.Context().Value("user_claims").(jwt.MapClaims)
+	userID := claims["username"].(string)
+
+	var model interface{}
+	tmpNotes := parsedData["notes"]
+
+	entity := models.Entity{
+		ID:     id,
+		Name:   name,
+		Notes:  &tmpNotes,
+		UserID: userID,
+	}
+
+	switch category {
+	case "item":
+		model = &models.Item{
+			Entity: entity,
+		}
+	case "container":
+		model = &models.Container{
+			Entity: entity,
+		}
+	case "shelf":
+		model = &models.Shelf{
+			Entity: entity,
+		}
+	case "shelvingunit":
+		model = &models.ShelvingUnit{
+			Entity: entity,
+		}
+	case "room":
+		model = &models.Room{
+			Entity: entity,
+		}
+	case "building":
+		tmpAddress := parsedData["address"]
+
+		model = &models.Building{
+			Entity:  entity,
+			Address: &tmpAddress,
+		}
+	default:
+		logAndRespond(w, fmt.Sprintf("Invalid Category: %v", category), nil)
+	}
+
+	dberr := handler.Repository.Save(model)
+	if dberr != nil {
+		logger.Errorf("Error: %v", dberr)
 		logAndRespond(w, fmt.Sprintf("Entity category of %v with id %v not found.", category, id), nil)
 		return
 	}

@@ -31,7 +31,7 @@ type GetEntitiesCacheKey struct {
 
 // Save is used to create a new record in the DB
 func (repo Repository) Save(model interface{}) interface{} {
-	err := repo.Database.Create(model).Error
+	err := repo.Database.Save(model).Error
 
 	if err != nil {
 		logger.Errorf("error, not save data %v", err)
@@ -43,12 +43,6 @@ func (repo Repository) Save(model interface{}) interface{} {
 // GetOne is used to get a single record from the DB
 func (repo Repository) GetOne(model interface{}, userID string) interface{} {
 	err := repo.Database.Where("user_id = ?", userID).First(model).Error
-	return err
-}
-
-// Update is used to update a record in the DB
-func (repo Repository) Update(model interface{}) interface{} {
-	err := repo.Database.Find(model).Error
 	return err
 }
 
