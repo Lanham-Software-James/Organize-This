@@ -156,7 +156,7 @@ func TestUserSignIn(t *testing.T) {
 			Password:        "152634",
 		},
 		{
-			testName:        "BEUT-47: User Sign In Missing Email",
+			testName:        "BEUT-47: User Sign In Missing Password",
 			validData:       false,
 			expectedHTTP:    http.StatusBadRequest,
 			expectedMessage: "data validation failed",

@@ -10,9 +10,9 @@ export async function POST({ request, cookies }) {
         notes,
     } = await request.json();
 
-    let proxyResponse = new Response()
+    let response = new Response()
     try {
-        proxyResponse = await fetch(
+        response = await fetch(
             `${API_URL}v1/entity`,
             {
                 method: "POST",
@@ -29,6 +29,12 @@ export async function POST({ request, cookies }) {
         );
     } catch (error) {
         console.error(error);
+        response = new Response(JSON.stringify(error),{
+            status: 400,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
     }
-    return proxyResponse
+    return response
 }

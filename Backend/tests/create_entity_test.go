@@ -292,7 +292,7 @@ func TestCreateEntityValid(t *testing.T) {
 			entityAddress:  "",
 		},
 		{
-			testName:       "BEUT-17: Create Entity Building Valid Not Notes No Address",
+			testName:       "BEUT-17: Create Entity Building Valid No Notes No Address",
 			entityName:     "Test Building 4",
 			entityNotes:    "",
 			entityCategory: "building",

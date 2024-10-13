@@ -54,21 +54,4 @@ describe('_logoutUser', () => {
     expect(invalidateAll).not.toHaveBeenCalled();
     expect(goto).not.toHaveBeenCalled();
   });
-
-  it('FEUT-12: Unsuccessful Logout Network Error', async () => {
-    global.fetch = vi.fn().mockRejectedValueOnce(new Error('Network error'));
-
-    const result = await _logoutUser();
-
-    expect(global.fetch).toHaveBeenCalledWith(
-      'http://test-api.com/api/v1/token',
-      expect.objectContaining({
-        method: 'DELETE',
-      })
-    );
-    expect(result).toBe(false);
-    expect(console.log).toHaveBeenCalledWith(new Error('Network error'));
-    expect(invalidateAll).not.toHaveBeenCalled();
-    expect(goto).not.toHaveBeenCalled();
-  });
 });

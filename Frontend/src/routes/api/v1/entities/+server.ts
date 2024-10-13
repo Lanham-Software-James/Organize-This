@@ -6,10 +6,10 @@ export async function GET({ url, cookies }) {
     const offset = url.searchParams.get('offset');
     const limit = url.searchParams.get('limit');
 
-    let proxyResponse = new Response()
+    let response = new Response()
 
     try {
-        proxyResponse = await fetch(
+        response = await fetch(
             `${API_URL}v1/entities?offset=${offset}&limit=${limit}`,
             {
                 headers: {
@@ -18,8 +18,14 @@ export async function GET({ url, cookies }) {
             }
         );
     } catch (error) {
-        console.error(error + "test");
+        console.error(error);
+        response = new Response(JSON.stringify(error),{
+            status: 400,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
     }
-    return proxyResponse
+    return response
 
 }

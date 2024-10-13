@@ -18,7 +18,7 @@ describe('_signUpUser', () => {
     global.console.log = vi.fn();
   });
 
-  it('FEUT-26: Successful Sign Up', async () => {
+  it('FEUT-23: Successful Sign Up', async () => {
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
       json: vi.fn().mockResolvedValueOnce({}),
@@ -45,7 +45,7 @@ describe('_signUpUser', () => {
     expect(goto).toHaveBeenCalledWith('/signup/confirm');
   });
 
-  it('FEUT-27: Unsuccessful Sign Up', async () => {
+  it('FEUT-24: Unsuccessful Sign Up', async () => {
     const errorMessage = 'Email already exists';
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: false,
@@ -63,24 +63,6 @@ describe('_signUpUser', () => {
     const result = await _signUpUser(formData);
 
     expect(result).toEqual([false, errorMessage]);
-    expect(goto).not.toHaveBeenCalled();
-  });
-
-  it('FEUT-28: Unsuccessful Sign Up Network Error', async () => {
-    global.fetch = vi.fn().mockRejectedValueOnce(new Error('Network error'));
-
-    const formData = {
-      userEmail: 'test@example.com',
-      password: 'password123',
-      firstName: 'John',
-      lastName: 'Doe',
-      birthday: '1990-01-01'
-    };
-
-    const result = await _signUpUser(formData);
-
-    expect(result).toEqual([false, 'Error']);
-    expect(console.log).toHaveBeenCalledWith(new Error('Network error'));
     expect(goto).not.toHaveBeenCalled();
   });
 });

@@ -30,20 +30,20 @@ describe('Hook functions', () => {
   });
 
   describe('isPathAllowed', () => {
-    it('FEUT-58: Allowed Paths', () => {
+    it('FEUT-51: Allowed Paths', () => {
       expect(isPathAllowed('/login')).toBe(true);
       expect(isPathAllowed('/signup')).toBe(true);
       expect(isPathAllowed('/signup/confirm')).toBe(true);
     });
 
-    it('FEUT-59: Not Allowed Paths', () => {
+    it('FEUT-52: Not Allowed Paths', () => {
       expect(isPathAllowed('/')).toBe(false);
       expect(isPathAllowed('/dashboard')).toBe(false);
     });
   });
 
   describe('validatePath', () => {
-    it('FEUT-60: Redirect Unauthed User', async () => {
+    it('FEUT-53: Redirect Unauthed User', async () => {
       const mockEvent = {
         request: { url: 'http://example.com/dashboard' },
         cookies: {},
@@ -57,7 +57,7 @@ describe('Hook functions', () => {
       expect(redirect).toHaveBeenCalledWith(302, '/login');
     });
 
-    it('FEUT-61: Redirect Authed User', async () => {
+    it('FEUT-54: Redirect Authed User', async () => {
       const mockEvent = {
         request: { url: 'http://example.com/login' },
         cookies: {},
@@ -73,7 +73,7 @@ describe('Hook functions', () => {
   });
 
   describe('refreshTokenHandle', () => {
-    it('FEUT-62: Refresh Token Valid', async () => {
+    it('FEUT-55: Refresh Token Valid', async () => {
       const mockEvent = {
         request: { url: 'http://example.com/api/something' },
         cookies: {},
@@ -117,7 +117,7 @@ describe('Hook functions', () => {
       expect(result.headers.get('Set-Cookie')).toContain('accessToken=new-access-token');
     });
 
-    it('FEUT-63: Do Not Refresh If Token Valid', async () => {
+    it('FEUT-56: Do Not Refresh', async () => {
       const mockEvent = {
         request: { url: 'http://example.com/api/something' },
         cookies: {},
@@ -133,7 +133,7 @@ describe('Hook functions', () => {
   });
 
   describe('handle', () => {
-    it('FEUT-64: Validate Path and Handle Token Refresh', () => {
+    it('FEUT-57: Validate Path and Handle Token Refresh', () => {
       expect(handle).toEqual({
         fn1: validatePath,
         fn2: refreshTokenHandle,

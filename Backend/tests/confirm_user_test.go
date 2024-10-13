@@ -144,7 +144,7 @@ func TestConfirmUser(t *testing.T) {
 			ConfirmationCode: "152634",
 		},
 		{
-			testName:         "BEUT-43: Confirm User Missing Email",
+			testName:         "BEUT-43: Confirm User Missing Confirmation Code",
 			validData:        false,
 			expectedHTTP:     http.StatusBadRequest,
 			expectedMessage:  "data validation failed",
