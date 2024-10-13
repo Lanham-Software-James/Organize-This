@@ -22,7 +22,7 @@ describe('POST function', () => {
     global.fetch = vi.fn();
   });
 
-  it('FEUT-50: Login Sever Request Success', async () => {
+  it('FEUT-43: Login Sever Request Success', async () => {
     const mockRequest = {
       json: vi.fn().mockResolvedValue({ userEmail: 'test@example.com', password: 'password123' })
     };
@@ -60,7 +60,7 @@ describe('POST function', () => {
     expect(await response.json()).toEqual(mockResponseData);
   });
 
-  it('FEUT-51: Login Sever Request Unsuccess', async () => {
+  it('FEUT-44: Login Sever Request Unsuccess', async () => {
     const mockRequest = {
       json: vi.fn().mockResolvedValue({})
     };
@@ -72,8 +72,8 @@ describe('POST function', () => {
     const response = await POST({ request: mockRequest, cookies: mockCookies });
 
     expect(console.error).toHaveBeenCalledWith(new Error('Network error'));
-    expect(response.status).toBe(200);
-    expect(await response.text()).toBe('');
+    expect(response.status).toBe(400);
+    expect(await response.text()).toBe('{}');
   });
 });
 
@@ -83,7 +83,7 @@ describe('DELETE function', () => {
     global.fetch = vi.fn();
   });
 
-  it('FEUT-52: Logout Sever Request Success', async () => {
+  it('FEUT-45: Logout Sever Request Success', async () => {
     const mockCookies = {};
     const mockResponseData = { message: 'Logged out successfully' };
 
@@ -113,7 +113,7 @@ describe('DELETE function', () => {
     expect(await response.json()).toEqual(mockResponseData);
   });
 
-  it('FEUT-53: Logout Sever Request Unsuccess', async () => {
+  it('FEUT-46: Logout Sever Request Unsuccess', async () => {
     const mockCookies = {};
 
     global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
@@ -122,7 +122,7 @@ describe('DELETE function', () => {
     const response = await DELETE({ cookies: mockCookies });
 
     expect(console.error).toHaveBeenCalledWith(new Error('Network error'));
-    expect(response.status).toBe(200);
-    expect(await response.text()).toBe('');
+    expect(response.status).toBe(400);
+    expect(await response.text()).toBe('{}');
   });
 });

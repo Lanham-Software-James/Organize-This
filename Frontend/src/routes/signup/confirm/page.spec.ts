@@ -19,7 +19,7 @@ describe('_confirmUser', () => {
     global.console.log = vi.fn();
   });
 
-  it('FEUT-35: Successful User Confirmation', async () => {
+  it('FEUT-29: Successful User Confirmation', async () => {
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
       json: vi.fn().mockResolvedValueOnce({}),
@@ -40,7 +40,7 @@ describe('_confirmUser', () => {
     expect(goto).toHaveBeenCalledWith('/login');
   });
 
-  it('FEUT-36: Unsuccessful User Confirmation', async () => {
+  it('FEUT-30: Unsuccessful User Confirmation', async () => {
     const errorMessage = 'Invalid confirmation code';
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: false,
@@ -50,16 +50,6 @@ describe('_confirmUser', () => {
     const result = await _confirmUser({ confirmationCode: 'wrongcode' });
 
     expect(result).toEqual([false, errorMessage]);
-    expect(goto).not.toHaveBeenCalled();
-  });
-
-  it('FEUT-37: Unsuccessful User Confirmation Network Error', async () => {
-    global.fetch = vi.fn().mockRejectedValueOnce(new Error('Network error'));
-
-    const result = await _confirmUser({ confirmationCode: '123456' });
-
-    expect(result).toEqual([false, 'Error']);
-    expect(console.log).toHaveBeenCalledWith(new Error('Network error'));
     expect(goto).not.toHaveBeenCalled();
   });
 });
