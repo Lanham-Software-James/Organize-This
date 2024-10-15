@@ -88,6 +88,7 @@ func (handler Handler) CreateEntity(w http.ResponseWriter, request *http.Request
 		return
 	}
 
+	handler.Repository.FlushEntities(request.Context(), userID)
 	helpers.SuccessResponse(w, &model)
 }
 
