@@ -29,7 +29,7 @@ func (handler Handler) CreateEntity(w http.ResponseWriter, request *http.Request
 		return
 	}
 
-	name, category := parsedData["name"], parsedData["category"]
+	name, category, parentIDParam, parentCategory := parsedData["name"], parsedData["category"], parsedData["parentID"], parsedData["parentCategory"]
 	if name == "" {
 		logAndRespond(w, "Missing name", nil)
 		return
@@ -40,15 +40,55 @@ func (handler Handler) CreateEntity(w http.ResponseWriter, request *http.Request
 		return
 	}
 
-	claims := request.Context().Value("user_claims").(jwt.MapClaims)
-
-	id, err := handler.createEntityByCategory(request.Context(), claims["username"].(string), category, parsedData)
-	if err != nil {
-		logAndRespond(w, err.Error(), nil)
+	if parentIDParam == "" && category != "building" {
+		logAndRespond(w, "Missing parent id", nil)
 		return
 	}
 
-	helpers.SuccessResponse(w, &id)
+	if parentCategory == "" && category != "building" {
+		logAndRespond(w, "Missing parent category", nil)
+		return
+	}
+
+	parentID, err := strconv.ParseUint(parentIDParam, 10, 64)
+	if err != nil && category != "building" {
+		logAndRespond(w, fmt.Sprintf("Parent ID must be type integer: %v", parentIDParam), nil)
+		return
+	}
+
+	claims := request.Context().Value("user_claims").(jwt.MapClaims)
+	userID := claims["username"].(string)
+	tmpNotes := parsedData["notes"]
+
+	var parent models.Parent
+	if category != "building" {
+		validParent := false
+		validParent, parent = buildParent(category, parentID, parentCategory)
+		if !validParent {
+			logAndRespond(w, "Invalid parent.", nil)
+			return
+		}
+	}
+
+	entity := models.Entity{
+		Name:   name,
+		Notes:  &tmpNotes,
+		UserID: userID,
+	}
+
+	validEntity, model := buildEntity(entity, parent, category, parsedData["address"])
+	if !validEntity {
+		logAndRespond(w, fmt.Sprintf("Invalid category %v.", category), nil)
+		return
+	}
+
+	dberr := handler.Repository.Save(model)
+	if dberr != nil {
+		logAndRespond(w, "Error adding etity.", nil)
+		return
+	}
+
+	helpers.SuccessResponse(w, &model)
 }
 
 // GetEntities return void, but sends a paginated list of all entities back to the client.
@@ -175,27 +215,21 @@ func (handler Handler) EditEntity(w http.ResponseWriter, request *http.Request) 
 
 	parentID, err := strconv.ParseUint(parentIDParam, 10, 64)
 	if err != nil && category != "building" {
-		logAndRespond(w, fmt.Sprintf("Parent ID must be type integer: %v", idParam), nil)
+		logAndRespond(w, fmt.Sprintf("Parent ID must be type integer: %v", parentIDParam), nil)
 		return
 	}
 
 	claims := request.Context().Value("user_claims").(jwt.MapClaims)
 	userID := claims["username"].(string)
-
-	var model interface{}
 	tmpNotes := parsedData["notes"]
 
 	var parent models.Parent
 	if category != "building" {
-		isParentValid := validateParent(category, parentCategory)
-		if !isParentValid {
-			logAndRespond(w, fmt.Sprintf("Invalid parent for category: %v parent: %v", category, parentCategory), nil)
+		validParent := false
+		validParent, parent = buildParent(category, parentID, parentCategory)
+		if !validParent {
+			logAndRespond(w, "Invalid parent.", nil)
 			return
-		}
-
-		parent = models.Parent{
-			ParentID:       parentID,
-			ParentCategory: parentCategory,
 		}
 	}
 
@@ -257,6 +291,21 @@ func validateParent(category string, parentCategory string) bool {
 	}
 
 	return isValid
+}
+
+func buildParent(category string, parentID uint64, parentCategory string) (bool, models.Parent) {
+	var parent models.Parent
+
+	isParentValid := validateParent(category, parentCategory)
+
+	if isParentValid {
+		parent = models.Parent{
+			ParentID:       parentID,
+			ParentCategory: parentCategory,
+		}
+	}
+
+	return isParentValid, parent
 }
 
 func buildEntity(entity models.Entity, parent models.Parent, category string, address string) (bool, interface{}) {
