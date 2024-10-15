@@ -141,7 +141,7 @@ func (handler Handler) EditEntity(w http.ResponseWriter, request *http.Request) 
 		return
 	}
 
-	idParam, name, category := parsedData["id"], parsedData["name"], parsedData["category"]
+	idParam, name, category, parentIDParam, parentCategory := parsedData["id"], parsedData["name"], parsedData["category"], parsedData["parentID"], parsedData["parentCategory"]
 	if idParam == "" {
 		logAndRespond(w, "Missing id", nil)
 		return
@@ -157,9 +157,26 @@ func (handler Handler) EditEntity(w http.ResponseWriter, request *http.Request) 
 		return
 	}
 
+	if parentIDParam == "" && category != "building" {
+		logAndRespond(w, "Missing parent id", nil)
+		return
+	}
+
+	if parentCategory == "" && category != "building" {
+		logAndRespond(w, "Missing parent category", nil)
+		return
+	}
+
 	id, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		logAndRespond(w, fmt.Sprintf("ID must be type integer: %v", idParam), nil)
+		return
+	}
+
+	parentID, err := strconv.ParseUint(parentIDParam, 10, 64)
+	if err != nil && category != "building" {
+		logAndRespond(w, fmt.Sprintf("Parent ID must be type integer: %v", idParam), nil)
+		return
 	}
 
 	claims := request.Context().Value("user_claims").(jwt.MapClaims)
@@ -168,6 +185,20 @@ func (handler Handler) EditEntity(w http.ResponseWriter, request *http.Request) 
 	var model interface{}
 	tmpNotes := parsedData["notes"]
 
+	var parent models.Parent
+	if category != "building" {
+		isParentValid := validateParent(category, parentCategory)
+		if !isParentValid {
+			logAndRespond(w, fmt.Sprintf("Invalid parent for category: %v parent: %v", category, parentCategory), nil)
+			return
+		}
+
+		parent = models.Parent{
+			ParentID:       parentID,
+			ParentCategory: parentCategory,
+		}
+	}
+
 	entity := models.Entity{
 		ID:     id,
 		Name:   name,
@@ -175,36 +206,10 @@ func (handler Handler) EditEntity(w http.ResponseWriter, request *http.Request) 
 		UserID: userID,
 	}
 
-	switch category {
-	case "item":
-		model = &models.Item{
-			Entity: entity,
-		}
-	case "container":
-		model = &models.Container{
-			Entity: entity,
-		}
-	case "shelf":
-		model = &models.Shelf{
-			Entity: entity,
-		}
-	case "shelvingunit":
-		model = &models.ShelvingUnit{
-			Entity: entity,
-		}
-	case "room":
-		model = &models.Room{
-			Entity: entity,
-		}
-	case "building":
-		tmpAddress := parsedData["address"]
-
-		model = &models.Building{
-			Entity:  entity,
-			Address: &tmpAddress,
-		}
-	default:
-		logAndRespond(w, fmt.Sprintf("Invalid Category: %v", category), nil)
+	validEntity, model := buildEntity(entity, parent, category, parsedData["address"])
+	if !validEntity {
+		logAndRespond(w, fmt.Sprintf("Invalid category %v.", category), nil)
+		return
 	}
 
 	dberr := handler.Repository.Save(model)
@@ -216,4 +221,91 @@ func (handler Handler) EditEntity(w http.ResponseWriter, request *http.Request) 
 
 	handler.Repository.FlushEntities(request.Context(), userID)
 	helpers.SuccessResponse(w, model)
+}
+
+func validateParent(category string, parentCategory string) bool {
+	isValid := false
+
+	switch category {
+	case "item":
+		if (parentCategory == "container") || (parentCategory == "shelf") || (parentCategory == "room") {
+			isValid = true
+		}
+		break
+	case "container":
+		if (parentCategory == "shelf") || (parentCategory == "room") {
+			isValid = true
+		}
+		break
+	case "shelf":
+		if parentCategory == "shelvingunit" {
+			isValid = true
+		}
+		break
+	case "shelvingunit":
+		if parentCategory == "room" {
+			isValid = true
+		}
+		break
+	case "room":
+		if parentCategory == "building" {
+			isValid = true
+		}
+		break
+	default:
+		logger.Errorf("Invalid category for entity.")
+	}
+
+	return isValid
+}
+
+func buildEntity(entity models.Entity, parent models.Parent, category string, address string) (bool, interface{}) {
+	valid := true
+	var model interface{}
+
+	switch category {
+	case "item":
+		model = &models.Item{
+			Entity: entity,
+			Parent: parent,
+		}
+		break
+	case "container":
+		model = &models.Container{
+			Entity: entity,
+			Parent: parent,
+		}
+		break
+	case "shelf":
+		model = &models.Shelf{
+			Entity: entity,
+			Parent: parent,
+		}
+		break
+	case "shelvingunit":
+		model = &models.ShelvingUnit{
+			Entity: entity,
+			Parent: parent,
+		}
+		break
+	case "room":
+		model = &models.Room{
+			Entity: entity,
+			Parent: parent,
+		}
+		break
+	case "building":
+		tmpAddress := address
+
+		model = &models.Building{
+			Entity:  entity,
+			Address: &tmpAddress,
+		}
+		break
+	default:
+		logger.Errorf("Invalid Category: %v", category)
+		valid = false
+	}
+
+	return valid, model
 }
