@@ -3,6 +3,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -29,30 +30,9 @@ func (handler Handler) CreateEntity(w http.ResponseWriter, request *http.Request
 		return
 	}
 
-	name, category, parentIDParam, parentCategory := parsedData["name"], parsedData["category"], parsedData["parentID"], parsedData["parentCategory"]
-	if name == "" {
-		logAndRespond(w, "Missing name", nil)
-		return
-	}
-
-	if category == "" {
-		logAndRespond(w, "Missing category", nil)
-		return
-	}
-
-	if parentIDParam == "" && category != "building" {
-		logAndRespond(w, "Missing parent id", nil)
-		return
-	}
-
-	if parentCategory == "" && category != "building" {
-		logAndRespond(w, "Missing parent category", nil)
-		return
-	}
-
-	parentID, err := strconv.ParseUint(parentIDParam, 10, 64)
-	if err != nil && category != "building" {
-		logAndRespond(w, fmt.Sprintf("Parent ID must be type integer: %v", parentIDParam), nil)
+	_, name, category, parentID, parentCategory, err := validateParams(parsedData, false)
+	if err != nil {
+		logAndRespond(w, "Error validating parameters", err)
 		return
 	}
 
@@ -182,41 +162,9 @@ func (handler Handler) EditEntity(w http.ResponseWriter, request *http.Request) 
 		return
 	}
 
-	idParam, name, category, parentIDParam, parentCategory := parsedData["id"], parsedData["name"], parsedData["category"], parsedData["parentID"], parsedData["parentCategory"]
-	if idParam == "" {
-		logAndRespond(w, "Missing id", nil)
-		return
-	}
-
-	if name == "" {
-		logAndRespond(w, "Missing name", nil)
-		return
-	}
-
-	if category == "" {
-		logAndRespond(w, "Missing category", nil)
-		return
-	}
-
-	if parentIDParam == "" && category != "building" {
-		logAndRespond(w, "Missing parent id", nil)
-		return
-	}
-
-	if parentCategory == "" && category != "building" {
-		logAndRespond(w, "Missing parent category", nil)
-		return
-	}
-
-	id, err := strconv.ParseUint(idParam, 10, 64)
+	id, name, category, parentID, parentCategory, err := validateParams(parsedData, true)
 	if err != nil {
-		logAndRespond(w, fmt.Sprintf("ID must be type integer: %v", idParam), nil)
-		return
-	}
-
-	parentID, err := strconv.ParseUint(parentIDParam, 10, 64)
-	if err != nil && category != "building" {
-		logAndRespond(w, fmt.Sprintf("Parent ID must be type integer: %v", parentIDParam), nil)
+		logAndRespond(w, "Error validating parameters: ", err)
 		return
 	}
 
@@ -249,13 +197,50 @@ func (handler Handler) EditEntity(w http.ResponseWriter, request *http.Request) 
 
 	dberr := handler.Repository.Save(model)
 	if dberr != nil {
-		logger.Errorf("Error: %v", dberr)
 		logAndRespond(w, fmt.Sprintf("Entity category of %v with id %v not found.", category, id), nil)
 		return
 	}
 
 	handler.Repository.FlushEntities(request.Context(), userID)
 	helpers.SuccessResponse(w, model)
+}
+
+func validateParams(parsedData map[string]string, edit bool) (uint64, string, string, uint64, string, error) {
+	var err error
+	var id uint64
+	if parsedData["id"] == "" && edit {
+		err = errors.New("Missing id")
+	}
+
+	if parsedData["name"] == "" {
+		err = errors.New("Missing name")
+	}
+
+	if parsedData["category"] == "" {
+		err = errors.New("Missing category")
+	}
+
+	if parsedData["parentID"] == "" && parsedData["category"] != "building" {
+		err = errors.New("Missing parent id")
+	}
+
+	if parsedData["parentCategory"] == "" && parsedData["category"] != "building" {
+		err = errors.New("Missing parent category")
+	}
+
+	if edit {
+		id, err = strconv.ParseUint(parsedData["id"], 10, 64)
+		if err != nil {
+			err = errors.New("ID must be type integer")
+		}
+	}
+
+	parentID, err2 := strconv.ParseUint(parsedData["parentID"], 10, 64)
+	if err2 != nil && parsedData["category"] != "building" {
+		err = errors.New("Parent ID must be type integer")
+	}
+
+	return id, parsedData["name"], parsedData["category"], parentID, parsedData["parentCategory"], err
 }
 
 func validateParent(category string, parentCategory string) bool {
