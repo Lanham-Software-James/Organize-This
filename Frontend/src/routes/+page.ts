@@ -30,7 +30,6 @@ export const _getEntities = async (offset: number, limit: number): Promise<[GetE
         if (data.message == "success") {
             entities = data.data.Entities
             size = +data.data.TotalCount
-            console.log(entities)
         }
 
     } catch(error) {

@@ -55,11 +55,11 @@
 				<tbody>
 					{#each entities as entity}
 						<tr>
-							<td>{entity.Name}</td>
-							<td class="hidden md:block">{entity.Category}</td>
+							<td class="capitalize">{entity.Name}</td>
+							<td class="hidden md:block capitalize">{entity.Category}</td>
 							<td>
 								{#each [...entity.Parent].reverse() as parent, index}
-									<span>{parent.Name}</span>
+									<span class="capitalize">{parent.Name}</span>
 
 									{#if index < entity.Parent.length - 1}
 										<span>&nbsp;<i class="fa-solid fa-arrow-right"></i>&nbsp;</span>
