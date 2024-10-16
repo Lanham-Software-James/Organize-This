@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { SvelteComponent } from 'svelte';
+	import { onMount, type SvelteComponent } from 'svelte';
 	import { getModalStore, getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
-	import { createEntity } from './AddNewModal';
+	import { createEntity, getParents, type parentData } from './AddNewModal';
 
 	export let parent: SvelteComponent;
 
@@ -12,7 +12,8 @@
 		category: 'item',
 		name: '',
 		address: '',
-		notes: ''
+		notes: '',
+		parent: ''
 	};
 
 	const entities = [
@@ -36,6 +37,16 @@
 	var formErrorClass = {
 		name: ''
 	};
+
+	var parents: parentData[] = []
+
+	onMount(async function () {
+		var [message, data] = await getParents(formData.category)
+		if(message == 'success') {
+			parents = data
+			console.log(data)
+		}
+	});
 
 	function validateForm() {
 		if(formData.name == '') {
@@ -103,6 +114,13 @@
 			{#if formError.name}
 				<p class="text-red-500 !mt-0">{formError.name}</p>
 			{/if}
+
+			<label class="label" for="parents">Parent:</label>
+			<select id="parents" class="select" bind:value={formData.parent}>
+				{#each parents as parent}
+					<option value={parent.ID + "-" + parent.Category}>{parent.Name}</option>
+				{/each}
+			</select>
 
 			{#if formData.category == 'building'}
 				<label for="address" class="label">Address:</label>

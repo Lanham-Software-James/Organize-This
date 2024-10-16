@@ -8,6 +8,8 @@ export async function POST({ request, cookies }) {
         category,
         name,
         notes,
+        parentID,
+        parentCategory,
     } = await request.json();
 
     let proxyResponse = new Response()
@@ -24,6 +26,8 @@ export async function POST({ request, cookies }) {
                     category: category,
                     name: name,
                     notes: notes,
+                    parentID: parentID,
+                    parentCategory: parentCategory,
                 })
             }
         );
