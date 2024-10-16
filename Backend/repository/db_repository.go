@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"gorm.io/gorm"
 )
@@ -166,11 +168,92 @@ func (repo Repository) CountEntities(ctx context.Context, userID string) int {
 	return entityCount
 }
 
+// GetParents returns all the possible parents for an item.
+func (repo Repository) GetParents(ctx context.Context, category string, userID string) ([]models.GetEntitiesParentData, error) {
+	var results []models.GetEntitiesParentData
+
+	caser := cases.Title(language.AmericanEnglish)
+	capitalizedCategory := caser.String(category)
+
+	cacheTTL := 5 * time.Minute
+	keyStructured := cache.CacheKey{
+		User:     userID,
+		Function: "Get" + capitalizedCategory + "Parents",
+	}
+
+	key, _ := json.Marshal(keyStructured)
+	value, redisErr := repo.Cache.Get(ctx, string(key)).Result()
+	if redisErr != nil && !errors.Is(redisErr, redis.Nil) {
+		logger.Errorf("Error retriving entites from Redis: %v", redisErr)
+		return nil, redisErr
+	}
+
+	if value == "" {
+		var dbErr error
+		switch category {
+		case "item":
+			dbErr = repo.Database.Raw(`
+			(SELECT 'room' AS category, id, name FROM rooms WHERE user_id = ?)
+			UNION ALL
+			(SELECT 'shelf' AS category, id, name FROM shelves WHERE user_id = ?)
+			UNION ALL
+			(SELECT 'container' AS category, id, name FROM containers WHERE user_id = ?)`,
+				userID, userID, userID).Scan(&results).Error
+			break
+		case "container":
+			dbErr = repo.Database.Raw(`
+			(SELECT 'room' AS category, id, name FROM rooms WHERE user_id = ?)
+			UNION ALL
+			(SELECT 'shelf' AS category, id, name FROM shelves WHERE user_id = ?)`,
+				userID, userID).Scan(&results).Error
+			break
+		case "shelf":
+			dbErr = repo.Database.Raw(`
+			(SELECT 'shelving_unit' AS category, id, name FROM shelving_units WHERE user_id = ?)`,
+				userID).Scan(&results).Error
+			break
+		case "shelvingunit":
+			dbErr = repo.Database.Raw(`
+			(SELECT 'room' AS category, id, name FROM rooms WHERE user_id = ?)`,
+				userID).Scan(&results).Error
+			break
+		case "room":
+			dbErr = repo.Database.Raw(`
+			(SELECT 'building' AS category, id, name FROM buildings WHERE user_id = ?)`,
+				userID).Scan(&results).Error
+			break
+		default:
+			logger.Errorf("Invalid category for entity.")
+		}
+
+		if dbErr != nil {
+			logger.Errorf("error executing query: %v", dbErr)
+			return nil, dbErr
+		}
+
+		byteData, jsonErr := json.Marshal(results)
+		if jsonErr != nil {
+			logger.Errorf("error executing query: %v", dbErr)
+			return nil, jsonErr
+		}
+
+		repo.Cache.Set(ctx, string(key), byteData, cacheTTL)
+	} else {
+		jsonErr := json.Unmarshal([]byte(value), &results)
+		if jsonErr != nil {
+			logger.Errorf("error executing query: %v", jsonErr)
+		}
+	}
+
+	return results, nil
+}
+
 // FlushEntities clears the redis cache of all things relating to entities
 func (repo Repository) FlushEntities(ctx context.Context, userID string) {
 
 	getAllEntitiesPattern := `{"CacheKey":{"User":"` + userID + `","Function":"GetAllEntities"},*`
 	countEntitiesPattern := `{"User":"` + userID + `","Function":"CountEntities"}`
+	itemParentsPattern := `{"User":"` + userID + `","Function":"GetItemParents"}`
 
 	keys, err := repo.Cache.Keys(ctx, getAllEntitiesPattern).Result()
 	if err != nil {
@@ -187,6 +270,12 @@ func (repo Repository) FlushEntities(ctx context.Context, userID string) {
 	}
 
 	err = repo.Cache.Del(ctx, countEntitiesPattern).Err()
+	if err != nil {
+		logger.Errorf("error clearing cache: %v", err)
+		return
+	}
+
+	err = repo.Cache.Del(ctx, itemParentsPattern).Err()
 	if err != nil {
 		logger.Errorf("error clearing cache: %v", err)
 		return

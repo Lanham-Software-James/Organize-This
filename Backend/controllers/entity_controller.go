@@ -205,6 +205,26 @@ func (handler Handler) EditEntity(w http.ResponseWriter, request *http.Request) 
 	helpers.SuccessResponse(w, model)
 }
 
+// GetParents returns void, but sends valid parents back to the client.
+func (handler Handler) GetParents(w http.ResponseWriter, request *http.Request) {
+	category := chi.URLParam(request, "category")
+
+	if category == "" {
+		logAndRespond(w, "Missing category", nil)
+	}
+
+	claims := request.Context().Value("user_claims").(jwt.MapClaims)
+	userID := claims["username"].(string)
+
+	parents, err := handler.Repository.GetParents(request.Context(), category, userID)
+	if err != nil {
+		logAndRespond(w, "Issue getting parents.", err)
+		return
+	}
+
+	helpers.SuccessResponse(w, parents)
+}
+
 func validateParams(parsedData map[string]string, edit bool) (uint64, string, string, uint64, string, error) {
 	var err error
 	var id uint64
@@ -344,48 +364,3 @@ func buildEntity(entity models.Entity, parent models.Parent, category string, ad
 
 	return valid, model
 }
-
-// func getEntityName(id uint64, category string) string {
-// 	var name string
-// 	var model interface{}
-// 	entity := models.Entity{
-// 		ID: id,
-// 	}
-
-// 	switch category {
-// 	case "item":
-// 		model = &models.Item{
-// 			Entity: entity,
-// 		}
-// 	case "container":
-// 		model = &models.Container{
-// 			Entity: entity,
-// 		}
-// 	case "shelf":
-// 		model = &models.Shelf{
-// 			Entity: entity,
-// 		}
-// 	case "shelvingunit":
-// 		model = &models.ShelvingUnit{
-// 			Entity: entity,
-// 		}
-// 	case "room":
-// 		model = &models.Room{
-// 			Entity: entity,
-// 		}
-// 	case "building":
-// 		model = &models.Building{
-// 			Entity: entity,
-// 		}
-// 	default:
-// 		logger.Errorf("Invalid category for entity.")
-// 	}
-
-// 	dberr := handler.Repository.GetOne(model, userID)
-// 	if dberr != nil {
-// 		logAndRespond(w, fmt.Sprintf("Entity category of %v with id %v not found.", category, id), nil)
-// 		return
-// 	}
-
-// 	return name
-// }
