@@ -47,7 +47,7 @@ func (repo Repository) GetOne(model interface{}, userID string) interface{} {
 }
 
 // GetAllEntities returns all entities that belong to the user.
-func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset int, limit int) []models.GetEntitiesResponseData {
+func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset int, limit int) ([]models.GetEntitiesEntity, error) {
 	stringOffset := strconv.Itoa(offset)
 	stringLimit := strconv.Itoa(limit)
 	var results []models.GetEntitiesResponseData
@@ -65,34 +65,34 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 	value, redisErr := repo.Cache.Get(ctx, string(key)).Result()
 	if redisErr != nil && !errors.Is(redisErr, redis.Nil) {
 		logger.Errorf("Error retriving entites from Redis: %v", redisErr)
-		return results
+		return nil, redisErr
 	}
 
 	if value == "" {
 		dbErr := repo.Database.Raw(`
-			(SELECT 'building' AS category, id, name, notes, ' ' as location FROM buildings WHERE user_id = ? LIMIT `+stringLimit+`)
+			(SELECT 'building' AS category, id, name, notes, 0 AS parent_id, ' ' AS parent_category FROM buildings WHERE user_id = ? LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'room' AS category, id, name, notes, ' ' as location FROM rooms WHERE user_id = ? LIMIT `+stringLimit+`)
+			(SELECT 'room' AS category, id, name, notes, parent_id, parent_category FROM rooms WHERE user_id = ? LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'shelving_unit' AS category, id, name, notes, ' ' as location FROM shelving_units WHERE user_id = ? LIMIT `+stringLimit+`)
+			(SELECT 'shelving_unit' AS category, id, name, notes, parent_id, parent_category FROM shelving_units WHERE user_id = ? LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'shelf' AS category, id, name, notes, ' ' as location FROM shelves WHERE user_id = ? LIMIT `+stringLimit+`)
+			(SELECT 'shelf' AS category, id, name, notes, parent_id, parent_category FROM shelves WHERE user_id = ? LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'container' AS category, id, name, notes, ' ' as location FROM containers WHERE user_id = ? LIMIT `+stringLimit+`)
+			(SELECT 'container' AS category, id, name, notes, parent_id, parent_category FROM containers WHERE user_id = ? LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'item' AS category, id, name, notes, ' ' as location FROM items WHERE user_id = ? LIMIT `+stringLimit+`)
+			(SELECT 'item' AS category, id, name, notes, parent_id, parent_category FROM items WHERE user_id = ? LIMIT `+stringLimit+`)
 			 OFFSET `+stringOffset+
 			` LIMIT `+stringLimit, userID, userID, userID, userID, userID, userID).Scan(&results).Error
 
 		if dbErr != nil {
 			logger.Errorf("error executing query: %v", dbErr)
-			return results
+			return nil, dbErr
 		}
 
 		byteData, jsonErr := json.Marshal(results)
 		if jsonErr != nil {
 			logger.Errorf("error executing query: %v", dbErr)
-			return results
+			return nil, jsonErr
 		}
 
 		repo.Cache.Set(ctx, string(key), byteData, cacheTTL)
@@ -102,8 +102,22 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 			logger.Errorf("error executing query: %v", jsonErr)
 		}
 	}
+	var data []models.GetEntitiesEntity
+	for _, entity := range results {
 
-	return results
+		var parents []models.GetEntitiesParentData
+		repo.getParents(entity.ParentID, entity.ParentCategory, userID, &parents)
+
+		data = append(data, models.GetEntitiesEntity{
+			ID:       entity.ID,
+			Name:     entity.Name,
+			Category: entity.Category,
+			Parent:   parents,
+			Notes:    entity.Notes,
+		})
+	}
+
+	return data, nil
 }
 
 // CountEntities is used to count the total number of entities that belong to a user.
@@ -177,4 +191,116 @@ func (repo Repository) FlushEntities(ctx context.Context, userID string) {
 		logger.Errorf("error clearing cache: %v", err)
 		return
 	}
+}
+
+func (repo Repository) getParents(parentID uint, parentCategory string, userID string, array *[]models.GetEntitiesParentData) error {
+	findEntity := models.Entity{
+		ID: uint64(parentID),
+	}
+
+	var parent models.GetEntitiesParentData
+	var recursiveID uint
+	var recursiveCategory string
+	switch parentCategory {
+	case "container":
+		model := &models.Container{
+			Entity: findEntity,
+		}
+
+		err := repo.GetOne(&model, userID)
+		if err != nil {
+			logger.Errorf("error executing query: %v", err)
+			return nil
+		}
+
+		parent = models.GetEntitiesParentData{
+			ID:       parentID,
+			Name:     model.Entity.Name,
+			Category: parentCategory,
+		}
+
+		recursiveID = uint(model.Parent.ParentID)
+		recursiveCategory = model.Parent.ParentCategory
+		break
+	case "shelf":
+		model := &models.Shelf{
+			Entity: findEntity,
+		}
+		err := repo.GetOne(&model, userID)
+		if err != nil {
+			logger.Errorf("error executing query: %v", err)
+			return nil
+		}
+
+		parent = models.GetEntitiesParentData{
+			ID:       parentID,
+			Name:     model.Entity.Name,
+			Category: parentCategory,
+		}
+		recursiveID = uint(model.Parent.ParentID)
+		recursiveCategory = model.Parent.ParentCategory
+		break
+	case "shelvingunit":
+		model := &models.ShelvingUnit{
+			Entity: findEntity,
+		}
+		err := repo.GetOne(&model, userID)
+		if err != nil {
+			logger.Errorf("error executing query: %v", err)
+			return nil
+		}
+
+		parent = models.GetEntitiesParentData{
+			ID:       parentID,
+			Name:     model.Entity.Name,
+			Category: parentCategory,
+		}
+		recursiveID = uint(model.Parent.ParentID)
+		recursiveCategory = model.Parent.ParentCategory
+		break
+	case "room":
+		model := &models.Room{
+			Entity: findEntity,
+		}
+		err := repo.GetOne(&model, userID)
+		if err != nil {
+			logger.Errorf("error executing query: %v", err)
+			return nil
+		}
+
+		parent = models.GetEntitiesParentData{
+			ID:       parentID,
+			Name:     model.Entity.Name,
+			Category: parentCategory,
+		}
+		recursiveID = uint(model.Parent.ParentID)
+		recursiveCategory = model.Parent.ParentCategory
+		break
+	case "building":
+		model := &models.Building{
+			Entity: findEntity,
+		}
+		err := repo.GetOne(&model, userID)
+		if err != nil {
+			logger.Errorf("error executing query: %v", err)
+			return nil
+		}
+
+		parent = models.GetEntitiesParentData{
+			ID:       parentID,
+			Name:     model.Entity.Name,
+			Category: parentCategory,
+		}
+		break
+	default:
+		logger.Errorf("Invalid Category: %v", parentCategory)
+	}
+
+	*array = append((*array), parent)
+
+	if parent.Category != "building" && recursiveID != 0 && recursiveCategory != "" {
+		repo.getParents(recursiveID, recursiveCategory, userID, array)
+	}
+
+	return nil
 }

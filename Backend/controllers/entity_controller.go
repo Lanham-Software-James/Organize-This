@@ -85,7 +85,7 @@ func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request)
 
 	claims := request.Context().Value("user_claims").(jwt.MapClaims)
 	userID := claims["username"].(string)
-	response.Entities = handler.Repository.GetAllEntities(request.Context(), userID, offset, limit)
+	response.Entities, _ = handler.Repository.GetAllEntities(request.Context(), userID, offset, limit)
 
 	response.TotalCount = handler.Repository.CountEntities(request.Context(), userID)
 	helpers.SuccessResponse(w, &response)
@@ -344,3 +344,48 @@ func buildEntity(entity models.Entity, parent models.Parent, category string, ad
 
 	return valid, model
 }
+
+// func getEntityName(id uint64, category string) string {
+// 	var name string
+// 	var model interface{}
+// 	entity := models.Entity{
+// 		ID: id,
+// 	}
+
+// 	switch category {
+// 	case "item":
+// 		model = &models.Item{
+// 			Entity: entity,
+// 		}
+// 	case "container":
+// 		model = &models.Container{
+// 			Entity: entity,
+// 		}
+// 	case "shelf":
+// 		model = &models.Shelf{
+// 			Entity: entity,
+// 		}
+// 	case "shelvingunit":
+// 		model = &models.ShelvingUnit{
+// 			Entity: entity,
+// 		}
+// 	case "room":
+// 		model = &models.Room{
+// 			Entity: entity,
+// 		}
+// 	case "building":
+// 		model = &models.Building{
+// 			Entity: entity,
+// 		}
+// 	default:
+// 		logger.Errorf("Invalid category for entity.")
+// 	}
+
+// 	dberr := handler.Repository.GetOne(model, userID)
+// 	if dberr != nil {
+// 		logAndRespond(w, fmt.Sprintf("Entity category of %v with id %v not found.", category, id), nil)
+// 		return
+// 	}
+
+// 	return name
+// }
