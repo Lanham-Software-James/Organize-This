@@ -57,7 +57,15 @@
 						<tr>
 							<td>{entity.Name}</td>
 							<td class="hidden md:block">{entity.Category}</td>
-							<td>{entity.Location}</td>
+							<td>
+								{#each [...entity.Parent].reverse() as parent, index}
+									<span>{parent.Name}</span>
+
+									{#if index < entity.Parent.length - 1}
+										<span>&nbsp;<i class="fa-solid fa-arrow-right"></i>&nbsp;</span>
+									{/if}
+								{/each}
+							</td>
 							<td class="hidden lg:block">{entity.Notes ?? ""}</td>
 						</tr>
 					{/each}
