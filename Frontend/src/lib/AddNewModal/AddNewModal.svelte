@@ -38,35 +38,39 @@
 		name: ''
 	};
 
-	var parents: parentData[] = []
+	var parents: parentData[] = [];
 
 	onMount(async function () {
-		var [message, data] = await getParents(formData.category)
-		if(message == 'success') {
-			parents = data
-			console.log(data)
+		var [message, data] = await getParents(formData.category);
+		if (message == 'success') {
+			parents = data;
 		}
 	});
 
-	function validateForm() {
-		if(formData.name == '') {
-			isFormInvalid = true;
-			formError.name = 'Name is required!'
-			formErrorClass.name = 'input-error'
+	async function updateParents() {
+		var [message, data] = await getParents(formData.category);
+		if (message == 'success') {
+			parents = data;
+			formData.parent = '0-zero'
 		}
-		else {
-			isFormInvalid = false;
-			formError.name = ''
-			formErrorClass.name = ''
-		}
+	}
 
+	function validateForm() {
+		if (formData.name == '') {
+			isFormInvalid = true;
+			formError.name = 'Name is required!';
+			formErrorClass.name = 'input-error';
+		} else {
+			isFormInvalid = false;
+			formError.name = '';
+			formErrorClass.name = '';
+		}
 	}
 
 	async function onFormSubmit() {
 		modalStore.close();
 
-		const [message, _] = await createEntity(formData)
-
+		const [message, _] = await createEntity(formData);
 
 		let toastMessage = '';
 		let toastBackground = 'variant-filled-secondary';
@@ -74,7 +78,7 @@
 		if (message == 'success') {
 			toastMessage = 'Successfully added!';
 		} else {
-			toastMessage = 'There was an issue adding your item.'
+			toastMessage = 'There was an issue adding your item.';
 			toastBackground = 'variant-filled-error';
 		}
 
@@ -95,7 +99,7 @@
 		<!-- Enable for debugging: -->
 		<form class="modal-form {cForm}">
 			<label class="label" for="category">Category:</label>
-			<select id="category" class="select" bind:value={formData.category}>
+			<select id="category" class="select" bind:value={formData.category} on:change={updateParents}>
 				{#each entities as entity}
 					<option value={entity.value}>{entity.display}</option>
 				{/each}
@@ -118,7 +122,7 @@
 			<label class="label" for="parents">Parent:</label>
 			<select id="parents" class="select" bind:value={formData.parent}>
 				{#each parents as parent}
-					<option value={parent.ID + "-" + parent.Category}>{parent.Name}</option>
+					<option value={parent.ID + '-' + parent.Category}>{parent.Name}</option>
 				{/each}
 			</select>
 
