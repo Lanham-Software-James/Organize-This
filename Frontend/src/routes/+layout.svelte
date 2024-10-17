@@ -57,16 +57,13 @@
 	$: isUserAuthed = $page.data.cookieExists satisfies boolean
 
 	const modalStore = getModalStore();
-	const modalRegistry: Record<string, ModalComponent> = {
-		addNewModal: { ref: AddNewModal }
-	};
 
 	function showModal() {
 		drawerStore.close();
 
 		const modal: ModalSettings = {
 			type: 'component',
-			component: 'addNewModal',
+			component: {ref: AddNewModal, props: {edit: false}},
 			title: 'Add New',
 			body: 'Please complete the form to add a new item, container, shelf, shelving unit, room, or building.'
 		};
@@ -136,7 +133,7 @@
 	{/if}
 </Drawer>
 
-<Modal components={modalRegistry} />
+<Modal />
 
 <Toast />
 

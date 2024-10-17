@@ -4,4 +4,5 @@ package models
 // Shelf describes our shelf table and objects.
 type Shelf struct {
 	Entity Entity `gorm:"embedded"`
+	Parent Parent `gorm:"embedded"`
 }

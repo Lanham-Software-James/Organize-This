@@ -22,7 +22,7 @@ export const _loginUser = async (formData: { userEmail: string; password: string
             message = data.data
         }
     } catch (error) {
-        console.log(error)
+        console.error(error)
     }
 
     if (success) {

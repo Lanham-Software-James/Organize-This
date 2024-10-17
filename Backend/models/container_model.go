@@ -4,4 +4,5 @@ package models
 // Container describes our room table and objects.
 type Container struct {
 	Entity Entity `gorm:"embedded"`
+	Parent Parent `gorm:"embedded"`
 }

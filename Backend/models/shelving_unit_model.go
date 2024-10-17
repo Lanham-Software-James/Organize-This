@@ -4,4 +4,5 @@ package models
 // ShelvingUnit describes our shelving_unit table and objects.
 type ShelvingUnit struct {
 	Entity Entity `gorm:"embedded"`
+	Parent Parent `gorm:"embedded"`
 }

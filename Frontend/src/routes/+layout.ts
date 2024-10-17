@@ -12,7 +12,7 @@ export const _logoutUser = async (): Promise<boolean> => {
 
         success = response.ok
     } catch (error) {
-        console.log(error)
+        console.error(error)
     }
 
     if (success) {
