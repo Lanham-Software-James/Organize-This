@@ -65,7 +65,7 @@ export async function DELETE({ cookies }) {
     let response = new Response()
 
     try {
-        const proxyResponse = await fetch(`${API_URL}v1/token`, {
+        const response = await fetch(`${API_URL}v1/token`, {
             method: 'DELETE',
             headers: new Headers({ 'content-type': 'application/json' }),
             body: JSON.stringify({
@@ -73,17 +73,7 @@ export async function DELETE({ cookies }) {
             })
         });
 
-        const data = await proxyResponse.json()
-
-        response = new Response(JSON.stringify(data), {
-            status: proxyResponse.status,
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (proxyResponse.status == 200) {
-            const data = await proxyResponse.json()
+        if (response.status == 200) {
 
             cookieStore.delete(cookies, 'accessToken', {
                 path: '/',
