@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { Paginator, type PaginationSettings } from '@skeletonlabs/skeleton';
+	import { Paginator, type PaginationSettings, getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
 	import { onMount } from 'svelte';
 	import { _getEntities as getEntities, type GetEntitiesData } from './+page';
+	import AddNewModal from '$lib/AddNewModal/AddNewModal.svelte';
 
 	let entities: GetEntitiesData[] = [];
 	let offset = 0;
@@ -30,6 +31,17 @@
 
 		[entities, paginationSettings.size] = await getEntities(offset, limit);
 	}
+	const modalStore = getModalStore();
+
+	async function editEntity(id: number, category: string) {
+		const modal: ModalSettings = {
+			type: 'component',
+			component: {ref: AddNewModal, props: {edit: true, id: id, category: category}},
+			title: 'Edit Entity',
+			body: 'Please complete the form to edit an existing item, container, shelf, shelving unit, room, or building.'
+		};
+		modalStore.trigger(modal);
+	}
 </script>
 
 <div class="flex flex-row justify-between items-center pb-2">
@@ -54,7 +66,7 @@
 				</thead>
 				<tbody>
 					{#each entities as entity}
-						<tr>
+						<tr on:click={() => editEntity(entity.ID, entity.Category)}>
 							<td class="capitalize">{entity.Name}</td>
 							<td class="hidden md:block capitalize">{entity.Category}</td>
 							<td>

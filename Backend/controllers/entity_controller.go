@@ -278,11 +278,11 @@ func validateParent(category string, parentCategory string) bool {
 		}
 		break
 	case "shelf":
-		if parentCategory == "shelvingunit" {
+		if parentCategory == "shelving_unit" {
 			isValid = true
 		}
 		break
-	case "shelvingunit":
+	case "shelving_unit":
 		if parentCategory == "room" {
 			isValid = true
 		}

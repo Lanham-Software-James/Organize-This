@@ -212,7 +212,7 @@ func (repo Repository) GetParents(ctx context.Context, category string, userID s
 			(SELECT 'shelving_unit' AS category, id, name FROM shelving_units WHERE user_id = ?)`,
 				userID).Scan(&results).Error
 			break
-		case "shelvingunit":
+		case "shelving_unit":
 			dbErr = repo.Database.Raw(`
 			(SELECT 'room' AS category, id, name FROM rooms WHERE user_id = ?)`,
 				userID).Scan(&results).Error
@@ -329,7 +329,7 @@ func (repo Repository) getParents(parentID uint, parentCategory string, userID s
 		recursiveID = uint(model.Parent.ParentID)
 		recursiveCategory = model.Parent.ParentCategory
 		break
-	case "shelvingunit":
+	case "shelving_unit":
 		model := &models.ShelvingUnit{
 			Entity: findEntity,
 		}
