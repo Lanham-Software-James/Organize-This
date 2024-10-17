@@ -2,6 +2,7 @@
 	import { onMount, type SvelteComponent } from 'svelte';
 	import { getModalStore, getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
 	import { createEntity, editEntity, getEntity, getParents, type parentData } from './AddNewModal';
+	import { getContext } from 'svelte';
 
 	export let parent: SvelteComponent;
 	export let edit: boolean;
@@ -10,6 +11,8 @@
 
 	const modalStore = getModalStore();
 	const toastStore = getToastStore();
+	//@ts-ignore
+	const { refresh } = getContext('refreshPage');
 
 	const formData = {
 		id: 0,
@@ -107,6 +110,7 @@
 
 		if (message == 'success') {
 			toastMessage = `Successfully ${addEdit}ed!`;
+			refresh();
 		} else {
 			toastMessage = `There was an issue ${addEdit}ing your item.`;
 			toastBackground = 'variant-filled-error';

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Paginator, type PaginationSettings, getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
-	import { onMount } from 'svelte';
+	import { getContext, onMount } from 'svelte';
 	import { _getEntities as getEntities, type GetEntitiesData } from './+page';
 	import AddNewModal from '$lib/AddNewModal/AddNewModal.svelte';
 
@@ -15,9 +15,22 @@
 		amounts: [5, 10, 15, 20, 25]
 	} satisfies PaginationSettings;
 
+	const refreshPage = getContext('refreshPage');
+
 	onMount(async function () {
-		[entities, paginationSettings.size] = await getEntities(offset, limit);
+		loadData();
+
+		//@ts-ignore
+        const unsubscribe = refreshPage.subscribe(() => {
+            loadData();
+        });
+
+        return unsubscribe;
 	});
+
+	async function loadData() {
+		[entities, paginationSettings.size] = await getEntities(offset, limit);
+	}
 
 	async function limitChange(e: CustomEvent) {
 		limit = e.detail;
