@@ -55,6 +55,15 @@
 		};
 		modalStore.trigger(modal);
 	}
+
+	function cleanCategory(category: string): string {
+		var cleanedCategory = category;
+		if(cleanedCategory == "shelving_unit"){
+			cleanedCategory = "shelving unit"
+		}
+
+		return cleanedCategory
+	}
 </script>
 
 <div class="flex flex-row justify-between items-center pb-2">
@@ -81,7 +90,7 @@
 					{#each entities as entity}
 						<tr on:click={() => editEntity(entity.ID, entity.Category)}>
 							<td class="capitalize">{entity.Name}</td>
-							<td class="hidden md:block capitalize">{entity.Category}</td>
+							<td class="hidden md:block capitalize">{cleanCategory(entity.Category)}</td>
 							<td>
 								{#each [...entity.Parent].reverse() as parent, index}
 									<span class="capitalize">{parent.Name}</span>
