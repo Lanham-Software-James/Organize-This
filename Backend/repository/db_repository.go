@@ -252,8 +252,15 @@ func (repo Repository) GetParents(ctx context.Context, category string, userID s
 func (repo Repository) FlushEntities(ctx context.Context, userID string) {
 
 	getAllEntitiesPattern := `{"CacheKey":{"User":"` + userID + `","Function":"GetAllEntities"},*`
-	countEntitiesPattern := `{"User":"` + userID + `","Function":"CountEntities"}`
-	itemParentsPattern := `{"User":"` + userID + `","Function":"GetItemParents"}`
+
+	patterns := map[string]string{
+		"countEntities":    `{"User":"` + userID + `","Function":"CountEntities"}`,
+		"itemParents":      `{"User":"` + userID + `","Function":"GetItemParents"}`,
+		"containerParents": `{"User":"` + userID + `","Function":"GetContainerParents"}`,
+		"shelfParents":     `{"User":"` + userID + `","Function":"GetShelfParents"}`,
+		"unitParents":      `{"User":"` + userID + `","Function":"GetShelving_unitParents"}`,
+		"roomParents":      `{"User":"` + userID + `","Function":"GetRoomParents"}`,
+	}
 
 	keys, err := repo.Cache.Keys(ctx, getAllEntitiesPattern).Result()
 	if err != nil {
@@ -269,16 +276,12 @@ func (repo Repository) FlushEntities(ctx context.Context, userID string) {
 		}
 	}
 
-	err = repo.Cache.Del(ctx, countEntitiesPattern).Err()
-	if err != nil {
-		logger.Errorf("error clearing cache: %v", err)
-		return
-	}
-
-	err = repo.Cache.Del(ctx, itemParentsPattern).Err()
-	if err != nil {
-		logger.Errorf("error clearing cache: %v", err)
-		return
+	for name, key := range patterns {
+		err = repo.Cache.Del(ctx, key).Err()
+		if err != nil {
+			logger.Errorf("error clearing cache key: %v. Error: %v", name, err)
+			return
+		}
 	}
 }
 
