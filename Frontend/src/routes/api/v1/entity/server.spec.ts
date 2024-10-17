@@ -23,7 +23,7 @@ describe('POST function', () => {
     global.fetch = vi.fn();
   });
 
-  it('FEUT-54: Create Entity Sever Request Success', async () => {
+  it('FEUT-47: Create Entity Sever Request Success', async () => {
     const mockCookies = {};
     const mockRequestBody = {
       address: '123 Test St',
@@ -61,7 +61,7 @@ describe('POST function', () => {
     expect(await response.json()).toEqual({ data: 'mock data' });
   });
 
-  it('FEUT-55: Create Entity Sever Request Unsuccess', async () => {
+  it('FEUT-48: Create Entity Sever Request Unsuccess', async () => {
     const mockCookies = {};
     const mockRequest = {
       json: vi.fn().mockResolvedValue({})
@@ -79,7 +79,7 @@ describe('POST function', () => {
     expect(console.error).toHaveBeenCalledWith(new Error('Network error'));
 
     // Check if an empty response is returned
-    expect(response.status).toBe(200);
-    expect(await response.text()).toBe('');
+    expect(response.status).toBe(400);
+    expect(await response.text()).toBe('{}');
   });
 });

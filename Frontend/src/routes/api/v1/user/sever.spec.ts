@@ -22,7 +22,7 @@ describe('POST function', () => {
     global.fetch = vi.fn();
   });
 
-  it('FEUT-46: Create User Sever Request Success', async () => {
+  it('FEUT-39: Create User Sever Request Success', async () => {
     const mockRequest = {
       json: vi.fn().mockResolvedValue({
         userEmail: 'test@example.com',
@@ -62,7 +62,7 @@ describe('POST function', () => {
     expect(await response.json()).toEqual(mockResponseData);
   });
 
-  it('FEUT-47: Create User Sever Request Unsuccess', async () => {
+  it('FEUT-40: Create User Sever Request Unsuccess', async () => {
     const mockRequest = {
       json: vi.fn().mockResolvedValue({})
     };
@@ -74,8 +74,8 @@ describe('POST function', () => {
     const response = await POST({ request: mockRequest, cookies: mockCookies });
 
     expect(console.error).toHaveBeenCalledWith(new Error('Network error'));
-    expect(response.status).toBe(200);
-    expect(await response.text()).toBe('');
+    expect(response.status).toBe(400);
+    expect(await response.text()).toBe("{}");
   });
 });
 
@@ -85,7 +85,7 @@ describe('PUT function', () => {
     global.fetch = vi.fn();
   });
 
-  it('FEUT-48: Confirm User Sever Request Success', async () => {
+  it('FEUT-41: Confirm User Sever Request Success', async () => {
     const mockRequest = {
       json: vi.fn().mockResolvedValue({
         confirmationCode: '123456'
@@ -120,7 +120,7 @@ describe('PUT function', () => {
     expect(await response.json()).toEqual(mockResponseData);
   });
 
-  it('FEUT-49: Confirm User Sever Request Unsuccess', async () => {
+  it('FEUT-42: Confirm User Sever Request Unsuccess', async () => {
     const mockRequest = {
       json: vi.fn().mockResolvedValue({})
     };
@@ -132,7 +132,7 @@ describe('PUT function', () => {
     const response = await PUT({ request: mockRequest, cookies: mockCookies });
 
     expect(console.error).toHaveBeenCalledWith(new Error('Network error'));
-    expect(response.status).toBe(200);
-    expect(await response.text()).toBe('');
+    expect(response.status).toBe(400);
+    expect(await response.text()).toBe("{}");
   });
 });

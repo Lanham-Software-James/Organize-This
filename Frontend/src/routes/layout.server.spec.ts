@@ -20,7 +20,7 @@ describe('Layout load function', () => {
     };
   });
 
-  it('FEUT-13: Cookie Exists', async () => {
+  it('FEUT-12: Cookie Exists', async () => {
     vi.mocked(cookieStore.get).mockReturnValue('some-refresh-token');
 
     //@ts-ignore
@@ -30,7 +30,7 @@ describe('Layout load function', () => {
     expect(result).toEqual({ cookieExists: true });
   });
 
-  it('FEUT-14: Cookie Does Not Exist', async () => {
+  it('FEUT-13: Cookie Does Not Exist', async () => {
     vi.mocked(cookieStore.get).mockReturnValue(undefined);
 
     //@ts-ignore

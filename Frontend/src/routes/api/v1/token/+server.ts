@@ -50,6 +50,12 @@ export async function POST({ request, cookies }) {
 
     } catch (error) {
         console.error(error);
+        response = new Response(JSON.stringify(error),{
+            status: 400,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
     }
     return response
 }
@@ -94,6 +100,12 @@ export async function DELETE({ cookies }) {
 
     } catch (error) {
         console.error(error);
+        response = new Response(JSON.stringify(error),{
+            status: 400,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
     }
     return response
 }
