@@ -93,16 +93,18 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 		}
 
 		for _, entity := range results {
-			var parents []models.GetEntitiesParentData
-			repo.getParents(entity.ParentID, entity.ParentCategory, userID, &parents)
+			if entity.ParentID != 0 && entity.ParentCategory != "" {
+				var parents []models.GetEntitiesParentData
+				repo.getParents(entity.ParentID, entity.ParentCategory, userID, &parents)
 
-			data = append(data, models.GetEntitiesEntity{
-				ID:       entity.ID,
-				Name:     entity.Name,
-				Category: entity.Category,
-				Parent:   parents,
-				Notes:    entity.Notes,
-			})
+				data = append(data, models.GetEntitiesEntity{
+					ID:       entity.ID,
+					Name:     entity.Name,
+					Category: entity.Category,
+					Parent:   parents,
+					Notes:    entity.Notes,
+				})
+			}
 		}
 
 		byteData, jsonErr := json.Marshal(data)

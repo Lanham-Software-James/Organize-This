@@ -12,6 +12,7 @@ import (
 	"organize-this/repository"
 	"organize-this/tests/mocks"
 	"reflect"
+	"regexp"
 	"testing"
 	"time"
 
@@ -71,17 +72,17 @@ func setupGetEntitiesCacheMissMockExpectations(mockDB *sqlmock.Sqlmock, mockCach
 	cacheKey := fmt.Sprintf(`{"CacheKey":{"User":"%s","Function":"GetAllEntities"},"Offset":"%s","Limit":"%s"}`, userName, offset, limit)
 	countCacheKey := fmt.Sprintf(`{"User":"%s","Function":"CountEntities"}`, userName)
 
-	expectedMainSQL := fmt.Sprintf(`\(SELECT 'building' AS category, id, name, notes, ' ' as location FROM buildings WHERE user_id = \$1 LIMIT %s\)
+	expectedMainSQL := fmt.Sprintf(`\(SELECT 'building' AS category, id, name, notes, 0 AS parent_id, ' ' AS parent_category FROM buildings WHERE user_id = \$1 LIMIT %s\)
                         UNION ALL
-                        \(SELECT 'room' AS category, id, name, notes, ' ' as location FROM rooms WHERE user_id = \$2 LIMIT %s\)
+                        \(SELECT 'room' AS category, id, name, notes, parent_id, parent_category FROM rooms WHERE user_id = \$2 LIMIT %s\)
                         UNION ALL
-                        \(SELECT 'shelving_unit' AS category, id, name, notes, ' ' as location FROM shelving_units WHERE user_id = \$3 LIMIT %s\)
+                        \(SELECT 'shelving_unit' AS category, id, name, notes, parent_id, parent_category FROM shelving_units WHERE user_id = \$3 LIMIT %s\)
                         UNION ALL
-                        \(SELECT 'shelf' AS category, id, name, notes, ' ' as location FROM shelves WHERE user_id = \$4 LIMIT %s\)
+                        \(SELECT 'shelf' AS category, id, name, notes, parent_id, parent_category FROM shelves WHERE user_id = \$4 LIMIT %s\)
                         UNION ALL
-                        \(SELECT 'container' AS category, id, name, notes, ' ' as location FROM containers WHERE user_id = \$5 LIMIT %s\)
+                        \(SELECT 'container' AS category, id, name, notes, parent_id, parent_category FROM containers WHERE user_id = \$5 LIMIT %s\)
                         UNION ALL
-                        \(SELECT 'item' AS category, id, name, notes, ' ' as location FROM items WHERE user_id = \$6 LIMIT %s\)
+                        \(SELECT 'item' AS category, id, name, notes, parent_id, parent_category FROM items WHERE user_id = \$6 LIMIT %s\)
                         OFFSET %s LIMIT %s`, limit, limit, limit, limit, limit, limit, offset, limit)
 
 	expectedCountSQL := `SELECT \(SELECT COUNT\(\*\) FROM buildings WHERE user_id = \$1\) \+
@@ -93,20 +94,40 @@ func setupGetEntitiesCacheMissMockExpectations(mockDB *sqlmock.Sqlmock, mockCach
 
 	(*mockDB).ExpectQuery(expectedMainSQL).
 		WithArgs(userName, userName, userName, userName, userName, userName).
-		WillReturnRows(sqlmock.NewRows([]string{"category", "id", "name", "notes", "location"}).
-			AddRow("building", 1, "Building 1", "", " ").
-			AddRow("building", 2, "Building 2", "", " ").
-			AddRow("room", 1, "Room 1", "", " ").
-			AddRow("room", 2, "Room 2", "", " ").
-			AddRow("shelving_unit", 1, "Shelving Unit 1", "", " ").
-			AddRow("shelving_unit", 2, "Shelving Unit 2", "", " ").
-			AddRow("shelf", 1, "Shelf 1", "", " ").
-			AddRow("shelf", 2, "Shelf 2", "", " ").
-			AddRow("container", 1, "Container 1", "", " ").
-			AddRow("container", 2, "Container 2", "", " ").
-			AddRow("item", 1, "Item 1", "", " ").
-			AddRow("item", 2, "Item 2", "", " "))
+		WillReturnRows(sqlmock.NewRows([]string{"category", "id", "name", "notes", "parent_id", "parent_category"}).
+			AddRow("building", 1, "Building 1", " ", 0, " ").
+			AddRow("room", 1, "Room 1", " ", 1, "building").
+			AddRow("shelving_unit", 1, "Shelving Unit 1", " ", 1, "room").
+			AddRow("shelf", 1, "Shelf 1", " ", 1, "shelving_unit").
+			AddRow("container", 1, "Container 1", " ", 1, "shelf").
+			AddRow("item", 2, "Item 2", " ", 1, "container"))
 
+	// Room 1 recusive parent build
+	expectBuilding(mockDB, userName)
+
+	// Shelving Unit 1 recusive parent build
+	expectRoom(mockDB, userName)
+	expectBuilding(mockDB, userName)
+
+	// Shelf 1 recusive parent build
+	expectUnit(mockDB, userName)
+	expectRoom(mockDB, userName)
+	expectBuilding(mockDB, userName)
+
+	//Container 1 recusive parent build
+	expectShelf(mockDB, userName)
+	expectUnit(mockDB, userName)
+	expectRoom(mockDB, userName)
+	expectBuilding(mockDB, userName)
+
+	//Item 1 recusive parent build
+	expectContainer(mockDB, userName)
+	expectShelf(mockDB, userName)
+	expectUnit(mockDB, userName)
+	expectRoom(mockDB, userName)
+	expectBuilding(mockDB, userName)
+
+	// Count Entity
 	(*mockDB).ExpectQuery(expectedCountSQL).
 		WithArgs(userName, userName, userName, userName, userName, userName).
 		WillReturnRows(sqlmock.NewRows([]string{"EntityCount"}).AddRow(12))
@@ -116,7 +137,41 @@ func setupGetEntitiesCacheMissMockExpectations(mockDB *sqlmock.Sqlmock, mockCach
 
 	mockCache.ExpectGet(countCacheKey).RedisNil()
 	mockCache.Regexp().ExpectSet(countCacheKey, ".*", 5*time.Minute).SetVal("OK")
+}
 
+func expectContainer(mockDB *sqlmock.Sqlmock, userName string) {
+	(*mockDB).ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "containers" WHERE user_id = $1 AND "containers"."id" = $2 ORDER BY "containers"."id" LIMIT 1`)).
+		WithArgs(userName, 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "notes", "created_at", "updated_at", "user_id", "parent_id", "parent_category"}).
+			AddRow(1, "Container 1", "test notes", time.Now(), time.Now(), userName, 1, "shelf"))
+}
+
+func expectShelf(mockDB *sqlmock.Sqlmock, userName string) {
+	(*mockDB).ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shelves" WHERE user_id = $1 AND "shelves"."id" = $2 ORDER BY "shelves"."id" LIMIT 1`)).
+		WithArgs(userName, 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "notes", "created_at", "updated_at", "user_id", "parent_id", "parent_category"}).
+			AddRow(1, "Shelf 1", "test notes", time.Now(), time.Now(), userName, 1, "shelving_unit"))
+}
+
+func expectUnit(mockDB *sqlmock.Sqlmock, userName string) {
+	(*mockDB).ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "shelving_units" WHERE user_id = $1 AND "shelving_units"."id" = $2 ORDER BY "shelving_units"."id" LIMIT 1`)).
+		WithArgs(userName, 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "notes", "created_at", "updated_at", "user_id", "parent_id", "parent_category"}).
+			AddRow(1, "Shelving Unit 1", "test notes", time.Now(), time.Now(), userName, 1, "room"))
+}
+
+func expectRoom(mockDB *sqlmock.Sqlmock, userName string) {
+	(*mockDB).ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "rooms" WHERE user_id = $1 AND "rooms"."id" = $2 ORDER BY "rooms"."id" LIMIT 1`)).
+		WithArgs(userName, 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "notes", "created_at", "updated_at", "user_id", "parent_id", "parent_category"}).
+			AddRow(1, "Room 1", "test notes", time.Now(), time.Now(), userName, 1, "building"))
+}
+
+func expectBuilding(mockDB *sqlmock.Sqlmock, userName string) {
+	(*mockDB).ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "buildings" WHERE user_id = $1 AND "buildings"."id" = $2 ORDER BY "buildings"."id" LIMIT 1`)).
+		WithArgs(userName, 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "address", "notes", "created_at", "updated_at", "user_id"}).
+			AddRow(1, "Building 1", "123 address", "test notes", time.Now(), time.Now(), userName))
 }
 
 func setupGetEntitiesCacheHitMockExpectations(mockCache redismock.ClientMock, userName string, offset string, limit string) {
@@ -174,7 +229,7 @@ func validateGetEntitiesSuccessResponse(t *testing.T, res *http.Response, mockDB
 	}
 
 	dataType = reflect.TypeOf(contents.Data.Entities).String()
-	if dataType != "[]models.GetEntitiesResponseData" {
+	if dataType != "[]models.GetEntitiesEntity" {
 		t.Errorf("Expected TotalCount to be type []models.GetEntitiesResponseData. Got: %v", dataType)
 	}
 
