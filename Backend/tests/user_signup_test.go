@@ -143,7 +143,7 @@ func validateUserSignUpResponse(t *testing.T, res *http.Response, expectedHTTP i
 func TestUserSignUp(t *testing.T) {
 	cases := []userSignUpTestCase{
 		{
-			testName:        "BEUT-32: User Sign Up Valid Data",
+			testName:        "BEUT-41: User Sign Up Valid Data",
 			validData:       true,
 			expectedHTTP:    http.StatusOK,
 			expectedMessage: "success",
@@ -155,7 +155,7 @@ func TestUserSignUp(t *testing.T) {
 			Birthday:        "06/06/06",
 		},
 		{
-			testName:        "BEUT-33: User Sign Up Invalid Password",
+			testName:        "BEUT-42: User Sign Up Invalid Password",
 			validData:       true,
 			badPassword:     true,
 			expectedHTTP:    http.StatusBadRequest,
@@ -168,7 +168,7 @@ func TestUserSignUp(t *testing.T) {
 			Birthday:        "06/06/06",
 		},
 		{
-			testName:        "BEUT-34: User Sign Up Duplicate User",
+			testName:        "BEUT-43: User Sign Up Duplicate User",
 			validData:       true,
 			badPassword:     false,
 			duplicateUser:   true,
@@ -182,7 +182,7 @@ func TestUserSignUp(t *testing.T) {
 			Birthday:        "06/06/06",
 		},
 		{
-			testName:        "BEUT-35: User Sign Up Missing Email",
+			testName:        "BEUT-44: User Sign Up Missing Email",
 			validData:       false,
 			expectedHTTP:    http.StatusBadRequest,
 			expectedMessage: "data validation failed",
@@ -194,7 +194,7 @@ func TestUserSignUp(t *testing.T) {
 			Birthday:        "06/06/06",
 		},
 		{
-			testName:        "BEUT-36: User Sign Up Missing Password",
+			testName:        "BEUT-45: User Sign Up Missing Password",
 			validData:       false,
 			expectedHTTP:    http.StatusBadRequest,
 			expectedMessage: "data validation failed",
@@ -206,7 +206,7 @@ func TestUserSignUp(t *testing.T) {
 			Birthday:        "06/06/06",
 		},
 		{
-			testName:        "BEUT-37: User Sign Up Missing First Name",
+			testName:        "BEUT-46: User Sign Up Missing First Name",
 			validData:       false,
 			expectedHTTP:    http.StatusBadRequest,
 			expectedMessage: "data validation failed",
@@ -218,7 +218,7 @@ func TestUserSignUp(t *testing.T) {
 			Birthday:        "06/06/06",
 		},
 		{
-			testName:        "BEUT-38: User Sign Up Missing Last Name",
+			testName:        "BEUT-47: User Sign Up Missing Last Name",
 			validData:       false,
 			expectedHTTP:    http.StatusBadRequest,
 			expectedMessage: "data validation failed",
@@ -230,7 +230,7 @@ func TestUserSignUp(t *testing.T) {
 			Birthday:        "06/06/06",
 		},
 		{
-			testName:        "BEUT-39: User Sign Up Missing Birthday",
+			testName:        "BEUT-48: User Sign Up Missing Birthday",
 			validData:       false,
 			expectedHTTP:    http.StatusBadRequest,
 			expectedMessage: "data validation failed",

@@ -97,7 +97,7 @@ func validateUserLogOutResponse(t *testing.T, res *http.Response, expectedHTTP i
 func TestUserLogOut(t *testing.T) {
 	cases := []userLogOutTestCase{
 		{
-			testName:        "BEUT-48: User Log Out Valid Data",
+			testName:        "BEUT-57: User Log Out Valid Data",
 			validData:       true,
 			expectedHTTP:    http.StatusOK,
 			expectedMessage: "success",
@@ -105,7 +105,7 @@ func TestUserLogOut(t *testing.T) {
 			RefreshToken:    "jkadlkfjhadsfakbcvadsuiofha",
 		},
 		{
-			testName:        "BEUT-49: User Log Out Invalid Data",
+			testName:        "BEUT-58: User Log Out Invalid Data",
 			validData:       false,
 			expectedHTTP:    http.StatusBadRequest,
 			expectedMessage: "data validation failed",
