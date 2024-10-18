@@ -52,7 +52,7 @@ func (repo Repository) GetOne(model interface{}, userID string) interface{} {
 func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset int, limit int) ([]models.GetEntitiesEntity, error) {
 	stringOffset := strconv.Itoa(offset)
 	stringLimit := strconv.Itoa(limit)
-	var results []models.GetEntitiesResponseData
+	var data []models.GetEntitiesEntity
 
 	cacheTTL := 5 * time.Minute
 	keyStructured := GetEntitiesCacheKey{
@@ -71,6 +71,7 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 	}
 
 	if value == "" {
+		var results []models.GetEntitiesResponseData
 		dbErr := repo.Database.Raw(`
 			(SELECT 'building' AS category, id, name, notes, 0 AS parent_id, ' ' AS parent_category FROM buildings WHERE user_id = ? LIMIT `+stringLimit+`)
 			UNION ALL
@@ -91,7 +92,20 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 			return nil, dbErr
 		}
 
-		byteData, jsonErr := json.Marshal(results)
+		for _, entity := range results {
+			var parents []models.GetEntitiesParentData
+			repo.getParents(entity.ParentID, entity.ParentCategory, userID, &parents)
+
+			data = append(data, models.GetEntitiesEntity{
+				ID:       entity.ID,
+				Name:     entity.Name,
+				Category: entity.Category,
+				Parent:   parents,
+				Notes:    entity.Notes,
+			})
+		}
+
+		byteData, jsonErr := json.Marshal(data)
 		if jsonErr != nil {
 			logger.Errorf("error executing query: %v", dbErr)
 			return nil, jsonErr
@@ -99,24 +113,10 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 
 		repo.Cache.Set(ctx, string(key), byteData, cacheTTL)
 	} else {
-		jsonErr := json.Unmarshal([]byte(value), &results)
+		jsonErr := json.Unmarshal([]byte(value), &data)
 		if jsonErr != nil {
 			logger.Errorf("error executing query: %v", jsonErr)
 		}
-	}
-	var data []models.GetEntitiesEntity
-	for _, entity := range results {
-
-		var parents []models.GetEntitiesParentData
-		repo.getParents(entity.ParentID, entity.ParentCategory, userID, &parents)
-
-		data = append(data, models.GetEntitiesEntity{
-			ID:       entity.ID,
-			Name:     entity.Name,
-			Category: entity.Category,
-			Parent:   parents,
-			Notes:    entity.Notes,
-		})
 	}
 
 	return data, nil
