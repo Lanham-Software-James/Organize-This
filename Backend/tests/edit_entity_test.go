@@ -333,7 +333,7 @@ func TestEditEntityValid(t *testing.T) {
 			ParentCategory: "room",
 		},
 		{
-			testName:       "BEUT-89: Edit Entity Shelving Unit Valid No Notes",
+			testName:       "BEUT-81: Edit Entity Shelving Unit Valid No Notes",
 			validData:      true,
 			EntityID:       "45",
 			EntityUser:     "testuser8",
@@ -344,7 +344,7 @@ func TestEditEntityValid(t *testing.T) {
 			ParentCategory: "room",
 		},
 		{
-			testName:       "BEUT-90: Edit Entity Shelving Unit Invalid Parent Category",
+			testName:       "BEUT-82: Edit Entity Shelving Unit Invalid Parent Category",
 			validData:      false,
 			EntityID:       "40",
 			EntityUser:     "testuser7",
@@ -355,7 +355,7 @@ func TestEditEntityValid(t *testing.T) {
 			ParentCategory: "test",
 		},
 		{
-			testName:       "BEUT-91: Edit Entity Room Valid All Fields",
+			testName:       "BEUT-83: Edit Entity Room Valid All Fields",
 			validData:      true,
 			EntityID:       "50",
 			EntityUser:     "testuser9",
@@ -366,7 +366,7 @@ func TestEditEntityValid(t *testing.T) {
 			ParentCategory: "building",
 		},
 		{
-			testName:       "BEUT-92: Edit Entity Room Valid No Notes",
+			testName:       "BEUT-84: Edit Entity Room Valid No Notes",
 			validData:      true,
 			EntityID:       "55",
 			EntityUser:     "testuser10",
@@ -377,7 +377,7 @@ func TestEditEntityValid(t *testing.T) {
 			ParentCategory: "building",
 		},
 		{
-			testName:       "BEUT-93: Edit Entity Room Invalid Parent Category",
+			testName:       "BEUT-85: Edit Entity Room Invalid Parent Category",
 			validData:      false,
 			EntityID:       "50",
 			EntityUser:     "testuser9",
@@ -388,7 +388,7 @@ func TestEditEntityValid(t *testing.T) {
 			ParentCategory: "test",
 		},
 		{
-			testName:       "BEUT-94: Edit Entity Building Valid All Fields",
+			testName:       "BEUT-86: Edit Entity Building Valid All Fields",
 			validData:      true,
 			EntityID:       "60",
 			EntityUser:     "testuser11",
@@ -398,7 +398,7 @@ func TestEditEntityValid(t *testing.T) {
 			EntityAddress:  "123 Test Rd",
 		},
 		{
-			testName:       "BEUT-95: Edit Entity Building Valid No Notes",
+			testName:       "BEUT-87: Edit Entity Building Valid No Notes",
 			validData:      true,
 			EntityID:       "65",
 			EntityUser:     "testuser12",
@@ -408,7 +408,7 @@ func TestEditEntityValid(t *testing.T) {
 			EntityAddress:  "213 Test Rd",
 		},
 		{
-			testName:       "BEUT-96: Edit Entity Building Valid No Address",
+			testName:       "BEUT-88: Edit Entity Building Valid No Address",
 			validData:      true,
 			EntityID:       "70",
 			EntityUser:     "testuser13",
@@ -418,7 +418,7 @@ func TestEditEntityValid(t *testing.T) {
 			EntityAddress:  "",
 		},
 		{
-			testName:       "BEUT-97: Edit Entity Building Valid No Notes No Address",
+			testName:       "BEUT-89: Edit Entity Building Valid No Notes No Address",
 			validData:      true,
 			EntityID:       "75",
 			EntityUser:     "testuser14",
