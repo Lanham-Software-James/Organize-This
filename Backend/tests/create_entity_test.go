@@ -26,13 +26,16 @@ type createSingleResponse struct {
 }
 
 type createEntityTestCase struct {
-	testName       string
-	entityName     string
-	entityNotes    string
-	entityCategory string
-	entityUser     string
-	entityID       uint
-	entityAddress  string
+	testName       string `json:"-"`
+	validData      bool   `json:"-"`
+	EntityUser     string `json:"-"`
+	EntityID       uint   `json:"-"`
+	EntityName     string `json:"name"`
+	EntityNotes    string `json:"notes"`
+	EntityCategory string `json:"category"`
+	EntityAddress  string `json:"address"`
+	ParentID       string `json:"parentID"`
+	ParentCategory string `json:"parentCategory"`
 }
 
 var endpoint = "/v1/entity"
@@ -68,13 +71,11 @@ func setupCreateEntityMockExpectations(mockDB *sqlmock.Sqlmock, mockCache redism
 	testID := args[3]
 
 	tableName := category + "s"
-	if category == "shelvingunit" {
-		tableName = "shelving_units"
-	} else if category == "shelf" {
+	if category == "shelf" {
 		tableName = "shelves"
 	}
 
-	query := fmt.Sprintf(`INSERT INTO "%s" \("name","notes","user_id","created_at","updated_at"\) VALUES \(\$1,\$2,\$3,\$4,\$5\) RETURNING "id"`, tableName)
+	query := fmt.Sprintf(`INSERT INTO "%s" \("name","notes","user_id","created_at","updated_at","parent_id","parent_category"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7\) RETURNING "id"`, tableName)
 	if category == "building" {
 		query = `INSERT INTO "buildings" \("name","notes","user_id","created_at","updated_at","address"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6\) RETURNING "id"`
 	}
@@ -84,7 +85,9 @@ func setupCreateEntityMockExpectations(mockDB *sqlmock.Sqlmock, mockCache redism
 		testAddress := args[4]
 		expectation.WithArgs(testName, testNotes, testUser, sqlmock.AnyArg(), sqlmock.AnyArg(), testAddress)
 	} else {
-		expectation.WithArgs(testName, testNotes, testUser, sqlmock.AnyArg(), sqlmock.AnyArg())
+		testParentID, _ := strconv.Atoi(args[4])
+		testParentCategory := args[5]
+		expectation.WithArgs(testName, testNotes, testUser, sqlmock.AnyArg(), sqlmock.AnyArg(), testParentID, testParentCategory)
 	}
 	expectation.WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(testID))
 
@@ -94,10 +97,22 @@ func setupCreateEntityMockExpectations(mockDB *sqlmock.Sqlmock, mockCache redism
 		`{"CacheKey":{"User":"` + testUser + `","Function":"GetAllEntities"},"Offset":"0","Limit":"15"}`,
 		`{"CacheKey":{"User":"` + testUser + `","Function":"GetAllEntities"},"Offset":"15","Limit":"15"}`,
 	}
+
 	mockCache.ExpectKeys(`{"CacheKey":{"User":"` + testUser + `","Function":"GetAllEntities"},*`).SetVal(keyVals)
-	mockCache.ExpectDel(`{"CacheKey":{"User":"` + testUser + `","Function":"GetAllEntities"},"Offset":"0","Limit":"15"}`).SetVal(1)
-	mockCache.ExpectDel(`{"CacheKey":{"User":"` + testUser + `","Function":"GetAllEntities"},"Offset":"15","Limit":"15"}`).SetVal(1)
-	mockCache.ExpectDel(`{"User":"` + testUser + `","Function":"CountEntities"}`).SetVal(1)
+
+	expectedDelKeys := append(
+		keyVals,
+		`{"User":"`+testUser+`","Function":"CountEntities"}`,
+		`{"User":"`+testUser+`","Function":"GetItemParents"}`,
+		`{"User":"`+testUser+`","Function":"GetContainerParents"}`,
+		`{"User":"`+testUser+`","Function":"GetShelfParents"}`,
+		`{"User":"`+testUser+`","Function":"GetShelving_unitParents"}`,
+		`{"User":"`+testUser+`","Function":"GetRoomParents"}`,
+	)
+
+	for _, key := range expectedDelKeys {
+		mockCache.ExpectDel(key).SetVal(1)
+	}
 }
 
 func validateCreateEntitySuccessResponse(t *testing.T, res *http.Response, mockDB sqlmock.Sqlmock, mockCache redismock.ClientMock, testID uint) {
@@ -133,190 +148,191 @@ func validateCreateEntitySuccessResponse(t *testing.T, res *http.Response, mockD
 	}
 }
 
-// TestCreateEntityInvalid runs the unit tests for invalid cases.
-func TestCreateEntityInvalid(t *testing.T) {
-	cases := []createEntityTestCase{
-		{
-			testName:       "BEUT-1: Create Entity Missing Name",
-			entityCategory: "item",
-		},
-		{
-			testName:   "BEUT-2: Create Entity Missing Category",
-			entityName: "Test Container 1",
-		},
-		{
-			testName: "BEUT-3: Create Entity Missing Name and Category",
-		},
-	}
-
-	for _, tc := range cases {
-		client, srv, mockDB, mockCache := setupCreateEntityTest(t, tc.entityUser)
-		t.Run(tc.testName, func(t *testing.T) {
-			if tc.entityCategory == "building" {
-				setupCreateEntityMockExpectations(&mockDB, mockCache, tc.entityCategory, tc.entityName, tc.entityNotes, tc.entityUser, strconv.Itoa(int(tc.entityID)), tc.entityAddress)
-			} else {
-				setupCreateEntityMockExpectations(&mockDB, mockCache, tc.entityCategory, tc.entityName, tc.entityNotes, tc.entityUser, strconv.Itoa(int(tc.entityID)))
-			}
-
-			values := map[string]string{"name": tc.entityName, "notes": tc.entityNotes, "category": tc.entityCategory}
-			if tc.entityCategory == "building" {
-				values = map[string]string{"name": tc.entityName, "notes": tc.entityNotes, "category": tc.entityCategory, "address": tc.entityAddress}
-			}
-
-			payload, err := json.Marshal(values)
-			if err != nil {
-				t.Fatalf("Failed to marshal json: %v", err)
-			}
-
-			res, err := client.Post(srv.URL+endpoint, "application/json", bytes.NewBuffer(payload))
-			if err != nil {
-				t.Fatalf("Failed to send request: %v", err)
-			}
-			defer res.Body.Close()
-
-			if res.StatusCode != http.StatusBadRequest {
-				t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusBadRequest, res.StatusCode)
-			}
-		})
-	}
-}
-
 // TestCreateEntityValid runs the unit tests for the CreateEntity function with valid parameters.
 func TestCreateEntityValid(t *testing.T) {
 	cases := []createEntityTestCase{
 		{
+			testName:       "BEUT-1: Create Entity Missing Name",
+			validData:      false,
+			EntityCategory: "item",
+			ParentID:       "10",
+			ParentCategory: "container",
+		},
+		{
+			testName:       "BEUT-2: Create Entity Missing Category",
+			validData:      false,
+			EntityName:     "Test Container 1",
+			ParentID:       "10",
+			ParentCategory: "container",
+		},
+		{
+			testName:       "BEUT-3: Create Entity Missing Name and Category",
+			validData:      false,
+			ParentID:       "10",
+			ParentCategory: "container",
+		},
+		{
 			testName:       "BEUT-4: Create Entity Item Valid All Fields",
-			entityName:     "Test Item 1",
-			entityNotes:    "Test Notes for item 1",
-			entityCategory: "item",
-			entityUser:     "testuser",
-			entityID:       10,
+			validData:      true,
+			EntityUser:     "testuser",
+			EntityID:       10,
+			EntityName:     "Test Item 1",
+			EntityNotes:    "Test Notes for item 1",
+			EntityCategory: "item",
+			ParentID:       "10",
+			ParentCategory: "container",
 		},
 		{
 			testName:       "BEUT-5: Create Entity Item Valid No Notes",
-			entityName:     "Test Item 2",
-			entityNotes:    "",
-			entityCategory: "item",
-			entityUser:     "testuser2",
-			entityID:       15,
+			validData:      true,
+			EntityID:       15,
+			EntityUser:     "testuser2",
+			EntityName:     "Test Item 2",
+			EntityNotes:    "",
+			EntityCategory: "item",
+			ParentID:       "10",
+			ParentCategory: "shelf",
 		},
 		{
 			testName:       "BEUT-6: Create Entity Container Valid All Fields",
-			entityName:     "Test Container 1",
-			entityNotes:    "Test container notes 1",
-			entityCategory: "container",
-			entityUser:     "testuser3",
-			entityID:       20,
+			validData:      true,
+			EntityID:       20,
+			EntityUser:     "testuser3",
+			EntityName:     "Test Container 1",
+			EntityNotes:    "Test container notes 1",
+			EntityCategory: "container",
+			ParentID:       "10",
+			ParentCategory: "shelf",
 		},
 		{
 			testName:       "BEUT-7: Create Entity Container Valid No Notes",
-			entityName:     "Test Container 2",
-			entityNotes:    "",
-			entityCategory: "container",
-			entityUser:     "testuser4",
-			entityID:       25,
+			validData:      true,
+			EntityID:       25,
+			EntityUser:     "testuser4",
+			EntityName:     "Test Container 2",
+			EntityNotes:    "",
+			EntityCategory: "container",
+			ParentID:       "10",
+			ParentCategory: "room",
 		},
 		{
 			testName:       "BEUT-8: Create Entity Shelf Valid All Fields",
-			entityName:     "Test Shelf 1",
-			entityNotes:    "Test notes for shelf 1",
-			entityCategory: "shelf",
-			entityUser:     "testuser5",
-			entityID:       30,
+			validData:      true,
+			EntityID:       30,
+			EntityUser:     "testuser5",
+			EntityName:     "Test Shelf 1",
+			EntityNotes:    "Test notes for shelf 1",
+			EntityCategory: "shelf",
+			ParentID:       "10",
+			ParentCategory: "shelving_unit",
 		},
 		{
 			testName:       "BEUT-9: Create Entity Shelf Valid No Notes",
-			entityName:     "Test Shelf 2",
-			entityNotes:    "",
-			entityCategory: "shelf",
-			entityUser:     "testuser6",
-			entityID:       35,
+			validData:      true,
+			EntityID:       35,
+			EntityUser:     "testuser6",
+			EntityName:     "Test Shelf 2",
+			EntityNotes:    "",
+			EntityCategory: "shelf",
+			ParentID:       "10",
+			ParentCategory: "shelving_unit",
 		},
 		{
 			testName:       "BEUT-10: Create Entity Shelving Unit Valid All Fields",
-			entityName:     "Test Shelving Unit 1",
-			entityNotes:    "Test notes for shelving unit 1",
-			entityCategory: "shelvingunit",
-			entityUser:     "testuser7",
-			entityID:       40,
+			validData:      true,
+			EntityID:       40,
+			EntityUser:     "testuser7",
+			EntityName:     "Test Shelving Unit 1",
+			EntityNotes:    "Test notes for shelving unit 1",
+			EntityCategory: "shelving_unit",
+			ParentID:       "10",
+			ParentCategory: "room",
 		},
 		{
 			testName:       "BEUT-11: Create Entity Shelving Unit Valid No Notes",
-			entityName:     "Test Shelving Unit 2",
-			entityNotes:    "",
-			entityCategory: "shelvingunit",
-			entityUser:     "testuser8",
-			entityID:       45,
+			validData:      true,
+			EntityID:       45,
+			EntityUser:     "testuser8",
+			EntityName:     "Test Shelving Unit 2",
+			EntityNotes:    "",
+			EntityCategory: "shelving_unit",
+			ParentID:       "10",
+			ParentCategory: "room",
 		},
 		{
 			testName:       "BEUT-12: Create Entity Room Valid All Fields",
-			entityName:     "Test Room 1",
-			entityNotes:    "Test notes for room 1",
-			entityCategory: "room",
-			entityUser:     "testuser9",
-			entityID:       50,
+			validData:      true,
+			EntityID:       50,
+			EntityUser:     "testuser9",
+			EntityName:     "Test Room 1",
+			EntityNotes:    "Test notes for room 1",
+			EntityCategory: "room",
+			ParentID:       "10",
+			ParentCategory: "building",
 		},
 		{
 			testName:       "BEUT-13: Create Entity Room Valid No Notes",
-			entityName:     "Test Room 2",
-			entityNotes:    "",
-			entityCategory: "room",
-			entityUser:     "testuser10",
-			entityID:       55,
+			validData:      true,
+			EntityID:       55,
+			EntityUser:     "testuser10",
+			EntityName:     "Test Room 2",
+			EntityNotes:    "",
+			EntityCategory: "room",
+			ParentID:       "10",
+			ParentCategory: "building",
 		},
 		{
 			testName:       "BEUT-14: Create Entity Building Valid All Fields",
-			entityName:     "Test Building 1",
-			entityNotes:    "Test notes for building 1",
-			entityCategory: "building",
-			entityUser:     "testuser11",
-			entityID:       60,
-			entityAddress:  "123 Test Rd",
+			validData:      true,
+			EntityID:       60,
+			EntityUser:     "testuser11",
+			EntityName:     "Test Building 1",
+			EntityNotes:    "Test notes for building 1",
+			EntityCategory: "building",
+			EntityAddress:  "123 Test Rd",
 		},
 		{
 			testName:       "BEUT-15: Create Entity Building Valid No Notes",
-			entityName:     "Test Building 2",
-			entityNotes:    "",
-			entityCategory: "building",
-			entityUser:     "testuser12",
-			entityID:       65,
-			entityAddress:  "213 Test Rd",
+			validData:      true,
+			EntityID:       65,
+			EntityUser:     "testuser12",
+			EntityName:     "Test Building 2",
+			EntityNotes:    "",
+			EntityCategory: "building",
+			EntityAddress:  "213 Test Rd",
 		},
 		{
 			testName:       "BEUT-16: Create Entity Building Valid No Address",
-			entityName:     "Test Building 3",
-			entityNotes:    "Test notes for building 3",
-			entityCategory: "building",
-			entityUser:     "testuser13",
-			entityID:       70,
-			entityAddress:  "",
+			validData:      true,
+			EntityID:       70,
+			EntityUser:     "testuser13",
+			EntityName:     "Test Building 3",
+			EntityNotes:    "Test notes for building 3",
+			EntityCategory: "building",
+			EntityAddress:  "",
 		},
 		{
 			testName:       "BEUT-17: Create Entity Building Valid No Notes No Address",
-			entityName:     "Test Building 4",
-			entityNotes:    "",
-			entityCategory: "building",
-			entityUser:     "testuser14",
-			entityID:       75,
-			entityAddress:  "",
+			validData:      true,
+			EntityID:       75,
+			EntityUser:     "testuser14",
+			EntityName:     "Test Building 4",
+			EntityNotes:    "",
+			EntityCategory: "building",
+			EntityAddress:  "",
 		},
 	}
 
 	for _, tc := range cases {
-		client, srv, mockDB, mockCache := setupCreateEntityTest(t, tc.entityUser)
+		client, srv, mockDB, mockCache := setupCreateEntityTest(t, tc.EntityUser)
 		t.Run(tc.testName, func(t *testing.T) {
-			if tc.entityCategory == "building" {
-				setupCreateEntityMockExpectations(&mockDB, mockCache, tc.entityCategory, tc.entityName, tc.entityNotes, tc.entityUser, strconv.Itoa(int(tc.entityID)), tc.entityAddress)
-			} else {
-				setupCreateEntityMockExpectations(&mockDB, mockCache, tc.entityCategory, tc.entityName, tc.entityNotes, tc.entityUser, strconv.Itoa(int(tc.entityID)))
+			if tc.EntityCategory == "building" && tc.validData {
+				setupCreateEntityMockExpectations(&mockDB, mockCache, tc.EntityCategory, tc.EntityName, tc.EntityNotes, tc.EntityUser, strconv.Itoa(int(tc.EntityID)), tc.EntityAddress)
+			} else if tc.validData {
+				setupCreateEntityMockExpectations(&mockDB, mockCache, tc.EntityCategory, tc.EntityName, tc.EntityNotes, tc.EntityUser, strconv.Itoa(int(tc.EntityID)), tc.ParentID, tc.ParentCategory)
 			}
 
-			values := map[string]string{"name": tc.entityName, "notes": tc.entityNotes, "category": tc.entityCategory}
-			if tc.entityCategory == "building" {
-				values = map[string]string{"name": tc.entityName, "notes": tc.entityNotes, "category": tc.entityCategory, "address": tc.entityAddress}
-			}
-
-			payload, err := json.Marshal(values)
+			payload, err := json.Marshal(tc)
 			if err != nil {
 				t.Fatalf("Failed to marshal json: %v", err)
 			}
@@ -327,7 +343,14 @@ func TestCreateEntityValid(t *testing.T) {
 			}
 			defer res.Body.Close()
 
-			validateCreateEntitySuccessResponse(t, res, mockDB, mockCache, tc.entityID)
+			if tc.validData {
+				validateCreateEntitySuccessResponse(t, res, mockDB, mockCache, tc.EntityID)
+			} else {
+				if res.StatusCode != http.StatusBadRequest {
+					t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusBadRequest, res.StatusCode)
+				}
+			}
+
 		})
 	}
 }

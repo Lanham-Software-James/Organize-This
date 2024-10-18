@@ -253,13 +253,13 @@ func (repo Repository) FlushEntities(ctx context.Context, userID string) {
 
 	getAllEntitiesPattern := `{"CacheKey":{"User":"` + userID + `","Function":"GetAllEntities"},*`
 
-	patterns := map[string]string{
-		"countEntities":    `{"User":"` + userID + `","Function":"CountEntities"}`,
-		"itemParents":      `{"User":"` + userID + `","Function":"GetItemParents"}`,
-		"containerParents": `{"User":"` + userID + `","Function":"GetContainerParents"}`,
-		"shelfParents":     `{"User":"` + userID + `","Function":"GetShelfParents"}`,
-		"unitParents":      `{"User":"` + userID + `","Function":"GetShelving_unitParents"}`,
-		"roomParents":      `{"User":"` + userID + `","Function":"GetRoomParents"}`,
+	patterns := []string{
+		`{"User":"` + userID + `","Function":"CountEntities"}`,
+		`{"User":"` + userID + `","Function":"GetItemParents"}`,
+		`{"User":"` + userID + `","Function":"GetContainerParents"}`,
+		`{"User":"` + userID + `","Function":"GetShelfParents"}`,
+		`{"User":"` + userID + `","Function":"GetShelving_unitParents"}`,
+		`{"User":"` + userID + `","Function":"GetRoomParents"}`,
 	}
 
 	keys, err := repo.Cache.Keys(ctx, getAllEntitiesPattern).Result()

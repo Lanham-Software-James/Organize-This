@@ -25,7 +25,8 @@ func (handler Handler) CreateEntity(w http.ResponseWriter, request *http.Request
 	}
 
 	var parsedData map[string]string
-	if err = json.Unmarshal(byteData, &parsedData); err != nil {
+	err = json.Unmarshal(byteData, &parsedData)
+	if err != nil {
 		logAndRespond(w, "Error parsing json", err)
 		return
 	}
@@ -123,7 +124,7 @@ func (handler Handler) GetEntity(w http.ResponseWriter, request *http.Request) {
 		model = &models.Shelf{
 			Entity: entity,
 		}
-	case "shelvingunit":
+	case "shelving_unit":
 		model = &models.ShelvingUnit{
 			Entity: entity,
 		}
@@ -337,7 +338,7 @@ func buildEntity(entity models.Entity, parent models.Parent, category string, ad
 			Parent: parent,
 		}
 		break
-	case "shelvingunit":
+	case "shelving_unit":
 		model = &models.ShelvingUnit{
 			Entity: entity,
 			Parent: parent,
