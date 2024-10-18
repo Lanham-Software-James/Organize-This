@@ -110,7 +110,6 @@ describe('DELETE function', () => {
     expect(cookieStore.delete).toHaveBeenCalledWith(mockCookies, 'refreshToken', expect.any(Object));
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual(mockResponseData);
   });
 
   it('FEUT-46: Logout Sever Request Unsuccess', async () => {

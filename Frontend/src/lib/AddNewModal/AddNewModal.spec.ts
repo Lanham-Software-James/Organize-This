@@ -24,8 +24,11 @@ describe("Unit Tests for createEntity()", () => {
             category: 'item',
             name: 'Test item',
             address: '',
-            notes: 'Test notes'
+            notes: 'Test notes',
+            parent: '1-container',
         };
+
+        const parentData = formData.parent.split('-')
 
         const createItemResponse = {
             data: 10,
@@ -44,7 +47,9 @@ describe("Unit Tests for createEntity()", () => {
                     address: formData.address,
                     category: formData.category,
                     name: formData.name,
-                    notes: formData.notes
+                    notes: formData.notes,
+                    parentID: parentData[0],
+                    parentCategory: parentData[1],
                 }),
             }
         );
@@ -57,8 +62,11 @@ describe("Unit Tests for createEntity()", () => {
             category: 'container',
             name: 'Test container',
             address: '',
-            notes: 'Test notes'
+            notes: 'Test notes',
+            parent: '1-shelf',
         };
+
+        const parentData = formData.parent.split('-')
 
         const createContainerResponse = {
             data: 10,
@@ -77,7 +85,9 @@ describe("Unit Tests for createEntity()", () => {
                     address: formData.address,
                     category: formData.category,
                     name: formData.name,
-                    notes: formData.notes
+                    notes: formData.notes,
+                    parentID: parentData[0],
+                    parentCategory: parentData[1],
                 }),
             }
         );
@@ -90,8 +100,11 @@ describe("Unit Tests for createEntity()", () => {
             category: 'shelf',
             name: 'Test shelf',
             address: '',
-            notes: 'Test notes'
+            notes: 'Test notes',
+            parent: '1-shelving_unit',
         };
+
+        const parentData = formData.parent.split('-')
 
         const createShelfResponse = {
             data: 10,
@@ -110,7 +123,9 @@ describe("Unit Tests for createEntity()", () => {
                     address: formData.address,
                     category: formData.category,
                     name: formData.name,
-                    notes: formData.notes
+                    notes: formData.notes,
+                    parentID: parentData[0],
+                    parentCategory: parentData[1],
                 }),
             }
         );
@@ -123,8 +138,11 @@ describe("Unit Tests for createEntity()", () => {
             category: 'shelvingunit',
             name: 'Test shelving unit',
             address: '',
-            notes: 'Test notes'
+            notes: 'Test notes',
+            parent: '1-room',
         };
+
+        const parentData = formData.parent.split('-')
 
         const createUnitResponse = {
             data: 10,
@@ -143,7 +161,9 @@ describe("Unit Tests for createEntity()", () => {
                     address: formData.address,
                     category: formData.category,
                     name: formData.name,
-                    notes: formData.notes
+                    notes: formData.notes,
+                    parentID: parentData[0],
+                    parentCategory: parentData[1],
                 }),
             }
         );
@@ -156,8 +176,11 @@ describe("Unit Tests for createEntity()", () => {
             category: 'room',
             name: 'Test room',
             address: '',
-            notes: 'Test notes'
+            notes: 'Test notes',
+            parent: '1-building',
         };
+
+        const parentData = formData.parent.split('-')
 
         const createRoomResponse = {
             data: 10,
@@ -176,7 +199,9 @@ describe("Unit Tests for createEntity()", () => {
                     address: formData.address,
                     category: formData.category,
                     name: formData.name,
-                    notes: formData.notes
+                    notes: formData.notes,
+                    parentID: parentData[0],
+                    parentCategory: parentData[1],
                 }),
             }
         );
@@ -189,8 +214,11 @@ describe("Unit Tests for createEntity()", () => {
             name: 'Test building',
             category: 'building',
             address: '888 test road',
-            notes: 'Test notes'
+            notes: 'Test notes',
+            parent: '',
         };
+
+        const parentData = formData.parent.split('-')
 
         const createBuildingResponse = {
             data: 10,
@@ -209,7 +237,9 @@ describe("Unit Tests for createEntity()", () => {
                     address: formData.address,
                     category: formData.category,
                     name: formData.name,
-                    notes: formData.notes
+                    notes: formData.notes,
+                    parentID: parentData[0],
+                    parentCategory: parentData[1],
                 }),
             }
         );
@@ -222,8 +252,11 @@ describe("Unit Tests for createEntity()", () => {
             name: '',
             category: '',
             address: '',
-            notes: ''
+            notes: '',
+            parent: '1-container',
         };
+
+        const parentData = formData.parent.split('-')
 
         const createBuildingResponse = {
             message: "bad request"
@@ -241,7 +274,9 @@ describe("Unit Tests for createEntity()", () => {
                     address: formData.address,
                     category: formData.category,
                     name: formData.name,
-                    notes: formData.notes
+                    notes: formData.notes,
+                    parentID: parentData[0],
+                    parentCategory: parentData[1],
                 }),
             }
         );
