@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"organize-this/infra/cache"
 	"organize-this/infra/logger"
 	"organize-this/models"
@@ -226,6 +227,7 @@ func (repo Repository) GetParents(ctx context.Context, category string, userID s
 			break
 		default:
 			logger.Errorf("Invalid category for entity.")
+			return nil, fmt.Errorf("Invalid category: %v", category)
 		}
 
 		if dbErr != nil {

@@ -212,8 +212,13 @@ func (handler Handler) EditEntity(w http.ResponseWriter, request *http.Request) 
 func (handler Handler) GetParents(w http.ResponseWriter, request *http.Request) {
 	category := chi.URLParam(request, "category")
 
-	if category == "" {
-		logAndRespond(w, "Missing category", nil)
+	if category != "item" &&
+		category != "container" &&
+		category != "shelf" &&
+		category != "shelving_unit" &&
+		category != "room" {
+		logAndRespond(w, "Invalid category", nil)
+		return
 	}
 
 	claims := request.Context().Value("user_claims").(jwt.MapClaims)

@@ -139,6 +139,30 @@ func setupGetEntitiesCacheMissMockExpectations(mockDB *sqlmock.Sqlmock, mockCach
 	mockCache.Regexp().ExpectSet(countCacheKey, ".*", 5*time.Minute).SetVal("OK")
 }
 
+func setupGetEntitiesCacheHitMockExpectations(mockCache redismock.ClientMock, userName string, offset string, limit string) {
+	if offset == "" {
+		offset = "0"
+	}
+
+	if limit == "" {
+		limit = "20"
+	}
+
+	cacheKey := fmt.Sprintf(`{"CacheKey":{"User":"%s","Function":"GetAllEntities"},"Offset":"%s","Limit":"%s"}`, userName, offset, limit)
+	countCacheKey := fmt.Sprintf(`{"User":"%s","Function":"CountEntities"}`, userName)
+
+	mockCache.ExpectGet(cacheKey).SetVal(`[
+											{"ID":36,"Name":"Home","Category":"building","Location":" ","Notes":"Some test notes for the building."},
+											{"ID":11,"Name":"Another Test Room","Category":"room","Location":" ","Notes":""},
+											{"ID":13,"Name":"Test Unit","Category":"shelving_unit","Location":" ","Notes":""},
+											{"ID":10,"Name":"Test Shelf","Category":"shelf","Location":" ","Notes":"Just some test notes for the test shelf."},
+											{"ID":11,"Name":"Test Container","Category":"container","Location":" ","Notes":"Just a test container notes."},
+											{"ID":85,"Name":"Test Entity","Category":"item","Location":" ","Notes":"Maybe."}
+										]`)
+
+	mockCache.ExpectGet(countCacheKey).SetVal("6")
+}
+
 func expectContainer(mockDB *sqlmock.Sqlmock, userName string) {
 	(*mockDB).ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "containers" WHERE user_id = $1 AND "containers"."id" = $2 ORDER BY "containers"."id" LIMIT 1`)).
 		WithArgs(userName, 1).
@@ -172,30 +196,6 @@ func expectBuilding(mockDB *sqlmock.Sqlmock, userName string) {
 		WithArgs(userName, 1).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "address", "notes", "created_at", "updated_at", "user_id"}).
 			AddRow(1, "Building 1", "123 address", "test notes", time.Now(), time.Now(), userName))
-}
-
-func setupGetEntitiesCacheHitMockExpectations(mockCache redismock.ClientMock, userName string, offset string, limit string) {
-	if offset == "" {
-		offset = "0"
-	}
-
-	if limit == "" {
-		limit = "20"
-	}
-
-	cacheKey := fmt.Sprintf(`{"CacheKey":{"User":"%s","Function":"GetAllEntities"},"Offset":"%s","Limit":"%s"}`, userName, offset, limit)
-	countCacheKey := fmt.Sprintf(`{"User":"%s","Function":"CountEntities"}`, userName)
-
-	mockCache.ExpectGet(cacheKey).SetVal(`[
-											{"ID":36,"Name":"Home","Category":"building","Location":" ","Notes":"Some test notes for the building."},
-											{"ID":11,"Name":"Another Test Room","Category":"room","Location":" ","Notes":""},
-											{"ID":13,"Name":"Test Unit","Category":"shelving_unit","Location":" ","Notes":""},
-											{"ID":10,"Name":"Test Shelf","Category":"shelf","Location":" ","Notes":"Just some test notes for the test shelf."},
-											{"ID":11,"Name":"Test Container","Category":"container","Location":" ","Notes":"Just a test container notes."},
-											{"ID":85,"Name":"Test Entity","Category":"item","Location":" ","Notes":"Maybe."}
-										]`)
-
-	mockCache.ExpectGet(countCacheKey).SetVal("6")
 }
 
 func validateGetEntitiesSuccessResponse(t *testing.T, res *http.Response, mockDB sqlmock.Sqlmock, mockCache redismock.ClientMock) {
