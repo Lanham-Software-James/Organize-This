@@ -100,6 +100,7 @@ func (handler Handler) GetEntity(w http.ResponseWriter, request *http.Request) {
 	id, err := strconv.ParseUint(idParam, 10, 64)
 	if err != nil {
 		logAndRespond(w, fmt.Sprintf("ID must be type integer: %v", idParam), nil)
+		return
 	}
 
 	claims := request.Context().Value("user_claims").(jwt.MapClaims)
@@ -138,6 +139,7 @@ func (handler Handler) GetEntity(w http.ResponseWriter, request *http.Request) {
 		}
 	default:
 		logAndRespond(w, fmt.Sprintf("Invalid Category: %v", category), nil)
+		return
 	}
 
 	dberr := handler.Repository.GetOne(model, userID)

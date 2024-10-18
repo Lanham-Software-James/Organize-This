@@ -36,7 +36,7 @@ type getEntitiesTestCase struct {
 	limit          string
 }
 
-var getEntityEndpoint = "/v1/entities"
+var getEntitiesEndpoint = "/v1/entities"
 
 func setupGetEntitiesTest(t *testing.T, userName string) (*http.Client, *httptest.Server, sqlmock.Sqlmock, redismock.ClientMock) {
 	ctrl := gomock.NewController(t)
@@ -52,7 +52,7 @@ func setupGetEntitiesTest(t *testing.T, userName string) (*http.Client, *httptes
 
 	r := chi.NewRouter()
 	r.Use(mocks.MockJWTMiddleware(userName))
-	r.Get(getEntityEndpoint, handler.GetEntities)
+	r.Get(getEntitiesEndpoint, handler.GetEntities)
 
 	srv := httptest.NewServer(r)
 	t.Cleanup(srv.Close)
@@ -243,7 +243,7 @@ func validateGetEntitiesSuccessResponse(t *testing.T, res *http.Response, mockDB
 }
 
 // TestCreateEntity runs the unit tests for invalid cases.
-func TestGetEntitites(t *testing.T) {
+func TestGetEntities(t *testing.T) {
 	cases := []getEntitiesTestCase{
 		{
 			testName:       "BEUT-27: Get Entities Valid URL Param Cache Miss",
@@ -351,7 +351,7 @@ func TestGetEntitites(t *testing.T) {
 				setupGetEntitiesCacheMissMockExpectations(&mockDB, mockCache, tc.testUser, tc.offset, tc.limit)
 			}
 
-			res, err := client.Get(fmt.Sprintf("%s%s?offset=%s&limit=%s", srv.URL, getEntityEndpoint, tc.offset, tc.limit))
+			res, err := client.Get(fmt.Sprintf("%s%s?offset=%s&limit=%s", srv.URL, getEntitiesEndpoint, tc.offset, tc.limit))
 			if err != nil {
 				t.Fatalf("Failed to send request: %v", err)
 			}
