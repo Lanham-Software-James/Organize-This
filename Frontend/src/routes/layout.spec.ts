@@ -19,7 +19,7 @@ describe('_logoutUser', () => {
     global.console.log = vi.fn();
   });
 
-  it('FEUT-10: Successful Logout', async () => {
+  it('FEUT-16: Successful Logout', async () => {
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
     });
@@ -37,7 +37,7 @@ describe('_logoutUser', () => {
     expect(goto).toHaveBeenCalledWith('/login');
   });
 
-  it('FEUT-11: Unsuccessful Logout', async () => {
+  it('FEUT-17: Unsuccessful Logout', async () => {
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: false,
     });

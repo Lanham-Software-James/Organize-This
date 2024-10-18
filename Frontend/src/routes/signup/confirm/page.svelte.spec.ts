@@ -13,7 +13,7 @@ describe('Home route', () => {
     vi.clearAllMocks();
   });
 
-  it('FEUT-25: Renders Confirm User Form', () => {
+  it('FEUT-31: Renders Confirm User Form', () => {
     const result = render(Page);
     expect(result.getByText('Confirm User Account')).toBeInTheDocument();
     expect(result.getByLabelText('Confirmation Code:')).toBeInTheDocument();
@@ -21,7 +21,7 @@ describe('Home route', () => {
     expect(result.getByRole('button', { name: 'Submit' })).toBeDisabled();
   });
 
-  it('FEUT-26: Confirm User Confirmation Code Validation', async () => {
+  it('FEUT-32: Confirm User Confirmation Code Validation', async () => {
     const result = render(Page);
     const input = result.getByLabelText('Confirmation Code:');
     const submitButton = result.getByRole('button', { name: 'Submit' });
@@ -38,7 +38,7 @@ describe('Home route', () => {
     expect(submitButton).not.toBeDisabled();
   });
 
-  it('FEUT-27: Confirm User Successful Submission', async () => {
+  it('FEUT-33: Confirm User Successful Submission', async () => {
     vi.mocked(_confirmUser).mockResolvedValue([true, '']);
     const result = render(Page);
     const input = result.getByLabelText('Confirmation Code:');
@@ -51,7 +51,7 @@ describe('Home route', () => {
     expect(result.queryByText(/error/i)).not.toBeInTheDocument();
   });
 
-  it('FEUT-28: Confirm User Unsuccessful Submission', async () => {
+  it('FEUT-34: Confirm User Unsuccessful Submission', async () => {
     vi.mocked(_confirmUser).mockResolvedValue([false, 'Invalid confirmation code']);
     const result = render(Page);
     const input = result.getByLabelText('Confirmation Code:');

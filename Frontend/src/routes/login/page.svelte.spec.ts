@@ -13,7 +13,7 @@ describe('LoginForm', () => {
         vi.clearAllMocks();
     });
 
-    it('FEUT-31: Renders Login Form', () => {
+    it('FEUT-37: Renders Login Form', () => {
         const result = render(Page);
         expect(result.getByText('Login')).toBeInTheDocument();
         expect(result.getByLabelText('Username:')).toBeInTheDocument();
@@ -22,7 +22,7 @@ describe('LoginForm', () => {
         expect(result.getByRole('button', { name: 'Submit' })).toBeDisabled();
     });
 
-    it('FEUT-32: Login Username', async () => {
+    it('FEUT-38: Login Username', async () => {
         const result = render(Page);
         const input = result.getByLabelText('Username:');
 
@@ -34,7 +34,7 @@ describe('LoginForm', () => {
         expect(result.queryByText('Username is required!')).not.toBeInTheDocument();
     });
 
-    it('FEUT-33: Login Password', async () => {
+    it('FEUT-39: Login Password', async () => {
         const result = render(Page);
         const input = result.getByLabelText('Password:');
 
@@ -46,7 +46,7 @@ describe('LoginForm', () => {
         expect(result.queryByText('Password is required!')).not.toBeInTheDocument();
     });
 
-    it('FEUT-34: Login Form Validation', async () => {
+    it('FEUT-40: Login Form Validation', async () => {
         const result = render(Page);
         const usernameInput = result.getByLabelText('Username:');
         const passwordInput = result.getByLabelText('Password:');
@@ -58,7 +58,7 @@ describe('LoginForm', () => {
         expect(submitButton).not.toBeDisabled();
     });
 
-    it('FEUT-35: Login Successful Submission', async () => {
+    it('FEUT-41: Login Successful Submission', async () => {
         vi.mocked(_loginUser).mockResolvedValue([true, '']);
         const result = render(Page);
 
@@ -77,7 +77,7 @@ describe('LoginForm', () => {
         expect(result.queryByText(/error/i)).not.toBeInTheDocument();
     });
 
-    it('FEUT-36: Login Unsuccessful Submission', async () => {
+    it('FEUT-42: Login Unsuccessful Submission', async () => {
         vi.mocked(_loginUser).mockResolvedValue([false, 'Invalid credentials']);
         const result = render(Page);
 

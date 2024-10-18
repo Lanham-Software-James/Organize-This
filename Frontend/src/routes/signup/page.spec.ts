@@ -18,7 +18,7 @@ describe('_signUpUser', () => {
     global.console.log = vi.fn();
   });
 
-  it('FEUT-23: Successful Sign Up', async () => {
+  it('FEUT-29: Successful Sign Up', async () => {
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
       json: vi.fn().mockResolvedValueOnce({}),
@@ -45,7 +45,7 @@ describe('_signUpUser', () => {
     expect(goto).toHaveBeenCalledWith('/signup/confirm');
   });
 
-  it('FEUT-24: Unsuccessful Sign Up', async () => {
+  it('FEUT-30: Unsuccessful Sign Up', async () => {
     const errorMessage = 'Email already exists';
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: false,

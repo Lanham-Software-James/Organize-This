@@ -19,7 +19,7 @@ describe("Unit Tests for _getEntities()", () => {
         vi.resetAllMocks();
     });
 
-    it("FEUT-8: Get Entities Successful Response", async () => {
+    it("FEUT-14: Get Entities Successful Response", async () => {
         let offset = 15;
         let limit = 25;
 
@@ -88,7 +88,7 @@ describe("Unit Tests for _getEntities()", () => {
         expect(entities).toEqual(getEntitiesResponse.data.Entities)
     });
 
-    it("FEUT-9: Get Entities Bad Response", async () => {
+    it("FEUT-15: Get Entities Bad Response", async () => {
         let offset = 15;
         let limit = 25;
 

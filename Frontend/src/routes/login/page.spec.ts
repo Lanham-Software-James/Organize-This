@@ -19,7 +19,7 @@ describe('_loginUser', () => {
     global.console.log = vi.fn();
   });
 
-  it('FEUT-37: Successful Login', async () => {
+  it('FEUT-43: Successful Login', async () => {
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
       json: vi.fn().mockResolvedValueOnce({}),
@@ -42,7 +42,7 @@ describe('_loginUser', () => {
     expect(goto).toHaveBeenCalledWith('/');
   });
 
-  it('FEUT-38: Unsuccessful Login', async () => {
+  it('FEUT-44: Unsuccessful Login', async () => {
     const errorMessage = 'Invalid credentials';
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: false,

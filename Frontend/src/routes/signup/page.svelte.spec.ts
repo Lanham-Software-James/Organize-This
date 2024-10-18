@@ -13,7 +13,7 @@ describe('SignUpForm', () => {
     vi.clearAllMocks();
   });
 
-  it('FEUT-14: Renders User Sign Up Form Correctly', () => {
+  it('FEUT-20: Renders User Sign Up Form Correctly', () => {
     const result = render(Page);
     expect(result.getByText('Sign Up')).toBeInTheDocument();
     expect(result.getByLabelText('Username:')).toBeInTheDocument();
@@ -26,7 +26,7 @@ describe('SignUpForm', () => {
     expect(result.getByRole('button', { name: 'Submit' })).toBeDisabled();
   });
 
-  it('FEUT-15: User Sign Up Username Field Validation', async () => {
+  it('FEUT-21: User Sign Up Username Field Validation', async () => {
     const result = render(Page);
     const input = result.getByLabelText('Username:');
 
@@ -38,7 +38,7 @@ describe('SignUpForm', () => {
     expect(result.queryByText('Username is required!')).not.toBeInTheDocument();
   });
 
-  it('FEUT-16: User Sign Up Password Field Validation', async () => {
+  it('FEUT-22: User Sign Up Password Field Validation', async () => {
     const result = render(Page);
     const passwordInput = result.getByLabelText('Password:');
     const confirmPasswordInput = result.getByLabelText('Confirm Password:');
@@ -56,7 +56,7 @@ describe('SignUpForm', () => {
     expect(result.queryByText('Passwords must match!')).not.toBeInTheDocument();
   });
 
-  it('FEUT-17: User Sign Up First Name Field Validation', async () => {
+  it('FEUT-23: User Sign Up First Name Field Validation', async () => {
     const result = render(Page);
     const input = result.getByLabelText('First Name:');
 
@@ -68,7 +68,7 @@ describe('SignUpForm', () => {
     expect(result.queryByText('First name is required!')).not.toBeInTheDocument();
   });
 
-  it('FEUT-18: User Sign Up Last Name Field Validation', async () => {
+  it('FEUT-24: User Sign Up Last Name Field Validation', async () => {
     const result = render(Page);
     const input = result.getByLabelText('Last Name:');
 
@@ -80,7 +80,7 @@ describe('SignUpForm', () => {
     expect(result.queryByText('Last name is required!')).not.toBeInTheDocument();
   });
 
-  it('FEUT-19: User Sign Up Birthday Field Validation', async () => {
+  it('FEUT-25: User Sign Up Birthday Field Validation', async () => {
     const result = render(Page);
     const input = result.getByLabelText('Birthday:');
 
@@ -92,7 +92,7 @@ describe('SignUpForm', () => {
     expect(result.queryByText('Birthday is required!')).not.toBeInTheDocument();
   });
 
-  it('FEUT-20: User Sign Up Form Validation', async () => {
+  it('FEUT-26: User Sign Up Form Validation', async () => {
     const result = render(Page);
     const usernameInput = result.getByLabelText('Username:');
     const passwordInput = result.getByLabelText('Password:');
@@ -112,7 +112,7 @@ describe('SignUpForm', () => {
     expect(submitButton).not.toBeDisabled();
   });
 
-  it('FEUT-21: Verify Successful User Sign Up Form Submission', async () => {
+  it('FEUT-27: Verify Successful User Sign Up Form Submission', async () => {
     vi.mocked(_signUpUser).mockResolvedValue([true, '']);
     const result = render(Page);
 
@@ -144,7 +144,7 @@ describe('SignUpForm', () => {
     expect(result.queryByText(/error/i)).not.toBeInTheDocument();
   });
 
-  it('FEUT-22: Verify Unsuccessful User Sign Up Form Submission', async () => {
+  it('FEUT-28: Verify Unsuccessful User Sign Up Form Submission', async () => {
     vi.mocked(_signUpUser).mockResolvedValue([false, 'Registration failed']);
     const result = render(Page);
 
