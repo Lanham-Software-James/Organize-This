@@ -19,7 +19,7 @@ describe("Unit Tests for _getEntities()", () => {
         vi.resetAllMocks();
     });
 
-    it("FEUT-8: Get Entities Successful Response", async () => {
+    it("FEUT-14: Get Entities Successful Response", async () => {
         let offset = 15;
         let limit = 25;
 
@@ -32,42 +32,42 @@ describe("Unit Tests for _getEntities()", () => {
                             ID: 25,
                             Name: "Test Item",
                             Category: "Item",
-                            Location: " ",
+                            Parent: [],
                             Notes: "Test notes"
                         },
                         {
                             ID: 26,
                             Name: "Test Container",
                             Category: "Container",
-                            Location: " ",
+                            Parent: [],
                             Notes: "Test notes"
                         },
                         {
                             ID: 27,
                             Name: "Test Shelf",
                             Category: "Shelf",
-                            Location: " ",
+                            Parent: [],
                             Notes: "Test notes"
                         },
                         {
                             ID: 28,
                             Name: "Test Shelving Unit",
                             Category: "Shelving Unit",
-                            Location: " ",
+                            Parent: [],
                             Notes: "Test notes"
                         },
                         {
                             ID: 29,
                             Name: "Test Room",
                             Category: "Room",
-                            Location: " ",
+                            Parent: [],
                             Notes: "Test notes"
                         },
                         {
                             ID: 30,
                             Name: "Test Building",
                             Category: "Building",
-                            Location: " ",
+                            Parent: [],
                             Notes: "Test notes"
                         },
                 ],
@@ -88,7 +88,7 @@ describe("Unit Tests for _getEntities()", () => {
         expect(entities).toEqual(getEntitiesResponse.data.Entities)
     });
 
-    it("FEUT-9: Get Entities Bad Response", async () => {
+    it("FEUT-15: Get Entities Bad Response", async () => {
         let offset = 15;
         let limit = 25;
 
@@ -112,7 +112,7 @@ describe("Unit Tests for _getEntities()", () => {
             ID: 0,
             Name: " ",
             Category: " ",
-            Location: " ",
+            Parent: [],
             Notes: " "
         }])
     });

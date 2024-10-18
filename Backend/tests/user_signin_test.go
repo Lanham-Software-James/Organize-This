@@ -127,7 +127,7 @@ func validateUserSignInResponse(t *testing.T, res *http.Response, expectedHTTP i
 func TestUserSignIn(t *testing.T) {
 	cases := []userSignInTestCase{
 		{
-			testName:          "BEUT-44: User Sign In Valid Data",
+			testName:          "BEUT-53: User Sign In Valid Data",
 			validData:         true,
 			incorrectPassword: false,
 			expectedHTTP:      http.StatusOK,
@@ -137,7 +137,7 @@ func TestUserSignIn(t *testing.T) {
 			Password:          "password",
 		},
 		{
-			testName:          "BEUT-45: User Sign In Incorrect Password",
+			testName:          "BEUT-54: User Sign In Incorrect Password",
 			validData:         true,
 			incorrectPassword: true,
 			expectedHTTP:      http.StatusUnauthorized,
@@ -147,7 +147,7 @@ func TestUserSignIn(t *testing.T) {
 			Password:          "password",
 		},
 		{
-			testName:        "BEUT-46: User Sign In Missing Email",
+			testName:        "BEUT-55: User Sign In Missing Email",
 			validData:       false,
 			expectedHTTP:    http.StatusBadRequest,
 			expectedMessage: "data validation failed",
@@ -156,7 +156,7 @@ func TestUserSignIn(t *testing.T) {
 			Password:        "152634",
 		},
 		{
-			testName:        "BEUT-47: User Sign In Missing Password",
+			testName:        "BEUT-56: User Sign In Missing Password",
 			validData:       false,
 			expectedHTTP:    http.StatusBadRequest,
 			expectedMessage: "data validation failed",

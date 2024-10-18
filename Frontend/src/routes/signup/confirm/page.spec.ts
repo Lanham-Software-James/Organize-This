@@ -19,7 +19,7 @@ describe('_confirmUser', () => {
     global.console.log = vi.fn();
   });
 
-  it('FEUT-29: Successful User Confirmation', async () => {
+  it('FEUT-35: Successful User Confirmation', async () => {
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
       json: vi.fn().mockResolvedValueOnce({}),
@@ -40,7 +40,7 @@ describe('_confirmUser', () => {
     expect(goto).toHaveBeenCalledWith('/login');
   });
 
-  it('FEUT-30: Unsuccessful User Confirmation', async () => {
+  it('FEUT-36: Unsuccessful User Confirmation', async () => {
     const errorMessage = 'Invalid confirmation code';
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: false,

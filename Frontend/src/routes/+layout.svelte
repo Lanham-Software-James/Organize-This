@@ -9,22 +9,14 @@
 	import css from 'highlight.js/lib/languages/css';
 	import javascript from 'highlight.js/lib/languages/javascript';
 	import typescript from 'highlight.js/lib/languages/typescript';
-
-	hljs.registerLanguage('xml', xml); // for HTML
-	hljs.registerLanguage('css', css);
-	hljs.registerLanguage('javascript', javascript);
-	hljs.registerLanguage('typescript', typescript);
-	storeHighlightJs.set(hljs);
-
-	// Floating UI for Popups
+	import { setContext } from 'svelte';
+    import { writable } from 'svelte/store';
+	import AddNewModal from '$lib/AddNewModal/AddNewModal.svelte';
+	import { _logoutUser as logoutUser } from './+layout';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/stores'
 	import { computePosition, autoUpdate, flip, shift, offset, arrow } from '@floating-ui/dom';
 	import { storePopup } from '@skeletonlabs/skeleton';
-	storePopup.set({ computePosition, autoUpdate, flip, shift, offset, arrow });
-
-	// Font Awesome
-	import '@fortawesome/fontawesome-free/css/all.min.css';
-
-	// Modal and drawers
 	import {
 		initializeStores,
 		Modal,
@@ -36,6 +28,16 @@
 		getDrawerStore,
 		Toast
 	} from '@skeletonlabs/skeleton';
+	import '@fortawesome/fontawesome-free/css/all.min.css';
+
+	hljs.registerLanguage('xml', xml); // for HTML
+	hljs.registerLanguage('css', css);
+	hljs.registerLanguage('javascript', javascript);
+	hljs.registerLanguage('typescript', typescript);
+	storeHighlightJs.set(hljs);
+
+	storePopup.set({ computePosition, autoUpdate, flip, shift, offset, arrow });
+
 	initializeStores();
 
 	const drawerStore = getDrawerStore();
@@ -50,23 +52,23 @@
 		drawerStore.open(drawerSettings);
 	}
 
-	import AddNewModal from '$lib/AddNewModal/AddNewModal.svelte';
-	import { _logoutUser as logoutUser } from './+layout';
-	import { goto } from '$app/navigation';
-	import { page } from '$app/stores'
+	const refreshPageStore = writable(false);
+
+    setContext('refreshPage', {
+        subscribe: refreshPageStore.subscribe,
+        refresh: () => refreshPageStore.update(n => !n)
+    });
+
 	$: isUserAuthed = $page.data.cookieExists satisfies boolean
 
 	const modalStore = getModalStore();
-	const modalRegistry: Record<string, ModalComponent> = {
-		addNewModal: { ref: AddNewModal }
-	};
 
 	function showModal() {
 		drawerStore.close();
 
 		const modal: ModalSettings = {
 			type: 'component',
-			component: 'addNewModal',
+			component: {ref: AddNewModal, props: {edit: false}},
 			title: 'Add New',
 			body: 'Please complete the form to add a new item, container, shelf, shelving unit, room, or building.'
 		};
@@ -136,7 +138,7 @@
 	{/if}
 </Drawer>
 
-<Modal components={modalRegistry} />
+<Modal />
 
 <Toast />
 

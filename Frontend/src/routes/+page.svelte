@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { Paginator, type PaginationSettings } from '@skeletonlabs/skeleton';
-	import { onMount } from 'svelte';
+	import { Paginator, type PaginationSettings, getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
+	import { getContext, onMount } from 'svelte';
 	import { _getEntities as getEntities, type GetEntitiesData } from './+page';
+	import AddNewModal from '$lib/AddNewModal/AddNewModal.svelte';
 
 	let entities: GetEntitiesData[] = [];
 	let offset = 0;
@@ -14,9 +15,22 @@
 		amounts: [5, 10, 15, 20, 25]
 	} satisfies PaginationSettings;
 
+	const refreshPage = getContext('refreshPage');
+
 	onMount(async function () {
-		[entities, paginationSettings.size] = await getEntities(offset, limit);
+		loadData();
+
+		//@ts-ignore
+        const unsubscribe = refreshPage.subscribe(() => {
+            loadData();
+        });
+
+        return unsubscribe;
 	});
+
+	async function loadData() {
+		[entities, paginationSettings.size] = await getEntities(offset, limit);
+	}
 
 	async function limitChange(e: CustomEvent) {
 		limit = e.detail;
@@ -29,6 +43,26 @@
 		offset = page * limit;
 
 		[entities, paginationSettings.size] = await getEntities(offset, limit);
+	}
+	const modalStore = getModalStore();
+
+	async function editEntity(id: number, category: string) {
+		const modal: ModalSettings = {
+			type: 'component',
+			component: {ref: AddNewModal, props: {edit: true, id: id, category: category}},
+			title: 'Edit Entity',
+			body: 'Please complete the form to edit an existing item, container, shelf, shelving unit, room, or building.'
+		};
+		modalStore.trigger(modal);
+	}
+
+	function cleanCategory(category: string): string {
+		var cleanedCategory = category;
+		if(cleanedCategory == "shelving_unit"){
+			cleanedCategory = "shelving unit"
+		}
+
+		return cleanedCategory
 	}
 </script>
 
@@ -54,10 +88,18 @@
 				</thead>
 				<tbody>
 					{#each entities as entity}
-						<tr>
-							<td>{entity.Name}</td>
-							<td class="hidden md:block">{entity.Category}</td>
-							<td>{entity.Location}</td>
+						<tr on:click={() => editEntity(entity.ID, entity.Category)}>
+							<td class="capitalize">{entity.Name}</td>
+							<td class="hidden md:block capitalize">{cleanCategory(entity.Category)}</td>
+							<td>
+								{#each [...entity.Parent].reverse() as parent, index}
+									<span class="capitalize">{parent.Name}</span>
+
+									{#if index < entity.Parent.length - 1}
+										<span>&nbsp;<i class="fa-solid fa-arrow-right"></i>&nbsp;</span>
+									{/if}
+								{/each}
+							</td>
 							<td class="hidden lg:block">{entity.Notes ?? ""}</td>
 						</tr>
 					{/each}

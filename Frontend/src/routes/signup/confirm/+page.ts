@@ -21,7 +21,7 @@ export const _confirmUser = async (formData: { confirmationCode: string; }): Pro
             message = data.data
         }
     } catch (error) {
-        console.log(error)
+        console.error(error)
     }
 
     if (success) {

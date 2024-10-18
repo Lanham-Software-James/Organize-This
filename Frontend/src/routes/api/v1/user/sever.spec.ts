@@ -22,7 +22,7 @@ describe('POST function', () => {
     global.fetch = vi.fn();
   });
 
-  it('FEUT-39: Create User Sever Request Success', async () => {
+  it('FEUT-45: Create User Sever Request Success', async () => {
     const mockRequest = {
       json: vi.fn().mockResolvedValue({
         userEmail: 'test@example.com',
@@ -62,7 +62,7 @@ describe('POST function', () => {
     expect(await response.json()).toEqual(mockResponseData);
   });
 
-  it('FEUT-40: Create User Sever Request Unsuccess', async () => {
+  it('FEUT-46: Create User Sever Request Unsuccess', async () => {
     const mockRequest = {
       json: vi.fn().mockResolvedValue({})
     };
@@ -85,7 +85,7 @@ describe('PUT function', () => {
     global.fetch = vi.fn();
   });
 
-  it('FEUT-41: Confirm User Sever Request Success', async () => {
+  it('FEUT-47: Confirm User Sever Request Success', async () => {
     const mockRequest = {
       json: vi.fn().mockResolvedValue({
         confirmationCode: '123456'
@@ -120,7 +120,7 @@ describe('PUT function', () => {
     expect(await response.json()).toEqual(mockResponseData);
   });
 
-  it('FEUT-42: Confirm User Sever Request Unsuccess', async () => {
+  it('FEUT-48: Confirm User Sever Request Unsuccess', async () => {
     const mockRequest = {
       json: vi.fn().mockResolvedValue({})
     };

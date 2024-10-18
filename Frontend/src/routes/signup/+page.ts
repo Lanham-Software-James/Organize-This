@@ -25,7 +25,7 @@ export const _signUpUser = async (formData: { userEmail: string; password: strin
             message = data.data
         }
     } catch (error) {
-        console.log(error)
+        console.error(error)
     }
 
     if (success) {

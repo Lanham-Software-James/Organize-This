@@ -11,6 +11,7 @@ import (
 	"organize-this/controllers"
 	"organize-this/repository"
 	"organize-this/tests/mocks"
+	"regexp"
 	"strconv"
 	"testing"
 
@@ -20,16 +21,16 @@ import (
 	"github.com/golang/mock/gomock"
 )
 
-type createSingleResponse struct {
-	Message string `json:"message"`
-	Data    uint   `json:"ID"`
+type editEntitySingleResponse struct {
+	Message string      `json:"message"`
+	Data    interface{} `json:"data"`
 }
 
-type createEntityTestCase struct {
+type editEntityTestCase struct {
 	testName       string `json:"-"`
 	validData      bool   `json:"-"`
 	EntityUser     string `json:"-"`
-	EntityID       uint   `json:"-"`
+	EntityID       string `json:"id"`
 	EntityName     string `json:"name"`
 	EntityNotes    string `json:"notes"`
 	EntityCategory string `json:"category"`
@@ -38,9 +39,9 @@ type createEntityTestCase struct {
 	ParentCategory string `json:"parentCategory"`
 }
 
-var endpoint = "/v1/entity"
+var editEntityEndpoint = "/v1/entity"
 
-func setupCreateEntityTest(t *testing.T, userName string) (*http.Client, *httptest.Server, sqlmock.Sqlmock, redismock.ClientMock) {
+func setupEditEntityTest(t *testing.T, userName string) (*http.Client, *httptest.Server, sqlmock.Sqlmock, redismock.ClientMock) {
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
 
@@ -54,7 +55,7 @@ func setupCreateEntityTest(t *testing.T, userName string) (*http.Client, *httpte
 
 	r := chi.NewRouter()
 	r.Use(mocks.MockJWTMiddleware(userName))
-	r.Post("/v1/entity", handler.CreateEntity)
+	r.Put("/v1/entity", handler.EditEntity)
 
 	srv := httptest.NewServer(r)
 	t.Cleanup(srv.Close)
@@ -62,35 +63,39 @@ func setupCreateEntityTest(t *testing.T, userName string) (*http.Client, *httpte
 	return &http.Client{}, srv, mockDB, mockCache
 }
 
-func setupCreateEntityMockExpectations(mockDB *sqlmock.Sqlmock, mockCache redismock.ClientMock, category string, args ...string) {
-	(*mockDB).ExpectBegin()
+func setupEditEntityMockExpectations(mockDB *sqlmock.Sqlmock, mockCache redismock.ClientMock, category string, args ...string) {
 
 	testName := args[0]
 	testNotes := args[1]
 	testUser := args[2]
-	testID := args[3]
+	testID, _ := strconv.Atoi(args[3])
 
 	tableName := category + "s"
 	if category == "shelf" {
 		tableName = "shelves"
 	}
 
-	query := fmt.Sprintf(`INSERT INTO "%s" \("name","notes","user_id","created_at","updated_at","parent_id","parent_category"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7\) RETURNING "id"`, tableName)
+	// Expect transaction to begin
+	(*mockDB).ExpectBegin()
+
+	// Expect the UPDATE operation
+	query := fmt.Sprintf(`UPDATE "%s" SET "name"=$1,"notes"=$2,"user_id"=$3,"created_at"=$4,"updated_at"=$5,"parent_id"=$6,"parent_category"=$7 WHERE "id" = $8`, tableName)
 	if category == "building" {
-		query = `INSERT INTO "buildings" \("name","notes","user_id","created_at","updated_at","address"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6\) RETURNING "id"`
+		query = `UPDATE "buildings" SET "name"=$1,"notes"=$2,"user_id"=$3,"created_at"=$4,"updated_at"=$5,"address"=$6 WHERE "id" = $7`
 	}
 
-	expectation := (*mockDB).ExpectQuery(query)
+	expectation := (*mockDB).ExpectExec(regexp.QuoteMeta(query))
 	if category == "building" {
 		testAddress := args[4]
-		expectation.WithArgs(testName, testNotes, testUser, sqlmock.AnyArg(), sqlmock.AnyArg(), testAddress)
+		expectation.WithArgs(testName, testNotes, testUser, sqlmock.AnyArg(), sqlmock.AnyArg(), testAddress, testID)
 	} else {
 		testParentID, _ := strconv.Atoi(args[4])
 		testParentCategory := args[5]
-		expectation.WithArgs(testName, testNotes, testUser, sqlmock.AnyArg(), sqlmock.AnyArg(), testParentID, testParentCategory)
+		expectation.WithArgs(testName, testNotes, testUser, sqlmock.AnyArg(), sqlmock.AnyArg(), testParentID, testParentCategory, testID)
 	}
-	expectation.WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(testID))
+	expectation.WillReturnResult(sqlmock.NewResult(0, 1))
 
+	// Expect transaction to be committed
 	(*mockDB).ExpectCommit()
 
 	keyVals := []string{
@@ -115,7 +120,7 @@ func setupCreateEntityMockExpectations(mockDB *sqlmock.Sqlmock, mockCache redism
 	}
 }
 
-func validateCreateEntitySuccessResponse(t *testing.T, res *http.Response, mockDB sqlmock.Sqlmock, mockCache redismock.ClientMock, testID uint) {
+func validateEditEntityResponse(t *testing.T, res *http.Response, mockDB sqlmock.Sqlmock, mockCache redismock.ClientMock) {
 	if res.StatusCode != http.StatusOK {
 		t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusOK, res.StatusCode)
 	}
@@ -125,7 +130,7 @@ func validateCreateEntitySuccessResponse(t *testing.T, res *http.Response, mockD
 		t.Errorf("Expected error to be nil. Got: %v", err)
 	}
 
-	contents := createSingleResponse{}
+	contents := editEntitySingleResponse{}
 	err = json.Unmarshal(data, &contents)
 	if err != nil {
 		t.Errorf("Expected error to be nil. Got: %v", err)
@@ -133,10 +138,6 @@ func validateCreateEntitySuccessResponse(t *testing.T, res *http.Response, mockD
 
 	if contents.Message != "success" {
 		t.Errorf("Expected message to be 'success'. Got: %s", contents.Message)
-	}
-
-	if contents.Data == testID {
-		t.Errorf("Expected data to be %v. Got: %v", testID, contents.Data)
 	}
 
 	if err := mockDB.ExpectationsWereMet(); err != nil {
@@ -148,42 +149,54 @@ func validateCreateEntitySuccessResponse(t *testing.T, res *http.Response, mockD
 	}
 }
 
-// TestCreateEntityValid runs the unit tests for the CreateEntity function with valid parameters.
-func TestCreateEntityValid(t *testing.T) {
-	cases := []createEntityTestCase{
+// TestEditEntityValid runs the unit tests for the EditEntity function with valid parameters.
+func TestEditEntityValid(t *testing.T) {
+	cases := []editEntityTestCase{
 		{
-			testName:       "BEUT-1: Create Entity Missing Name",
+			testName:       "BEUT-63: Edit Entity Missing ID",
 			validData:      false,
+			EntityName:     "test item",
 			EntityCategory: "item",
 			ParentID:       "10",
 			ParentCategory: "container",
 		},
 		{
-			testName:       "BEUT-2: Create Entity Missing Category",
+			testName:       "BEUT-64: Edit Entity Missing Name",
 			validData:      false,
+			EntityID:       "10",
+			EntityCategory: "item",
+			ParentID:       "10",
+			ParentCategory: "container",
+		},
+		{
+			testName:       "BEUT-65: Edit Entity Missing Category",
+			validData:      false,
+			EntityID:       "10",
 			EntityName:     "Test Container 1",
 			ParentID:       "10",
 			ParentCategory: "container",
 		},
 		{
-			testName:       "BEUT-3: Create Entity Missing Parent ID",
+			testName:       "BEUT-66: Edit Entity Missing Parent ID",
 			validData:      false,
+			EntityID:       "10",
 			EntityName:     "Test Container 1",
 			EntityCategory: "item",
 			ParentCategory: "container",
 		},
 		{
-			testName:       "BEUT-4: Create Entity Missing Parent Category",
+			testName:       "BEUT-67: Edit Entity Missing Parent Category",
 			validData:      false,
+			EntityID:       "10",
 			EntityName:     "Test Container 1",
 			EntityCategory: "item",
 			ParentID:       "10",
 		},
 		{
-			testName:       "BEUT-5: Create Entity Item Valid All Fields - Container",
+			testName:       "BEUT-68: Edit Entity Item Valid All Fields - Container",
 			validData:      true,
 			EntityUser:     "testuser",
-			EntityID:       10,
+			EntityID:       "10",
 			EntityName:     "Test Item 1",
 			EntityNotes:    "Test Notes for item 1",
 			EntityCategory: "item",
@@ -191,10 +204,10 @@ func TestCreateEntityValid(t *testing.T) {
 			ParentCategory: "container",
 		},
 		{
-			testName:       "BEUT-6: Create Entity Item Valid All Fields - Shelf",
+			testName:       "BEUT-69: Edit Entity Item Valid All Fields - Shelf",
 			validData:      true,
 			EntityUser:     "testuser",
-			EntityID:       10,
+			EntityID:       "10",
 			EntityName:     "Test Item 1",
 			EntityNotes:    "Test Notes for item 1",
 			EntityCategory: "item",
@@ -202,10 +215,10 @@ func TestCreateEntityValid(t *testing.T) {
 			ParentCategory: "shelf",
 		},
 		{
-			testName:       "BEUT-7: Create Entity Item Valid All Fields - Room",
+			testName:       "BEUT-70: Edit Entity Item Valid All Fields - Room",
 			validData:      true,
 			EntityUser:     "testuser",
-			EntityID:       10,
+			EntityID:       "10",
 			EntityName:     "Test Item 1",
 			EntityNotes:    "Test Notes for item 1",
 			EntityCategory: "item",
@@ -213,9 +226,9 @@ func TestCreateEntityValid(t *testing.T) {
 			ParentCategory: "room",
 		},
 		{
-			testName:       "BEUT-8: Create Entity Item Valid No Notes",
+			testName:       "BEUT-71: Edit Entity Item Valid No Notes",
 			validData:      true,
-			EntityID:       15,
+			EntityID:       "15",
 			EntityUser:     "testuser2",
 			EntityName:     "Test Item 2",
 			EntityNotes:    "",
@@ -224,7 +237,7 @@ func TestCreateEntityValid(t *testing.T) {
 			ParentCategory: "shelf",
 		},
 		{
-			testName:       "BEUT-9: Create Entity Item Invalid Parent Category",
+			testName:       "BEUT-72: Edit Entity Item Invalid Parent Category",
 			validData:      false,
 			EntityName:     "Test Container 1",
 			EntityCategory: "item",
@@ -232,9 +245,9 @@ func TestCreateEntityValid(t *testing.T) {
 			ParentCategory: "test",
 		},
 		{
-			testName:       "BEUT-10: Create Entity Container Valid All Fields - Shelf",
+			testName:       "BEUT-73: Edit Entity Container Valid All Fields - Shelf",
 			validData:      true,
-			EntityID:       20,
+			EntityID:       "20",
 			EntityUser:     "testuser3",
 			EntityName:     "Test Container 1",
 			EntityNotes:    "Test container notes 1",
@@ -243,9 +256,9 @@ func TestCreateEntityValid(t *testing.T) {
 			ParentCategory: "shelf",
 		},
 		{
-			testName:       "BEUT-11: Create Entity Container Valid All Fields - Room",
+			testName:       "BEUT-74: Edit Entity Container Valid All Fields - Room",
 			validData:      true,
-			EntityID:       20,
+			EntityID:       "20",
 			EntityUser:     "testuser3",
 			EntityName:     "Test Container 1",
 			EntityNotes:    "Test container notes 1",
@@ -254,9 +267,9 @@ func TestCreateEntityValid(t *testing.T) {
 			ParentCategory: "room",
 		},
 		{
-			testName:       "BEUT-12: Create Entity Container Valid No Notes",
+			testName:       "BEUT-75: Edit Entity Container Valid No Notes",
 			validData:      true,
-			EntityID:       25,
+			EntityID:       "25",
 			EntityUser:     "testuser4",
 			EntityName:     "Test Container 2",
 			EntityNotes:    "",
@@ -265,9 +278,9 @@ func TestCreateEntityValid(t *testing.T) {
 			ParentCategory: "room",
 		},
 		{
-			testName:       "BEUT-13: Create Entity Container Invalid Parent Category",
+			testName:       "BEUT-76: Edit Entity Container Invalid Parent Category",
 			validData:      false,
-			EntityID:       25,
+			EntityID:       "25",
 			EntityUser:     "testuser4",
 			EntityName:     "Test Container 2",
 			EntityNotes:    "",
@@ -276,9 +289,9 @@ func TestCreateEntityValid(t *testing.T) {
 			ParentCategory: "test",
 		},
 		{
-			testName:       "BEUT-14: Create Entity Shelf Valid All Fields",
+			testName:       "BEUT-77: Edit Entity Shelf Valid All Fields",
 			validData:      true,
-			EntityID:       30,
+			EntityID:       "30",
 			EntityUser:     "testuser5",
 			EntityName:     "Test Shelf 1",
 			EntityNotes:    "Test notes for shelf 1",
@@ -287,9 +300,9 @@ func TestCreateEntityValid(t *testing.T) {
 			ParentCategory: "shelving_unit",
 		},
 		{
-			testName:       "BEUT-15: Create Entity Shelf Valid No Notes",
+			testName:       "BEUT-78: Edit Entity Shelf Valid No Notes",
 			validData:      true,
-			EntityID:       35,
+			EntityID:       "35",
 			EntityUser:     "testuser6",
 			EntityName:     "Test Shelf 2",
 			EntityNotes:    "",
@@ -298,9 +311,9 @@ func TestCreateEntityValid(t *testing.T) {
 			ParentCategory: "shelving_unit",
 		},
 		{
-			testName:       "BEUT-16: Create Entity Shelf Invalid Parent Category",
+			testName:       "BEUT-79: Edit Entity Shelf Invalid Parent Category",
 			validData:      false,
-			EntityID:       30,
+			EntityID:       "30",
 			EntityUser:     "testuser5",
 			EntityName:     "Test Shelf 1",
 			EntityNotes:    "Test notes for shelf 1",
@@ -309,9 +322,9 @@ func TestCreateEntityValid(t *testing.T) {
 			ParentCategory: "test",
 		},
 		{
-			testName:       "BEUT-17: Create Entity Shelving Unit Valid All Fields",
+			testName:       "BEUT-80: Edit Entity Shelving Unit Valid All Fields",
 			validData:      true,
-			EntityID:       40,
+			EntityID:       "40",
 			EntityUser:     "testuser7",
 			EntityName:     "Test Shelving Unit 1",
 			EntityNotes:    "Test notes for shelving unit 1",
@@ -320,9 +333,9 @@ func TestCreateEntityValid(t *testing.T) {
 			ParentCategory: "room",
 		},
 		{
-			testName:       "BEUT-18: Create Entity Shelving Unit Valid No Notes",
+			testName:       "BEUT-81: Edit Entity Shelving Unit Valid No Notes",
 			validData:      true,
-			EntityID:       45,
+			EntityID:       "45",
 			EntityUser:     "testuser8",
 			EntityName:     "Test Shelving Unit 2",
 			EntityNotes:    "",
@@ -331,9 +344,9 @@ func TestCreateEntityValid(t *testing.T) {
 			ParentCategory: "room",
 		},
 		{
-			testName:       "BEUT-19: Create Entity Shelving Unit Invalid Parent Category",
+			testName:       "BEUT-82: Edit Entity Shelving Unit Invalid Parent Category",
 			validData:      false,
-			EntityID:       40,
+			EntityID:       "40",
 			EntityUser:     "testuser7",
 			EntityName:     "Test Shelving Unit 1",
 			EntityNotes:    "Test notes for shelving unit 1",
@@ -342,9 +355,9 @@ func TestCreateEntityValid(t *testing.T) {
 			ParentCategory: "test",
 		},
 		{
-			testName:       "BEUT-20: Create Entity Room Valid All Fields",
+			testName:       "BEUT-83: Edit Entity Room Valid All Fields",
 			validData:      true,
-			EntityID:       50,
+			EntityID:       "50",
 			EntityUser:     "testuser9",
 			EntityName:     "Test Room 1",
 			EntityNotes:    "Test notes for room 1",
@@ -353,9 +366,9 @@ func TestCreateEntityValid(t *testing.T) {
 			ParentCategory: "building",
 		},
 		{
-			testName:       "BEUT-21: Create Entity Room Valid No Notes",
+			testName:       "BEUT-84: Edit Entity Room Valid No Notes",
 			validData:      true,
-			EntityID:       55,
+			EntityID:       "55",
 			EntityUser:     "testuser10",
 			EntityName:     "Test Room 2",
 			EntityNotes:    "",
@@ -364,9 +377,9 @@ func TestCreateEntityValid(t *testing.T) {
 			ParentCategory: "building",
 		},
 		{
-			testName:       "BEUT-22: Create Entity Room Invalid Parent Category",
+			testName:       "BEUT-85: Edit Entity Room Invalid Parent Category",
 			validData:      false,
-			EntityID:       50,
+			EntityID:       "50",
 			EntityUser:     "testuser9",
 			EntityName:     "Test Room 1",
 			EntityNotes:    "Test notes for room 1",
@@ -375,9 +388,9 @@ func TestCreateEntityValid(t *testing.T) {
 			ParentCategory: "test",
 		},
 		{
-			testName:       "BEUT-23: Create Entity Building Valid All Fields",
+			testName:       "BEUT-86: Edit Entity Building Valid All Fields",
 			validData:      true,
-			EntityID:       60,
+			EntityID:       "60",
 			EntityUser:     "testuser11",
 			EntityName:     "Test Building 1",
 			EntityNotes:    "Test notes for building 1",
@@ -385,9 +398,9 @@ func TestCreateEntityValid(t *testing.T) {
 			EntityAddress:  "123 Test Rd",
 		},
 		{
-			testName:       "BEUT-24: Create Entity Building Valid No Notes",
+			testName:       "BEUT-87: Edit Entity Building Valid No Notes",
 			validData:      true,
-			EntityID:       65,
+			EntityID:       "65",
 			EntityUser:     "testuser12",
 			EntityName:     "Test Building 2",
 			EntityNotes:    "",
@@ -395,9 +408,9 @@ func TestCreateEntityValid(t *testing.T) {
 			EntityAddress:  "213 Test Rd",
 		},
 		{
-			testName:       "BEUT-25: Create Entity Building Valid No Address",
+			testName:       "BEUT-88: Edit Entity Building Valid No Address",
 			validData:      true,
-			EntityID:       70,
+			EntityID:       "70",
 			EntityUser:     "testuser13",
 			EntityName:     "Test Building 3",
 			EntityNotes:    "Test notes for building 3",
@@ -405,9 +418,9 @@ func TestCreateEntityValid(t *testing.T) {
 			EntityAddress:  "",
 		},
 		{
-			testName:       "BEUT-26: Create Entity Building Valid No Notes No Address",
+			testName:       "BEUT-89: Edit Entity Building Valid No Notes No Address",
 			validData:      true,
-			EntityID:       75,
+			EntityID:       "75",
 			EntityUser:     "testuser14",
 			EntityName:     "Test Building 4",
 			EntityNotes:    "",
@@ -417,27 +430,34 @@ func TestCreateEntityValid(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		client, srv, mockDB, mockCache := setupCreateEntityTest(t, tc.EntityUser)
+		client, srv, mockDB, mockCache := setupEditEntityTest(t, tc.EntityUser)
 		t.Run(tc.testName, func(t *testing.T) {
 			if tc.EntityCategory == "building" && tc.validData {
-				setupCreateEntityMockExpectations(&mockDB, mockCache, tc.EntityCategory, tc.EntityName, tc.EntityNotes, tc.EntityUser, strconv.Itoa(int(tc.EntityID)), tc.EntityAddress)
+				setupEditEntityMockExpectations(&mockDB, mockCache, tc.EntityCategory, tc.EntityName, tc.EntityNotes, tc.EntityUser, tc.EntityID, tc.EntityAddress)
 			} else if tc.validData {
-				setupCreateEntityMockExpectations(&mockDB, mockCache, tc.EntityCategory, tc.EntityName, tc.EntityNotes, tc.EntityUser, strconv.Itoa(int(tc.EntityID)), tc.ParentID, tc.ParentCategory)
+				setupEditEntityMockExpectations(&mockDB, mockCache, tc.EntityCategory, tc.EntityName, tc.EntityNotes, tc.EntityUser, tc.EntityID, tc.ParentID, tc.ParentCategory)
 			}
 
-			payload, err := json.Marshal(tc)
+			url := fmt.Sprintf("%s%s", srv.URL, editEntityEndpoint)
+
+			jsonBody, err := json.Marshal(tc)
 			if err != nil {
-				t.Fatalf("Failed to marshal json: %v", err)
+				t.Fatalf("Error marshalling json: %v", err)
 			}
 
-			res, err := client.Post(srv.URL+endpoint, "application/json", bytes.NewBuffer(payload))
+			req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(jsonBody))
+			if err != nil {
+				t.Fatalf("Failed to build request: %v", err)
+			}
+
+			res, err := client.Do(req)
 			if err != nil {
 				t.Fatalf("Failed to send request: %v", err)
 			}
 			defer res.Body.Close()
 
 			if tc.validData {
-				validateCreateEntitySuccessResponse(t, res, mockDB, mockCache, tc.EntityID)
+				validateEditEntityResponse(t, res, mockDB, mockCache)
 			} else {
 				if res.StatusCode != http.StatusBadRequest {
 					t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusBadRequest, res.StatusCode)

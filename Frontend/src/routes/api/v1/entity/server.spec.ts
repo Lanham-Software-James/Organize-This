@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { POST } from './+server'; // adjust this import to match your file structure
+import { POST, PUT } from './+server'; // adjust this import to match your file structure
 import { cookieStore } from '$lib/stores/cookieStore';
 
 // Mock the API_URL
@@ -23,7 +23,7 @@ describe('POST function', () => {
     global.fetch = vi.fn();
   });
 
-  it('FEUT-47: Create Entity Sever Request Success', async () => {
+  it('FEUT-53: Create Entity Sever Request Success', async () => {
     const mockCookies = {};
     const mockRequestBody = {
       address: '123 Test St',
@@ -61,7 +61,7 @@ describe('POST function', () => {
     expect(await response.json()).toEqual({ data: 'mock data' });
   });
 
-  it('FEUT-48: Create Entity Sever Request Unsuccess', async () => {
+  it('FEUT-54: Create Entity Sever Request Unsuccess', async () => {
     const mockCookies = {};
     const mockRequest = {
       json: vi.fn().mockResolvedValue({})
@@ -81,5 +81,64 @@ describe('POST function', () => {
     // Check if an empty response is returned
     expect(response.status).toBe(400);
     expect(await response.text()).toBe('{}');
+  });
+});
+
+describe('PUT function', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    global.fetch = vi.fn();
+  });
+
+  it('FEUT-55: Update Entity Server Request Success', async () => {
+    const mockCookies = {};
+    const mockRequestBody = {
+      id: '456',
+      address: '456 Update St',
+      category: 'Updated Category',
+      name: 'Updated Name',
+      notes: 'Updated Notes',
+      parentID: '789',
+      parentCategory: 'Updated Parent Category'
+    };
+
+    const mockRequest = {
+      json: vi.fn().mockResolvedValue(mockRequestBody)
+    };
+
+    vi.mocked(cookieStore.get).mockReturnValue('mock-token');
+    global.fetch = vi.fn().mockResolvedValue(new Response('{"data": "updated mock data"}', { status: 200 }));
+
+    const response = await PUT({ request: mockRequest, cookies: mockCookies });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://mock-api.com/v1/entity',
+      {
+        method: 'PUT',
+        headers: {
+          Authorization: 'Bearer mock-token'
+        },
+        body: JSON.stringify({...mockRequestBody, id: '456'})
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ data: 'updated mock data' });
+  });
+
+  it('FEUT-56: Update Entity Server Request Unsuccess', async () => {
+    const mockCookies = {};
+    const mockRequest = {
+      json: vi.fn().mockResolvedValue({id: '456'})
+    };
+
+    global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+    console.error = vi.fn();
+
+    const response = await PUT({ request: mockRequest, cookies: mockCookies });
+
+    expect(console.error).toHaveBeenCalledWith(new Error('Network error'));
+    expect(response.status).toBe(400);
+    expect(await response.text()).toBe(JSON.stringify(new Error('Network error')));
   });
 });

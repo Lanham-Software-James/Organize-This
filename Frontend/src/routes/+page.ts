@@ -9,8 +9,14 @@ export interface GetEntitiesData {
     ID: number,
     Name: string,
     Category: string,
-    Location: string,
+    Parent: Parent[],
     Notes: string
+}
+
+export interface Parent {
+    ID: number,
+    Name: string,
+    Category: string,
 }
 
 export const _getEntities = async (offset: number, limit: number): Promise<[GetEntitiesData[], number]> => {
@@ -36,7 +42,7 @@ export const _getEntities = async (offset: number, limit: number): Promise<[GetE
             ID: 0,
             Name: " ",
             Category: " ",
-            Location: " ",
+            Parent: [],
             Notes: " "
         })
     }

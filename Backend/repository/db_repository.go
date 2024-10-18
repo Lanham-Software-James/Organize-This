@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"organize-this/infra/cache"
 	"organize-this/infra/logger"
 	"organize-this/models"
@@ -12,6 +13,8 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"gorm.io/gorm"
 )
@@ -31,7 +34,7 @@ type GetEntitiesCacheKey struct {
 
 // Save is used to create a new record in the DB
 func (repo Repository) Save(model interface{}) interface{} {
-	err := repo.Database.Create(model).Error
+	err := repo.Database.Save(model).Error
 
 	if err != nil {
 		logger.Errorf("error, not save data %v", err)
@@ -40,11 +43,17 @@ func (repo Repository) Save(model interface{}) interface{} {
 	return err
 }
 
+// GetOne is used to get a single record from the DB
+func (repo Repository) GetOne(model interface{}, userID string) interface{} {
+	err := repo.Database.Where("user_id = ?", userID).First(model).Error
+	return err
+}
+
 // GetAllEntities returns all entities that belong to the user.
-func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset int, limit int) []models.GetEntitiesResponseData {
+func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset int, limit int) ([]models.GetEntitiesEntity, error) {
 	stringOffset := strconv.Itoa(offset)
 	stringLimit := strconv.Itoa(limit)
-	var results []models.GetEntitiesResponseData
+	var data []models.GetEntitiesEntity
 
 	cacheTTL := 5 * time.Minute
 	keyStructured := GetEntitiesCacheKey{
@@ -59,45 +68,61 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 	value, redisErr := repo.Cache.Get(ctx, string(key)).Result()
 	if redisErr != nil && !errors.Is(redisErr, redis.Nil) {
 		logger.Errorf("Error retriving entites from Redis: %v", redisErr)
-		return results
+		return nil, redisErr
 	}
 
 	if value == "" {
+		var results []models.GetEntitiesResponseData
 		dbErr := repo.Database.Raw(`
-			(SELECT 'building' AS category, id, name, notes, ' ' as location FROM buildings WHERE user_id = ? LIMIT `+stringLimit+`)
+			(SELECT 'building' AS category, id, name, notes, 0 AS parent_id, ' ' AS parent_category FROM buildings WHERE user_id = ? LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'room' AS category, id, name, notes, ' ' as location FROM rooms WHERE user_id = ? LIMIT `+stringLimit+`)
+			(SELECT 'room' AS category, id, name, notes, parent_id, parent_category FROM rooms WHERE user_id = ? LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'shelving_unit' AS category, id, name, notes, ' ' as location FROM shelving_units WHERE user_id = ? LIMIT `+stringLimit+`)
+			(SELECT 'shelving_unit' AS category, id, name, notes, parent_id, parent_category FROM shelving_units WHERE user_id = ? LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'shelf' AS category, id, name, notes, ' ' as location FROM shelves WHERE user_id = ? LIMIT `+stringLimit+`)
+			(SELECT 'shelf' AS category, id, name, notes, parent_id, parent_category FROM shelves WHERE user_id = ? LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'container' AS category, id, name, notes, ' ' as location FROM containers WHERE user_id = ? LIMIT `+stringLimit+`)
+			(SELECT 'container' AS category, id, name, notes, parent_id, parent_category FROM containers WHERE user_id = ? LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'item' AS category, id, name, notes, ' ' as location FROM items WHERE user_id = ? LIMIT `+stringLimit+`)
+			(SELECT 'item' AS category, id, name, notes, parent_id, parent_category FROM items WHERE user_id = ? LIMIT `+stringLimit+`)
 			 OFFSET `+stringOffset+
 			` LIMIT `+stringLimit, userID, userID, userID, userID, userID, userID).Scan(&results).Error
 
 		if dbErr != nil {
 			logger.Errorf("error executing query: %v", dbErr)
-			return results
+			return nil, dbErr
 		}
 
-		byteData, jsonErr := json.Marshal(results)
+		for _, entity := range results {
+			if entity.ParentID != 0 && entity.ParentCategory != "" {
+				var parents []models.GetEntitiesParentData
+				repo.getParents(entity.ParentID, entity.ParentCategory, userID, &parents)
+
+				data = append(data, models.GetEntitiesEntity{
+					ID:       entity.ID,
+					Name:     entity.Name,
+					Category: entity.Category,
+					Parent:   parents,
+					Notes:    entity.Notes,
+				})
+			}
+		}
+
+		byteData, jsonErr := json.Marshal(data)
 		if jsonErr != nil {
 			logger.Errorf("error executing query: %v", dbErr)
-			return results
+			return nil, jsonErr
 		}
 
 		repo.Cache.Set(ctx, string(key), byteData, cacheTTL)
 	} else {
-		jsonErr := json.Unmarshal([]byte(value), &results)
+		jsonErr := json.Unmarshal([]byte(value), &data)
 		if jsonErr != nil {
 			logger.Errorf("error executing query: %v", jsonErr)
 		}
 	}
 
-	return results
+	return data, nil
 }
 
 // CountEntities is used to count the total number of entities that belong to a user.
@@ -146,11 +171,100 @@ func (repo Repository) CountEntities(ctx context.Context, userID string) int {
 	return entityCount
 }
 
+// GetParents returns all the possible parents for an item.
+func (repo Repository) GetParents(ctx context.Context, category string, userID string) ([]models.GetEntitiesParentData, error) {
+	var results []models.GetEntitiesParentData
+
+	caser := cases.Title(language.AmericanEnglish)
+	capitalizedCategory := caser.String(category)
+
+	cacheTTL := 5 * time.Minute
+	keyStructured := cache.CacheKey{
+		User:     userID,
+		Function: "Get" + capitalizedCategory + "Parents",
+	}
+
+	key, _ := json.Marshal(keyStructured)
+	value, redisErr := repo.Cache.Get(ctx, string(key)).Result()
+	if redisErr != nil && !errors.Is(redisErr, redis.Nil) {
+		logger.Errorf("Error retriving entites from Redis: %v", redisErr)
+		return nil, redisErr
+	}
+
+	if value == "" {
+		var dbErr error
+		switch category {
+		case "item":
+			dbErr = repo.Database.Raw(`
+			(SELECT 'room' AS category, id, name FROM rooms WHERE user_id = ?)
+			UNION ALL
+			(SELECT 'shelf' AS category, id, name FROM shelves WHERE user_id = ?)
+			UNION ALL
+			(SELECT 'container' AS category, id, name FROM containers WHERE user_id = ?)`,
+				userID, userID, userID).Scan(&results).Error
+			break
+		case "container":
+			dbErr = repo.Database.Raw(`
+			(SELECT 'room' AS category, id, name FROM rooms WHERE user_id = ?)
+			UNION ALL
+			(SELECT 'shelf' AS category, id, name FROM shelves WHERE user_id = ?)`,
+				userID, userID).Scan(&results).Error
+			break
+		case "shelf":
+			dbErr = repo.Database.Raw(`
+			(SELECT 'shelving_unit' AS category, id, name FROM shelving_units WHERE user_id = ?)`,
+				userID).Scan(&results).Error
+			break
+		case "shelving_unit":
+			dbErr = repo.Database.Raw(`
+			(SELECT 'room' AS category, id, name FROM rooms WHERE user_id = ?)`,
+				userID).Scan(&results).Error
+			break
+		case "room":
+			dbErr = repo.Database.Raw(`
+			(SELECT 'building' AS category, id, name FROM buildings WHERE user_id = ?)`,
+				userID).Scan(&results).Error
+			break
+		default:
+			logger.Errorf("Invalid category for entity.")
+			return nil, fmt.Errorf("Invalid category: %v", category)
+		}
+
+		if dbErr != nil {
+			logger.Errorf("error executing query: %v", dbErr)
+			return nil, dbErr
+		}
+
+		byteData, jsonErr := json.Marshal(results)
+		if jsonErr != nil {
+			logger.Errorf("error executing query: %v", dbErr)
+			return nil, jsonErr
+		}
+
+		repo.Cache.Set(ctx, string(key), byteData, cacheTTL)
+	} else {
+		jsonErr := json.Unmarshal([]byte(value), &results)
+		if jsonErr != nil {
+			logger.Errorf("error executing query: %v", jsonErr)
+		}
+	}
+
+	return results, nil
+}
+
 // FlushEntities clears the redis cache of all things relating to entities
 func (repo Repository) FlushEntities(ctx context.Context, userID string) {
 
 	getAllEntitiesPattern := `{"CacheKey":{"User":"` + userID + `","Function":"GetAllEntities"},*`
-	countEntitiesPattern := `{"User":"` + userID + `","Function":"CountEntities"}`
+
+	patterns := []string{
+		`{"User":"` + userID + `","Function":"CountEntities"}`,
+		`{"User":"` + userID + `","Function":"GetItemParents"}`,
+		`{"User":"` + userID + `","Function":"GetContainerParents"}`,
+		`{"User":"` + userID + `","Function":"GetShelfParents"}`,
+		`{"User":"` + userID + `","Function":"GetShelving_unitParents"}`,
+		`{"User":"` + userID + `","Function":"GetRoomParents"}`,
+	}
 
 	keys, err := repo.Cache.Keys(ctx, getAllEntitiesPattern).Result()
 	if err != nil {
@@ -166,9 +280,123 @@ func (repo Repository) FlushEntities(ctx context.Context, userID string) {
 		}
 	}
 
-	err = repo.Cache.Del(ctx, countEntitiesPattern).Err()
-	if err != nil {
-		logger.Errorf("error clearing cache: %v", err)
-		return
+	for name, key := range patterns {
+		err = repo.Cache.Del(ctx, key).Err()
+		if err != nil {
+			logger.Errorf("error clearing cache key: %v. Error: %v", name, err)
+			return
+		}
 	}
+}
+
+func (repo Repository) getParents(parentID uint, parentCategory string, userID string, array *[]models.GetEntitiesParentData) error {
+	findEntity := models.Entity{
+		ID: uint64(parentID),
+	}
+
+	var parent models.GetEntitiesParentData
+	var recursiveID uint
+	var recursiveCategory string
+	switch parentCategory {
+	case "container":
+		model := &models.Container{
+			Entity: findEntity,
+		}
+
+		err := repo.GetOne(&model, userID)
+		if err != nil {
+			logger.Errorf("error executing query: %v", err)
+			return nil
+		}
+
+		parent = models.GetEntitiesParentData{
+			ID:       parentID,
+			Name:     model.Entity.Name,
+			Category: parentCategory,
+		}
+
+		recursiveID = uint(model.Parent.ParentID)
+		recursiveCategory = model.Parent.ParentCategory
+		break
+	case "shelf":
+		model := &models.Shelf{
+			Entity: findEntity,
+		}
+		err := repo.GetOne(&model, userID)
+		if err != nil {
+			logger.Errorf("error executing query: %v", err)
+			return nil
+		}
+
+		parent = models.GetEntitiesParentData{
+			ID:       parentID,
+			Name:     model.Entity.Name,
+			Category: parentCategory,
+		}
+		recursiveID = uint(model.Parent.ParentID)
+		recursiveCategory = model.Parent.ParentCategory
+		break
+	case "shelving_unit":
+		model := &models.ShelvingUnit{
+			Entity: findEntity,
+		}
+		err := repo.GetOne(&model, userID)
+		if err != nil {
+			logger.Errorf("error executing query: %v", err)
+			return nil
+		}
+
+		parent = models.GetEntitiesParentData{
+			ID:       parentID,
+			Name:     model.Entity.Name,
+			Category: parentCategory,
+		}
+		recursiveID = uint(model.Parent.ParentID)
+		recursiveCategory = model.Parent.ParentCategory
+		break
+	case "room":
+		model := &models.Room{
+			Entity: findEntity,
+		}
+		err := repo.GetOne(&model, userID)
+		if err != nil {
+			logger.Errorf("error executing query: %v", err)
+			return nil
+		}
+
+		parent = models.GetEntitiesParentData{
+			ID:       parentID,
+			Name:     model.Entity.Name,
+			Category: parentCategory,
+		}
+		recursiveID = uint(model.Parent.ParentID)
+		recursiveCategory = model.Parent.ParentCategory
+		break
+	case "building":
+		model := &models.Building{
+			Entity: findEntity,
+		}
+		err := repo.GetOne(&model, userID)
+		if err != nil {
+			logger.Errorf("error executing query: %v", err)
+			return nil
+		}
+
+		parent = models.GetEntitiesParentData{
+			ID:       parentID,
+			Name:     model.Entity.Name,
+			Category: parentCategory,
+		}
+		break
+	default:
+		logger.Errorf("Invalid Category: %v", parentCategory)
+	}
+
+	*array = append((*array), parent)
+
+	if parent.Category != "building" && recursiveID != 0 && recursiveCategory != "" {
+		repo.getParents(recursiveID, recursiveCategory, userID, array)
+	}
+
+	return nil
 }

@@ -23,7 +23,7 @@ describe('GET function', () => {
     global.fetch = vi.fn();
   });
 
-  it('FEUT-49: Get Entities Sever Request Success', async () => {
+  it('FEUT-57: Get Entities Sever Request Success', async () => {
     const mockCookies = {};
     const mockUrl = new URL('http://example.com?offset=0&limit=10');
 
@@ -50,7 +50,7 @@ describe('GET function', () => {
     expect(await response.json()).toEqual({ data: 'mock data' });
   });
 
-  it('FEUT-50: Get Entities Sever Request Unsuccess', async () => {
+  it('FEUT-58: Get Entities Sever Request Unsuccess', async () => {
     const mockCookies = {};
     const mockUrl = new URL('http://example.com?offset=0&limit=10');
 
