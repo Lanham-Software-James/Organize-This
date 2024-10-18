@@ -120,7 +120,7 @@ func setupEditEntityMockExpectations(mockDB *sqlmock.Sqlmock, mockCache redismoc
 	}
 }
 
-func validateEditEntityResponse(t *testing.T, res *http.Response, mockDB sqlmock.Sqlmock, mockCache redismock.ClientMock, testID string) {
+func validateEditEntityResponse(t *testing.T, res *http.Response, mockDB sqlmock.Sqlmock, mockCache redismock.ClientMock) {
 	if res.StatusCode != http.StatusOK {
 		t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusOK, res.StatusCode)
 	}
@@ -457,7 +457,7 @@ func TestEditEntityValid(t *testing.T) {
 			defer res.Body.Close()
 
 			if tc.validData {
-				validateEditEntityResponse(t, res, mockDB, mockCache, tc.EntityID)
+				validateEditEntityResponse(t, res, mockDB, mockCache)
 			} else {
 				if res.StatusCode != http.StatusBadRequest {
 					t.Errorf("Expected status code to be: %d. Got: %d.", http.StatusBadRequest, res.StatusCode)
