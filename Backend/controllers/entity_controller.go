@@ -182,7 +182,7 @@ func (handler Handler) EditEntity(w http.ResponseWriter, request *http.Request) 
 	helpers.SuccessResponse(w, model)
 }
 
-// DeleteEntity return void, but sends a single entity back to the client if it finds a match.
+// DeleteEntity return void, but sends a confirmation message to the client.
 func (handler Handler) DeleteEntity(w http.ResponseWriter, request *http.Request) {
 	category := chi.URLParam(request, "category")
 	idParam := chi.URLParam(request, "id")
