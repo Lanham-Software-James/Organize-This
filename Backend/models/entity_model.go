@@ -3,6 +3,8 @@ package models
 
 import (
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // Entity describes the attributes all entities have in common
@@ -13,4 +15,5 @@ type Entity struct {
 	UserID    string
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt
 }

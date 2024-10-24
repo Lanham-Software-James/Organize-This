@@ -47,6 +47,7 @@ func RegisterRoutes(r *chi.Mux) {
 			r.Post("/entity", handler.CreateEntity)
 			r.Put("/entity", handler.EditEntity)
 			r.Get("/entity/{category}/{id}", handler.GetEntity)
+			r.Delete("/entity/{category}/{id}", handler.DeleteEntity)
 			r.Get("/entities", handler.GetEntities)
 			r.Get("/parents/{category}", handler.GetParents)
 		})

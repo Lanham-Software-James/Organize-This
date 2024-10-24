@@ -6,4 +6,5 @@ type GetEntitiesEntity struct {
 	Category string
 	Parent   []GetEntitiesParentData
 	Notes    *string
+	Address  *string
 }
