@@ -117,9 +117,6 @@ export const getEntity = async(id: number, category: string): Promise<[string, g
         console.error(error)
     }
 
-
-
-
     return [message, entity]
 }
 
@@ -137,4 +134,29 @@ export const getParents = async(category: string): Promise<[string, parentData[]
     }
 
     return [message, parents]
+}
+
+export const deleteEntity = async(id: number, category: string): Promise<[string, string]> => {
+    let message: string = ""
+    let error: string = ""
+
+    const response = await fetch(
+        `${PUBLIC_API_URL}api/v1/entity/${category}/${id}`,
+        {
+            method: "DELETE"
+        }
+    );
+
+    try {
+       const data = await response.json()
+
+       message = data.message
+        if (message != "success") {
+            error = data.data
+        }
+    } catch (error) {
+        console.error(error)
+    }
+
+    return [message, error]
 }

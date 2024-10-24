@@ -49,7 +49,7 @@
 	async function editEntity(id: number, category: string) {
 		const modal: ModalSettings = {
 			type: 'component',
-			component: {ref: AddNewModal, props: {edit: true, id: id, category: category}},
+			component: {ref: AddNewModal, props: {edit: true, id: id, category: category, displayCategory: cleanCategory(category)}},
 			title: 'Edit Entity',
 			body: 'Please complete the form to edit an existing item, container, shelf, shelving unit, room, or building.'
 		};
