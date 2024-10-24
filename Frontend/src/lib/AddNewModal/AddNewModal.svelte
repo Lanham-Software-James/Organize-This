@@ -204,10 +204,16 @@
 		<!-- prettier-ignore -->
 		<footer class="modal-footer flex justify-between items-center">
 			{#if edit}
-				<label class="flex items-center space-x-2 capitalize">
-					<input class="checkbox" type="checkbox" bind:checked={formData.delete}/>
-					<p>Delete {displayCategory}</p>
-				</label>
+				<div class="flex flex-col">
+					<label class="flex items-center space-x-2 capitalize">
+						<input class="checkbox" type="checkbox" bind:checked={formData.delete}/>
+						<p>Delete {displayCategory}</p>
+					</label>
+
+					{#if formData.delete}
+						<p class="text-red-500 !mt-0">This cannot be undone!</p>
+					{/if}
+				</div>
 			{:else}
 				<div></div>
 			{/if}
