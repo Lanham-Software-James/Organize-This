@@ -48,7 +48,17 @@
 	var parents: parentData[] = [];
 
 	onMount(async function () {
-		if (edit) {
+		if(category == 'building' && edit) {
+			var  [entityMessage, entityData] = await getEntity(id, category);
+			if (entityMessage == 'success') {
+				formData.id = entityData.Entity.ID
+				formData.category = category
+				formData.name = entityData.Entity.Name
+				formData.address = entityData.Address || ''
+				formData.notes = entityData.Entity.Notes || ''
+			}
+		}
+		else if (category != 'building' && edit) {
 			var [[parentsMessage, parentsData], [entityMessage, entityData]] = await Promise.all([getParents(category), getEntity(id, category)]);
 			if (parentsMessage == 'success') {
 				parents = parentsData;

@@ -92,13 +92,17 @@
 							<td class="capitalize">{entity.Name}</td>
 							<td class="hidden md:block capitalize">{cleanCategory(entity.Category)}</td>
 							<td>
-								{#each [...entity.Parent].reverse() as parent, index}
-									<span class="capitalize">{parent.Name}</span>
+								{#if entity.Category == 'building'}
+									{entity.Address}
+								{:else}
+									{#each [...entity.Parent].reverse() as parent, index}
+										<span class="capitalize">{parent.Name}</span>
 
-									{#if index < entity.Parent.length - 1}
-										<span>&nbsp;<i class="fa-solid fa-arrow-right"></i>&nbsp;</span>
-									{/if}
-								{/each}
+										{#if index < entity.Parent.length - 1}
+											<span>&nbsp;<i class="fa-solid fa-arrow-right"></i>&nbsp;</span>
+										{/if}
+									{/each}
+								{/if}
 							</td>
 							<td class="hidden lg:block">{entity.Notes ?? ""}</td>
 						</tr>

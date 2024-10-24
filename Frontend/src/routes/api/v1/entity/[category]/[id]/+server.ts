@@ -8,7 +8,8 @@ export async function GET({ params, cookies }) {
         params.category == 'container' ||
         params.category == 'shelf' ||
         params.category == 'shelving_unit' ||
-        params.category == 'room')
+        params.category == 'room' ||
+        params.category == 'building')
     ){
         try {
             response = await fetch(

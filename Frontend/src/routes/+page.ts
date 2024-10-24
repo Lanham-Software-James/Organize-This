@@ -10,7 +10,8 @@ export interface GetEntitiesData {
     Name: string,
     Category: string,
     Parent: Parent[],
-    Notes: string
+    Notes: string,
+    Address?: string,
 }
 
 export interface Parent {

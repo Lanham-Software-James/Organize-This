@@ -74,17 +74,17 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 	if value == "" {
 		var results []models.GetEntitiesResponseData
 		dbErr := repo.Database.Raw(`
-			(SELECT 'building' AS category, id, name, notes, 0 AS parent_id, ' ' AS parent_category FROM buildings WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
+			(SELECT 'building' AS category, id, name, notes, address, 0 AS parent_id, ' ' AS parent_category FROM buildings WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'room' AS category, id, name, notes, parent_id, parent_category FROM rooms WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
+			(SELECT 'room' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM rooms WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'shelving_unit' AS category, id, name, notes, parent_id, parent_category FROM shelving_units WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
+			(SELECT 'shelving_unit' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM shelving_units WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'shelf' AS category, id, name, notes, parent_id, parent_category FROM shelves WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
+			(SELECT 'shelf' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM shelves WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'container' AS category, id, name, notes, parent_id, parent_category FROM containers WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
+			(SELECT 'container' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM containers WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'item' AS category, id, name, notes, parent_id, parent_category FROM items WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
+			(SELECT 'item' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM items WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
 			 OFFSET `+stringOffset+
 			` LIMIT `+stringLimit, userID, userID, userID, userID, userID, userID).Scan(&results).Error
 
