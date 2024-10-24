@@ -7,4 +7,5 @@ type GetEntitiesResponseData struct {
 	ParentID       uint
 	ParentCategory string
 	Notes          *string
+	Address        *string
 }

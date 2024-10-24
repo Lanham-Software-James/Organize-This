@@ -106,39 +106,13 @@ func (handler Handler) GetEntity(w http.ResponseWriter, request *http.Request) {
 	claims := request.Context().Value("user_claims").(jwt.MapClaims)
 	userID := claims["username"].(string)
 
-	var model interface{}
-
 	entity := models.Entity{
 		ID: id,
 	}
 
-	switch category {
-	case "item":
-		model = &models.Item{
-			Entity: entity,
-		}
-	case "container":
-		model = &models.Container{
-			Entity: entity,
-		}
-	case "shelf":
-		model = &models.Shelf{
-			Entity: entity,
-		}
-	case "shelving_unit":
-		model = &models.ShelvingUnit{
-			Entity: entity,
-		}
-	case "room":
-		model = &models.Room{
-			Entity: entity,
-		}
-	case "building":
-		model = &models.Building{
-			Entity: entity,
-		}
-	default:
-		logAndRespond(w, fmt.Sprintf("Invalid Category: %v", category), nil)
+	validEntity, model := buildEntity(entity, models.Parent{}, category, "")
+	if !validEntity {
+		logAndRespond(w, fmt.Sprintf("Invalid category %v.", category), nil)
 		return
 	}
 
@@ -206,6 +180,63 @@ func (handler Handler) EditEntity(w http.ResponseWriter, request *http.Request) 
 
 	handler.Repository.FlushEntities(request.Context(), userID)
 	helpers.SuccessResponse(w, model)
+}
+
+// DeleteEntity return void, but sends a single entity back to the client if it finds a match.
+func (handler Handler) DeleteEntity(w http.ResponseWriter, request *http.Request) {
+	category := chi.URLParam(request, "category")
+	idParam := chi.URLParam(request, "id")
+
+	id, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		logAndRespond(w, fmt.Sprintf("ID must be type integer: %v", idParam), nil)
+		return
+	}
+
+	claims := request.Context().Value("user_claims").(jwt.MapClaims)
+	userID := claims["username"].(string)
+
+	entity := models.Entity{
+		ID: id,
+	}
+
+	validEntity, model := buildEntity(entity, models.Parent{}, category, "")
+	if !validEntity {
+		logAndRespond(w, fmt.Sprintf("Invalid category %v.", category), nil)
+		return
+	}
+
+	dberr := handler.Repository.GetOne(model, userID)
+	if dberr != nil {
+		logAndRespond(w, fmt.Sprintf("Entity category of %v with id %v not found.", category, id), nil)
+		return
+	}
+
+	if category != "item" {
+		hasChildren, count, err := handler.Repository.HasChildren(entity.ID, category, userID)
+		if err != nil {
+			logAndRespond(w, "Issue getting children", err)
+			return
+		}
+
+		if hasChildren {
+			logAndRespond(w,
+				fmt.Sprintf("Cannot delete entity with children. Number of children: %d", count),
+				fmt.Errorf("Cannot delete entity with children. Number of children: %v", count))
+			return
+		}
+	}
+
+	dberr = handler.Repository.Delete(model, userID)
+	if dberr != nil {
+		logAndRespond(w,
+			fmt.Sprintf("Error deleting entity: %s - %d", category, id),
+			fmt.Errorf("Error deleting entity: %s - %d", category, id))
+		return
+	}
+
+	handler.Repository.FlushEntities(request.Context(), userID)
+	helpers.SuccessResponse(w, "Successfully Deleted!")
 }
 
 // GetParents returns void, but sends valid parents back to the client.

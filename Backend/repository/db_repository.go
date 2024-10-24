@@ -74,17 +74,17 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 	if value == "" {
 		var results []models.GetEntitiesResponseData
 		dbErr := repo.Database.Raw(`
-			(SELECT 'building' AS category, id, name, notes, 0 AS parent_id, ' ' AS parent_category FROM buildings WHERE user_id = ? LIMIT `+stringLimit+`)
+			(SELECT 'building' AS category, id, name, notes, 0 AS parent_id, ' ' AS parent_category FROM buildings WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'room' AS category, id, name, notes, parent_id, parent_category FROM rooms WHERE user_id = ? LIMIT `+stringLimit+`)
+			(SELECT 'room' AS category, id, name, notes, parent_id, parent_category FROM rooms WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'shelving_unit' AS category, id, name, notes, parent_id, parent_category FROM shelving_units WHERE user_id = ? LIMIT `+stringLimit+`)
+			(SELECT 'shelving_unit' AS category, id, name, notes, parent_id, parent_category FROM shelving_units WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'shelf' AS category, id, name, notes, parent_id, parent_category FROM shelves WHERE user_id = ? LIMIT `+stringLimit+`)
+			(SELECT 'shelf' AS category, id, name, notes, parent_id, parent_category FROM shelves WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'container' AS category, id, name, notes, parent_id, parent_category FROM containers WHERE user_id = ? LIMIT `+stringLimit+`)
+			(SELECT 'container' AS category, id, name, notes, parent_id, parent_category FROM containers WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'item' AS category, id, name, notes, parent_id, parent_category FROM items WHERE user_id = ? LIMIT `+stringLimit+`)
+			(SELECT 'item' AS category, id, name, notes, parent_id, parent_category FROM items WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
 			 OFFSET `+stringOffset+
 			` LIMIT `+stringLimit, userID, userID, userID, userID, userID, userID).Scan(&results).Error
 
@@ -103,6 +103,22 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 					Name:     entity.Name,
 					Category: entity.Category,
 					Parent:   parents,
+					Notes:    entity.Notes,
+				})
+			} else {
+				var parents []models.GetEntitiesParentData
+
+				parents = append(parents, models.GetEntitiesParentData{
+					ID:       0,
+					Name:     "-",
+					Category: "",
+				})
+				data = append(data, models.GetEntitiesEntity{
+					ID:       entity.ID,
+					Name:     entity.Name,
+					Category: entity.Category,
+					Parent:   parents,
+					Address:  entity.Address,
 					Notes:    entity.Notes,
 				})
 			}
@@ -144,12 +160,12 @@ func (repo Repository) CountEntities(ctx context.Context, userID string) int {
 	if value == "" {
 		err := repo.Database.Raw(`
 			SELECT
-				(SELECT COUNT(*) FROM buildings WHERE user_id = ?) +
-				(SELECT COUNT(*) FROM rooms WHERE user_id = ?) +
-				(SELECT COUNT(*) FROM shelving_units WHERE user_id = ?) +
-				(SELECT COUNT(*) FROM shelves WHERE user_id = ?) +
-				(SELECT COUNT(*) FROM containers WHERE user_id = ?) +
-				(SELECT COUNT(*) FROM items WHERE user_id = ?)
+				(SELECT COUNT(*) FROM buildings WHERE user_id = ? AND deleted_at IS NULL) +
+				(SELECT COUNT(*) FROM rooms WHERE user_id = ? AND deleted_at IS NULL) +
+				(SELECT COUNT(*) FROM shelving_units WHERE user_id = ? AND deleted_at IS NULL) +
+				(SELECT COUNT(*) FROM shelves WHERE user_id = ? AND deleted_at IS NULL) +
+				(SELECT COUNT(*) FROM containers WHERE user_id = ? AND deleted_at IS NULL) +
+				(SELECT COUNT(*) FROM items WHERE user_id = ? AND deleted_at IS NULL)
 			AS EntityCount
 		`, userID, userID, userID, userID, userID, userID).Scan(&entityCount).Error
 
@@ -169,6 +185,12 @@ func (repo Repository) CountEntities(ctx context.Context, userID string) int {
 	}
 
 	return entityCount
+}
+
+// Delete is used to soft delete a record from the DB
+func (repo Repository) Delete(model interface{}, userID string) interface{} {
+	err := repo.Database.Where("user_id = ?", userID).Delete(model).Error
+	return err
 }
 
 // GetParents returns all the possible parents for an item.
@@ -196,33 +218,33 @@ func (repo Repository) GetParents(ctx context.Context, category string, userID s
 		switch category {
 		case "item":
 			dbErr = repo.Database.Raw(`
-			(SELECT 'room' AS category, id, name FROM rooms WHERE user_id = ?)
+			(SELECT 'room' AS category, id, name FROM rooms WHERE user_id = ? AND deleted_at IS NULL)
 			UNION ALL
-			(SELECT 'shelf' AS category, id, name FROM shelves WHERE user_id = ?)
+			(SELECT 'shelf' AS category, id, name FROM shelves WHERE user_id = ? AND deleted_at IS NULL)
 			UNION ALL
-			(SELECT 'container' AS category, id, name FROM containers WHERE user_id = ?)`,
+			(SELECT 'container' AS category, id, name FROM containers WHERE user_id = ? AND deleted_at IS NULL)`,
 				userID, userID, userID).Scan(&results).Error
 			break
 		case "container":
 			dbErr = repo.Database.Raw(`
-			(SELECT 'room' AS category, id, name FROM rooms WHERE user_id = ?)
+			(SELECT 'room' AS category, id, name FROM rooms WHERE user_id = ? AND deleted_at IS NULL)
 			UNION ALL
-			(SELECT 'shelf' AS category, id, name FROM shelves WHERE user_id = ?)`,
+			(SELECT 'shelf' AS category, id, name FROM shelves WHERE user_id = ? AND deleted_at IS NULL)`,
 				userID, userID).Scan(&results).Error
 			break
 		case "shelf":
 			dbErr = repo.Database.Raw(`
-			(SELECT 'shelving_unit' AS category, id, name FROM shelving_units WHERE user_id = ?)`,
+			(SELECT 'shelving_unit' AS category, id, name FROM shelving_units WHERE user_id = ? AND deleted_at IS NULL)`,
 				userID).Scan(&results).Error
 			break
 		case "shelving_unit":
 			dbErr = repo.Database.Raw(`
-			(SELECT 'room' AS category, id, name FROM rooms WHERE user_id = ?)`,
+			(SELECT 'room' AS category, id, name FROM rooms WHERE user_id = ? AND deleted_at IS NULL)`,
 				userID).Scan(&results).Error
 			break
 		case "room":
 			dbErr = repo.Database.Raw(`
-			(SELECT 'building' AS category, id, name FROM buildings WHERE user_id = ?)`,
+			(SELECT 'building' AS category, id, name FROM buildings WHERE user_id = ? AND deleted_at IS NULL)`,
 				userID).Scan(&results).Error
 			break
 		default:
@@ -250,6 +272,76 @@ func (repo Repository) GetParents(ctx context.Context, category string, userID s
 	}
 
 	return results, nil
+}
+
+// HasChildren returns all the children for an entity.
+func (repo Repository) HasChildren(id uint64, category string, userID string) (bool, int, error) {
+	var childrenCount int
+	hasChildren := false
+
+	var dbErr error
+	switch category {
+	case "building":
+		dbErr = repo.Database.Raw(`
+			(SELECT count(id) AS childrenCount FROM rooms WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL)`,
+			userID,
+			id,
+			category,
+		).Scan(&childrenCount).Error
+		break
+	case "room":
+		dbErr = repo.Database.Raw(`
+			SELECT
+				(SELECT count(id) FROM shelving_units WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL) +
+				(SELECT count(id) FROM containers WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL) +
+				(SELECT count(id) FROM items WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL)
+			AS childrenCount`,
+			userID, id, category,
+			userID, id, category,
+			userID, id, category,
+		).Scan(&childrenCount).Error
+		break
+	case "shelving_unit":
+		dbErr = repo.Database.Raw(`
+			(SELECT count(id) AS childrenCount FROM shelves WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL)`,
+			userID,
+			id,
+			category,
+		).Scan(&childrenCount).Error
+		break
+	case "shelf":
+		dbErr = repo.Database.Raw(`
+			SELECT
+				(SELECT count(id) FROM containers WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL) +
+				(SELECT count(id) FROM items WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL)
+			AS childrenCount`,
+			userID, id, category,
+			userID, id, category,
+		).Scan(&childrenCount).Error
+		break
+	case "container":
+		dbErr = repo.Database.Raw(`
+			(SELECT count(id) AS childrenCount FROM items WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL)`,
+			userID,
+			id,
+			category,
+		).Scan(&childrenCount).Error
+		break
+	default:
+		logger.Errorf("Invalid category for retriving children.")
+		return false, 0, fmt.Errorf("Invalid category for retriving children: %v", category)
+	}
+
+	if dbErr != nil {
+		logger.Errorf("error executing query: %v", dbErr)
+		return false, 0, dbErr
+	}
+
+	if childrenCount > 0 {
+		hasChildren = true
+	}
+
+	return hasChildren, childrenCount, nil
 }
 
 // FlushEntities clears the redis cache of all things relating to entities
