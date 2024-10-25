@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createEntity, editEntity, getEntity, getParents } from './AddNewModal';
+import { createEntity, deleteEntity, editEntity, getEntity, getParents } from './AddNewModal';
 import { PUBLIC_API_URL } from '$env/static/public';
 
 // Define a type for the mock fetch function
@@ -464,6 +464,54 @@ describe("Unit Tests for Entity Functions", () => {
 
             expect(message).toEqual(getParentsResponse.message);
             expect(parents).toEqual([]);
+        });
+    });
+
+    describe("deleteEntity function", () => {
+        it("FEUT-75: Delete Entity Request - Successful", async () => {
+            const id = 1;
+            const category = 'item';
+
+            const deleteEntityResponse = {
+                message: "success",
+                data: null
+            };
+
+            (fetch as ReturnType<typeof vi.fn>).mockResolvedValue(createFetchResponse(deleteEntityResponse));
+
+            const [message, error] = await deleteEntity(id, category);
+
+            expect(global.fetch).toHaveBeenCalledWith(
+                `${PUBLIC_API_URL}api/v1/entity/${category}/${id}`,
+                {
+                    method: 'DELETE'
+                }
+            );
+            expect(message).toEqual(deleteEntityResponse.message);
+            expect(error).toEqual("");
+        });
+
+        it("FEUT-76: Delete Entity Request - Unsuccess", async () => {
+            const id = 999;
+            const category = 'item';
+
+            const deleteEntityResponse = {
+                message: "error",
+                data: "Entity not found"
+            };
+
+            (fetch as ReturnType<typeof vi.fn>).mockResolvedValue(createFetchResponse(deleteEntityResponse));
+
+            const [message, error] = await deleteEntity(id, category);
+
+            expect(global.fetch).toHaveBeenCalledWith(
+                `${PUBLIC_API_URL}api/v1/entity/${category}/${id}`,
+                {
+                    method: 'DELETE'
+                }
+            );
+            expect(message).toEqual(deleteEntityResponse.message);
+            expect(error).toEqual(deleteEntityResponse.data);
         });
     });
 });
