@@ -11,6 +11,7 @@ import (
 	"organize-this/controllers"
 	"organize-this/repository"
 	"organize-this/tests/mocks"
+	"regexp"
 	"strconv"
 	"testing"
 
@@ -75,19 +76,19 @@ func setupCreateEntityMockExpectations(mockDB *sqlmock.Sqlmock, mockCache redism
 		tableName = "shelves"
 	}
 
-	query := fmt.Sprintf(`INSERT INTO "%s" \("name","notes","user_id","created_at","updated_at","parent_id","parent_category"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6,\$7\) RETURNING "id"`, tableName)
+	query := fmt.Sprintf(`INSERT INTO "%s" ("name","notes","user_id","created_at","updated_at","deleted_at","parent_id","parent_category") VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING "id"`, tableName)
 	if category == "building" {
-		query = `INSERT INTO "buildings" \("name","notes","user_id","created_at","updated_at","address"\) VALUES \(\$1,\$2,\$3,\$4,\$5,\$6\) RETURNING "id"`
+		query = `INSERT INTO "buildings" ("name","notes","user_id","created_at","updated_at","deleted_at","address") VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING "id"`
 	}
 
-	expectation := (*mockDB).ExpectQuery(query)
+	expectation := (*mockDB).ExpectQuery(regexp.QuoteMeta(query))
 	if category == "building" {
 		testAddress := args[4]
-		expectation.WithArgs(testName, testNotes, testUser, sqlmock.AnyArg(), sqlmock.AnyArg(), testAddress)
+		expectation.WithArgs(testName, testNotes, testUser, sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), testAddress)
 	} else {
 		testParentID, _ := strconv.Atoi(args[4])
 		testParentCategory := args[5]
-		expectation.WithArgs(testName, testNotes, testUser, sqlmock.AnyArg(), sqlmock.AnyArg(), testParentID, testParentCategory)
+		expectation.WithArgs(testName, testNotes, testUser, sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), testParentID, testParentCategory)
 	}
 	expectation.WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(testID))
 

@@ -60,7 +60,6 @@ func setupGetEntityTest(t *testing.T, userName string) (*http.Client, *httptest.
 }
 
 func setupGetEntityMockExpectations(mockDB *sqlmock.Sqlmock, category string, userName string, entityID string) {
-
 	tableName := category + "s"
 	if category == "shelf" {
 		tableName = "shelves"
@@ -68,10 +67,10 @@ func setupGetEntityMockExpectations(mockDB *sqlmock.Sqlmock, category string, us
 
 	entityIDInt, _ := strconv.ParseInt(entityID, 10, 64)
 
-	expectedMainSQL := fmt.Sprintf(`SELECT \* FROM "%s" WHERE user_id = \$1 AND "%s"."id" = \$2 ORDER BY "%s"."id" LIMIT 1`, tableName, tableName, tableName)
+	expectedMainSQL := fmt.Sprintf(`SELECT \* FROM "%s" WHERE user_id = \$1 AND "%s"."deleted_at" IS NULL AND "%s"."id" = \$2 ORDER BY "%s"."id" LIMIT 1`, tableName, tableName, tableName, tableName)
 
-	rows := sqlmock.NewRows([]string{"id", "name", "notes", "user_id", "created_at", "updated_at", "parent_id", "parent_category"}).
-		AddRow(entityID, "Entity 1", "Notes", userName, time.Now(), time.Now(), 0, "")
+	rows := sqlmock.NewRows([]string{"id", "name", "notes", "user_id", "created_at", "updated_at", "deleted_at", "parent_id", "parent_category"}).
+		AddRow(entityID, "Entity 1", "Notes", userName, time.Now(), time.Now(), nil, 0, "")
 
 	(*mockDB).ExpectQuery(expectedMainSQL).
 		WithArgs(userName, entityIDInt).
