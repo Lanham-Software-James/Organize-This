@@ -64,11 +64,11 @@ func setupGetParentsCacheMissMockExpectations(mockDB *sqlmock.Sqlmock, mockCache
 	case "item":
 		cacheKey := fmt.Sprintf(`{"User":"%s","Function":"GetItemParents"}`, userName)
 		expectedSQL := `
-        (SELECT 'room' AS category, id, name FROM rooms WHERE user_id = $1)
+        (SELECT 'room' AS category, id, name FROM rooms WHERE user_id = $1 AND deleted_at IS NULL)
         UNION ALL
-        (SELECT 'shelf' AS category, id, name FROM shelves WHERE user_id = $2)
+        (SELECT 'shelf' AS category, id, name FROM shelves WHERE user_id = $2 AND deleted_at IS NULL)
         UNION ALL
-        (SELECT 'container' AS category, id, name FROM containers WHERE user_id = $3)`
+        (SELECT 'container' AS category, id, name FROM containers WHERE user_id = $3 AND deleted_at IS NULL)`
 
 		(*mockDB).ExpectQuery(regexp.QuoteMeta(expectedSQL)).
 			WithArgs(userName, userName, userName).
@@ -83,9 +83,9 @@ func setupGetParentsCacheMissMockExpectations(mockDB *sqlmock.Sqlmock, mockCache
 	case "container":
 		cacheKey := fmt.Sprintf(`{"User":"%s","Function":"GetContainerParents"}`, userName)
 		expectedSQL := `
-        (SELECT 'room' AS category, id, name FROM rooms WHERE user_id = $1)
+        (SELECT 'room' AS category, id, name FROM rooms WHERE user_id = $1 AND deleted_at IS NULL)
         UNION ALL
-        (SELECT 'shelf' AS category, id, name FROM shelves WHERE user_id = $2)`
+        (SELECT 'shelf' AS category, id, name FROM shelves WHERE user_id = $2 AND deleted_at IS NULL)`
 
 		(*mockDB).ExpectQuery(regexp.QuoteMeta(expectedSQL)).
 			WithArgs(userName, userName).
@@ -99,7 +99,7 @@ func setupGetParentsCacheMissMockExpectations(mockDB *sqlmock.Sqlmock, mockCache
 	case "shelf":
 		cacheKey := fmt.Sprintf(`{"User":"%s","Function":"GetShelfParents"}`, userName)
 		expectedSQL := `
-        (SELECT 'shelving_unit' AS category, id, name FROM shelving_units WHERE user_id = $1)`
+        (SELECT 'shelving_unit' AS category, id, name FROM shelving_units WHERE user_id = $1 AND deleted_at IS NULL)`
 
 		(*mockDB).ExpectQuery(regexp.QuoteMeta(expectedSQL)).
 			WithArgs(userName).
@@ -112,7 +112,7 @@ func setupGetParentsCacheMissMockExpectations(mockDB *sqlmock.Sqlmock, mockCache
 	case "shelving_unit":
 		cacheKey := fmt.Sprintf(`{"User":"%s","Function":"GetShelving_unitParents"}`, userName)
 		expectedSQL := `
-        (SELECT 'room' AS category, id, name FROM rooms WHERE user_id = $1)`
+        (SELECT 'room' AS category, id, name FROM rooms WHERE user_id = $1 AND deleted_at IS NULL)`
 
 		(*mockDB).ExpectQuery(regexp.QuoteMeta(expectedSQL)).
 			WithArgs(userName).
@@ -125,7 +125,7 @@ func setupGetParentsCacheMissMockExpectations(mockDB *sqlmock.Sqlmock, mockCache
 	case "room":
 		cacheKey := fmt.Sprintf(`{"User":"%s","Function":"GetRoomParents"}`, userName)
 		expectedSQL := `
-        (SELECT 'building' AS category, id, name FROM buildings WHERE user_id = $1)`
+        (SELECT 'building' AS category, id, name FROM buildings WHERE user_id = $1 AND deleted_at IS NULL)`
 
 		(*mockDB).ExpectQuery(regexp.QuoteMeta(expectedSQL)).
 			WithArgs(userName).
@@ -175,7 +175,6 @@ func setupGetParentsCacheHitMockExpectations(mockCache redismock.ClientMock, cat
 		]`)
 		break
 	}
-
 }
 
 func validateGetParentsSuccessResponse(t *testing.T, res *http.Response, mockDB sqlmock.Sqlmock, mockCache redismock.ClientMock) {

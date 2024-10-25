@@ -1,13 +1,14 @@
 <script lang="ts">
 	import { onMount, type SvelteComponent } from 'svelte';
 	import { getModalStore, getToastStore, type ToastSettings } from '@skeletonlabs/skeleton';
-	import { createEntity, editEntity, getEntity, getParents, type parentData } from './AddNewModal';
+	import { createEntity, deleteEntity, editEntity, getEntity, getParents, type parentData } from './AddNewModal';
 	import { getContext } from 'svelte';
 
 	export let parent: SvelteComponent;
 	export let edit: boolean;
 	export let id: number;
 	export let category: string;
+	export let displayCategory: string;
 
 	const modalStore = getModalStore();
 	const toastStore = getToastStore();
@@ -20,7 +21,8 @@
 		name: '',
 		address: '',
 		notes: '',
-		parent: ''
+		parent: '',
+		delete: false,
 	};
 
 	const entities = [
@@ -48,7 +50,17 @@
 	var parents: parentData[] = [];
 
 	onMount(async function () {
-		if (edit) {
+		if(category == 'building' && edit) {
+			var  [entityMessage, entityData] = await getEntity(id, category);
+			if (entityMessage == 'success') {
+				formData.id = entityData.Entity.ID
+				formData.category = category
+				formData.name = entityData.Entity.Name
+				formData.address = entityData.Address || ''
+				formData.notes = entityData.Entity.Notes || ''
+			}
+		}
+		else if (category != 'building' && edit) {
 			var [[parentsMessage, parentsData], [entityMessage, entityData]] = await Promise.all([getParents(category), getEntity(id, category)]);
 			if (parentsMessage == 'success') {
 				parents = parentsData;
@@ -99,7 +111,10 @@
 		const addEdit = edit ? 'edit' : 'add'
 
 		var message = ''
-		if(edit){
+		var error = ''
+		if(edit && formData.delete){
+			[message, error] = await deleteEntity(formData.id, formData.category);
+		} else if(edit){
 			[message, ] = await editEntity(formData);
 		} else {
 			[message, ] = await createEntity(formData);
@@ -114,6 +129,10 @@
 		} else {
 			toastMessage = `There was an issue ${addEdit}ing your item.`;
 			toastBackground = 'variant-filled-error';
+
+			if(error != '') {
+				toastMessage += '<br>' + error
+			}
 		}
 
 		const t: ToastSettings = {
@@ -181,10 +200,27 @@
 				bind:value={formData.notes}
 			/>
 		</form>
+
 		<!-- prettier-ignore -->
-		<footer class="modal-footer {parent.regionFooter}">
-			<button class="btn {parent.buttonNeutral}" on:click={parent.onClose}>{parent.buttonTextCancel}</button>
-			<button class="btn {parent.buttonPositive}" disabled={isFormInvalid} on:click={onFormSubmit}>{parent.buttonTextSubmit}</button>
+		<footer class="modal-footer flex justify-between items-center">
+			{#if edit}
+				<div class="flex flex-col">
+					<label class="flex items-center space-x-2 capitalize">
+						<input class="checkbox" type="checkbox" bind:checked={formData.delete}/>
+						<p>Delete {displayCategory}</p>
+					</label>
+
+					{#if formData.delete}
+						<p class="text-red-500 !mt-0">This cannot be undone!</p>
+					{/if}
+				</div>
+			{:else}
+				<div></div>
+			{/if}
+			<div>
+				<button class="btn {parent.buttonNeutral}" on:click={parent.onClose}>{parent.buttonTextCancel}</button>
+				<button class="btn {parent.buttonPositive}" disabled={isFormInvalid} on:click={onFormSubmit}>{parent.buttonTextSubmit}</button>
+			</div>
 		</footer>
 	</div>
 {/if}

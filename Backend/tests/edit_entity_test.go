@@ -64,7 +64,6 @@ func setupEditEntityTest(t *testing.T, userName string) (*http.Client, *httptest
 }
 
 func setupEditEntityMockExpectations(mockDB *sqlmock.Sqlmock, mockCache redismock.ClientMock, category string, args ...string) {
-
 	testName := args[0]
 	testNotes := args[1]
 	testUser := args[2]
@@ -79,19 +78,19 @@ func setupEditEntityMockExpectations(mockDB *sqlmock.Sqlmock, mockCache redismoc
 	(*mockDB).ExpectBegin()
 
 	// Expect the UPDATE operation
-	query := fmt.Sprintf(`UPDATE "%s" SET "name"=$1,"notes"=$2,"user_id"=$3,"created_at"=$4,"updated_at"=$5,"parent_id"=$6,"parent_category"=$7 WHERE "id" = $8`, tableName)
+	query := fmt.Sprintf(`UPDATE "%s" SET "name"=$1,"notes"=$2,"user_id"=$3,"created_at"=$4,"updated_at"=$5,"deleted_at"=$6,"parent_id"=$7,"parent_category"=$8 WHERE "%s"."deleted_at" IS NULL AND "id" = $9`, tableName, tableName)
 	if category == "building" {
-		query = `UPDATE "buildings" SET "name"=$1,"notes"=$2,"user_id"=$3,"created_at"=$4,"updated_at"=$5,"address"=$6 WHERE "id" = $7`
+		query = `UPDATE "buildings" SET "name"=$1,"notes"=$2,"user_id"=$3,"created_at"=$4,"updated_at"=$5,"deleted_at"=$6,"address"=$7 WHERE "buildings"."deleted_at" IS NULL AND "id" = $8`
 	}
 
 	expectation := (*mockDB).ExpectExec(regexp.QuoteMeta(query))
 	if category == "building" {
 		testAddress := args[4]
-		expectation.WithArgs(testName, testNotes, testUser, sqlmock.AnyArg(), sqlmock.AnyArg(), testAddress, testID)
+		expectation.WithArgs(testName, testNotes, testUser, sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), testAddress, testID)
 	} else {
 		testParentID, _ := strconv.Atoi(args[4])
 		testParentCategory := args[5]
-		expectation.WithArgs(testName, testNotes, testUser, sqlmock.AnyArg(), sqlmock.AnyArg(), testParentID, testParentCategory, testID)
+		expectation.WithArgs(testName, testNotes, testUser, sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), testParentID, testParentCategory, testID)
 	}
 	expectation.WillReturnResult(sqlmock.NewResult(0, 1))
 
