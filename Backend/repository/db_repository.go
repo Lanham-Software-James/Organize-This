@@ -30,6 +30,7 @@ type GetEntitiesCacheKey struct {
 	CacheKey cache.CacheKey
 	Offset   string
 	Limit    string
+	Search   string
 }
 
 // Save is used to create a new record in the DB
@@ -50,10 +51,19 @@ func (repo Repository) GetOne(model interface{}, userID string) interface{} {
 }
 
 // GetAllEntities returns all entities that belong to the user.
-func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset int, limit int) ([]models.GetEntitiesEntity, error) {
+func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset int, limit int, search string) ([]models.GetEntitiesEntity, error) {
 	stringOffset := strconv.Itoa(offset)
 	stringLimit := strconv.Itoa(limit)
 	var data []models.GetEntitiesEntity
+
+	searchSQL := ""
+	buildingSearchSQL := ""
+	filterSQL := ""
+
+	if search != "" {
+		searchSQL = "AND (name ILIKE '%" + search + "%' OR notes ILIKE '%" + search + "%')"
+		buildingSearchSQL = "AND (name ILIKE '%" + search + "%' OR notes ILIKE '%" + search + "%' OR address ILIKE '%" + search + "%')"
+	}
 
 	cacheTTL := 5 * time.Minute
 	keyStructured := GetEntitiesCacheKey{
@@ -63,6 +73,7 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 		},
 		Offset: stringOffset,
 		Limit:  stringLimit,
+		Search: search,
 	}
 	key, _ := json.Marshal(keyStructured)
 	value, redisErr := repo.Cache.Get(ctx, string(key)).Result()
@@ -74,17 +85,17 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 	if value == "" {
 		var results []models.GetEntitiesResponseData
 		dbErr := repo.Database.Raw(`
-			(SELECT 'building' AS category, id, name, notes, address, 0 AS parent_id, ' ' AS parent_category FROM buildings WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
+			(SELECT 'building' AS category, id, name, notes, address, 0 AS parent_id, ' ' AS parent_category FROM buildings WHERE user_id = ? AND deleted_at IS NULL `+buildingSearchSQL+` `+filterSQL+` LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'room' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM rooms WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
+			(SELECT 'room' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM rooms WHERE user_id = ? AND deleted_at IS NULL `+searchSQL+` `+filterSQL+` LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'shelving_unit' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM shelving_units WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
+			(SELECT 'shelving_unit' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM shelving_units WHERE user_id = ? AND deleted_at IS NULL `+searchSQL+` `+filterSQL+` LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'shelf' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM shelves WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
+			(SELECT 'shelf' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM shelves WHERE user_id = ? AND deleted_at IS NULL `+searchSQL+` `+filterSQL+` LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'container' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM containers WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
+			(SELECT 'container' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM containers WHERE user_id = ? AND deleted_at IS NULL `+searchSQL+` `+filterSQL+` LIMIT `+stringLimit+`)
 			UNION ALL
-			(SELECT 'item' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM items WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
+			(SELECT 'item' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM items WHERE user_id = ? AND deleted_at IS NULL `+searchSQL+` `+filterSQL+` LIMIT `+stringLimit+`)
 			 OFFSET `+stringOffset+
 			` LIMIT `+stringLimit, userID, userID, userID, userID, userID, userID).Scan(&results).Error
 
@@ -142,8 +153,16 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 }
 
 // CountEntities is used to count the total number of entities that belong to a user.
-func (repo Repository) CountEntities(ctx context.Context, userID string) int {
+func (repo Repository) CountEntities(ctx context.Context, userID string, search string) int {
 	var entityCount int
+	searchSQL := ""
+	buildingSearchSQL := ""
+	filterSQL := ""
+
+	if search != "" {
+		searchSQL = "AND (name ILIKE '%" + search + "%' OR notes ILIKE '%" + search + "%')"
+		buildingSearchSQL = "AND (name ILIKE '%" + search + "%' OR notes ILIKE '%" + search + "%' OR address ILIKE '%" + search + "%')"
+	}
 
 	cacheTTL := 5 * time.Minute
 	keyStructured := cache.CacheKey{
@@ -160,12 +179,12 @@ func (repo Repository) CountEntities(ctx context.Context, userID string) int {
 	if value == "" {
 		err := repo.Database.Raw(`
 			SELECT
-				(SELECT COUNT(*) FROM buildings WHERE user_id = ? AND deleted_at IS NULL) +
-				(SELECT COUNT(*) FROM rooms WHERE user_id = ? AND deleted_at IS NULL) +
-				(SELECT COUNT(*) FROM shelving_units WHERE user_id = ? AND deleted_at IS NULL) +
-				(SELECT COUNT(*) FROM shelves WHERE user_id = ? AND deleted_at IS NULL) +
-				(SELECT COUNT(*) FROM containers WHERE user_id = ? AND deleted_at IS NULL) +
-				(SELECT COUNT(*) FROM items WHERE user_id = ? AND deleted_at IS NULL)
+				(SELECT COUNT(*) FROM buildings WHERE user_id = ? AND deleted_at IS NULL `+buildingSearchSQL+` `+filterSQL+`) +
+				(SELECT COUNT(*) FROM rooms WHERE user_id = ? AND deleted_at IS NULL `+searchSQL+` `+filterSQL+`) +
+				(SELECT COUNT(*) FROM shelving_units WHERE user_id = ? AND deleted_at IS NULL `+searchSQL+` `+filterSQL+`) +
+				(SELECT COUNT(*) FROM shelves WHERE user_id = ? AND deleted_at IS NULL `+searchSQL+` `+filterSQL+`) +
+				(SELECT COUNT(*) FROM containers WHERE user_id = ? AND deleted_at IS NULL `+searchSQL+` `+filterSQL+`) +
+				(SELECT COUNT(*) FROM items WHERE user_id = ? AND deleted_at IS NULL `+searchSQL+` `+filterSQL+`)
 			AS EntityCount
 		`, userID, userID, userID, userID, userID, userID).Scan(&entityCount).Error
 
