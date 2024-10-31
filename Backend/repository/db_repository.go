@@ -33,6 +33,12 @@ type GetEntitiesCacheKey struct {
 	Search   string
 }
 
+// CountEntitiesCacheKey is an extension of cachekey that represents the structure of the keys in our cache for the count entities data.
+type CountEntitiesCacheKey struct {
+	CacheKey cache.CacheKey
+	Search   string
+}
+
 // Save is used to create a new record in the DB
 func (repo Repository) Save(model interface{}) interface{} {
 	err := repo.Database.Save(model).Error
@@ -56,15 +62,6 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 	stringLimit := strconv.Itoa(limit)
 	var data []models.GetEntitiesEntity
 
-	searchSQL := ""
-	buildingSearchSQL := ""
-	filterSQL := ""
-
-	if search != "" {
-		searchSQL = "AND (name ILIKE '%" + search + "%' OR notes ILIKE '%" + search + "%')"
-		buildingSearchSQL = "AND (name ILIKE '%" + search + "%' OR notes ILIKE '%" + search + "%' OR address ILIKE '%" + search + "%')"
-	}
-
 	cacheTTL := 5 * time.Minute
 	keyStructured := GetEntitiesCacheKey{
 		CacheKey: cache.CacheKey{
@@ -84,6 +81,15 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 
 	if value == "" {
 		var results []models.GetEntitiesResponseData
+		searchSQL := ""
+		buildingSearchSQL := ""
+		filterSQL := ""
+
+		if search != "" {
+			searchSQL = "AND (name ILIKE '%" + search + "%' OR notes ILIKE '%" + search + "%')"
+			buildingSearchSQL = "AND (name ILIKE '%" + search + "%' OR notes ILIKE '%" + search + "%' OR address ILIKE '%" + search + "%')"
+		}
+
 		dbErr := repo.Database.Raw(`
 			(SELECT 'building' AS category, id, name, notes, address, 0 AS parent_id, ' ' AS parent_category FROM buildings WHERE user_id = ? AND deleted_at IS NULL `+buildingSearchSQL+` `+filterSQL+` LIMIT `+stringLimit+`)
 			UNION ALL
@@ -155,20 +161,16 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 // CountEntities is used to count the total number of entities that belong to a user.
 func (repo Repository) CountEntities(ctx context.Context, userID string, search string) int {
 	var entityCount int
-	searchSQL := ""
-	buildingSearchSQL := ""
-	filterSQL := ""
-
-	if search != "" {
-		searchSQL = "AND (name ILIKE '%" + search + "%' OR notes ILIKE '%" + search + "%')"
-		buildingSearchSQL = "AND (name ILIKE '%" + search + "%' OR notes ILIKE '%" + search + "%' OR address ILIKE '%" + search + "%')"
-	}
 
 	cacheTTL := 5 * time.Minute
-	keyStructured := cache.CacheKey{
-		User:     userID,
-		Function: "CountEntities",
+	keyStructured := CountEntitiesCacheKey{
+		CacheKey: cache.CacheKey{
+			User:     userID,
+			Function: "CountEntities",
+		},
+		Search: search,
 	}
+
 	key, _ := json.Marshal(keyStructured)
 	value, redisErr := repo.Cache.Get(ctx, string(key)).Result()
 	if redisErr != nil && !errors.Is(redisErr, redis.Nil) {
@@ -177,6 +179,15 @@ func (repo Repository) CountEntities(ctx context.Context, userID string, search 
 	}
 
 	if value == "" {
+		searchSQL := ""
+		buildingSearchSQL := ""
+		filterSQL := ""
+
+		if search != "" {
+			searchSQL = "AND (name ILIKE '%" + search + "%' OR notes ILIKE '%" + search + "%')"
+			buildingSearchSQL = "AND (name ILIKE '%" + search + "%' OR notes ILIKE '%" + search + "%' OR address ILIKE '%" + search + "%')"
+		}
+
 		err := repo.Database.Raw(`
 			SELECT
 				(SELECT COUNT(*) FROM buildings WHERE user_id = ? AND deleted_at IS NULL `+buildingSearchSQL+` `+filterSQL+`) +
@@ -367,9 +378,9 @@ func (repo Repository) HasChildren(id uint64, category string, userID string) (b
 func (repo Repository) FlushEntities(ctx context.Context, userID string) {
 
 	getAllEntitiesPattern := `{"CacheKey":{"User":"` + userID + `","Function":"GetAllEntities"},*`
+	countEntitiesPattern := `{"CacheKey":{"User":"` + userID + `","Function":"CountEntities"},*`
 
 	patterns := []string{
-		`{"User":"` + userID + `","Function":"CountEntities"}`,
 		`{"User":"` + userID + `","Function":"GetItemParents"}`,
 		`{"User":"` + userID + `","Function":"GetContainerParents"}`,
 		`{"User":"` + userID + `","Function":"GetShelfParents"}`,
@@ -377,24 +388,25 @@ func (repo Repository) FlushEntities(ctx context.Context, userID string) {
 		`{"User":"` + userID + `","Function":"GetRoomParents"}`,
 	}
 
-	keys, err := repo.Cache.Keys(ctx, getAllEntitiesPattern).Result()
+	entitiesKeys, err := repo.Cache.Keys(ctx, getAllEntitiesPattern).Result()
 	if err != nil {
 		logger.Errorf("error getting cache keys: %v", err)
 		return
 	}
 
+	countKeys, err := repo.Cache.Keys(ctx, countEntitiesPattern).Result()
+	if err != nil {
+		logger.Errorf("error getting cache keys: %v", err)
+		return
+	}
+
+	keys := append(entitiesKeys, countKeys...)
+	keys = append(keys, patterns...)
+
 	for _, key := range keys {
 		err := repo.Cache.Del(ctx, key).Err()
 		if err != nil {
 			logger.Errorf("error clearing cache: %v", err)
-			return
-		}
-	}
-
-	for name, key := range patterns {
-		err = repo.Cache.Del(ctx, key).Err()
-		if err != nil {
-			logger.Errorf("error clearing cache key: %v. Error: %v", name, err)
 			return
 		}
 	}
