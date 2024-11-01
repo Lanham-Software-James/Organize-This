@@ -9,7 +9,9 @@ import (
 	"organize-this/infra/cache"
 	"organize-this/infra/logger"
 	"organize-this/models"
+	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -31,12 +33,14 @@ type GetEntitiesCacheKey struct {
 	Offset   string
 	Limit    string
 	Search   string
+	Filters  []string
 }
 
 // CountEntitiesCacheKey is an extension of cachekey that represents the structure of the keys in our cache for the count entities data.
 type CountEntitiesCacheKey struct {
 	CacheKey cache.CacheKey
 	Search   string
+	Filters  []string
 }
 
 // Save is used to create a new record in the DB
@@ -57,7 +61,7 @@ func (repo Repository) GetOne(model interface{}, userID string) interface{} {
 }
 
 // GetAllEntities returns all entities that belong to the user.
-func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset int, limit int, search string) ([]models.GetEntitiesEntity, error) {
+func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset int, limit int, search string, filters []string) ([]models.GetEntitiesEntity, error) {
 	stringOffset := strconv.Itoa(offset)
 	stringLimit := strconv.Itoa(limit)
 	var data []models.GetEntitiesEntity
@@ -68,9 +72,10 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 			User:     userID,
 			Function: "GetAllEntities",
 		},
-		Offset: stringOffset,
-		Limit:  stringLimit,
-		Search: search,
+		Offset:  stringOffset,
+		Limit:   stringLimit,
+		Search:  search,
+		Filters: filters,
 	}
 	key, _ := json.Marshal(keyStructured)
 	value, redisErr := repo.Cache.Get(ctx, string(key)).Result()
@@ -81,35 +86,145 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 
 	if value == "" {
 		var results []models.GetEntitiesResponseData
+		stringValues := []string{}
+		mainSQL := []string{}
+
 		searchSQL := ""
 		buildingSearchSQL := ""
-		filterSQL := ""
+		addSearch := false
 
+		// Dynamically build search query
 		if search != "" {
-			searchSQL = "AND (name ILIKE '%" + search + "%' OR notes ILIKE '%" + search + "%')"
-			buildingSearchSQL = "AND (name ILIKE '%" + search + "%' OR notes ILIKE '%" + search + "%' OR address ILIKE '%" + search + "%')"
+			search = strings.ToLower(search)
+			search = "%" + search + "%"
+			searchSQL = "AND (LOWER(name) LIKE ? OR LOWER(notes) LIKE ?)"
+			buildingSearchSQL = "AND (LOWER(name) LIKE ? OR LOWER(notes) LIKE ? OR LOWER(address) LIKE ?)"
+			addSearch = true
 		}
 
-		dbErr := repo.Database.Raw(`
-			(SELECT 'building' AS category, id, name, notes, address, 0 AS parent_id, ' ' AS parent_category FROM buildings WHERE user_id = ? AND deleted_at IS NULL `+buildingSearchSQL+` `+filterSQL+` LIMIT `+stringLimit+`)
-			UNION ALL
-			(SELECT 'room' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM rooms WHERE user_id = ? AND deleted_at IS NULL `+searchSQL+` `+filterSQL+` LIMIT `+stringLimit+`)
-			UNION ALL
-			(SELECT 'shelving_unit' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM shelving_units WHERE user_id = ? AND deleted_at IS NULL `+searchSQL+` `+filterSQL+` LIMIT `+stringLimit+`)
-			UNION ALL
-			(SELECT 'shelf' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM shelves WHERE user_id = ? AND deleted_at IS NULL `+searchSQL+` `+filterSQL+` LIMIT `+stringLimit+`)
-			UNION ALL
-			(SELECT 'container' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM containers WHERE user_id = ? AND deleted_at IS NULL `+searchSQL+` `+filterSQL+` LIMIT `+stringLimit+`)
-			UNION ALL
-			(SELECT 'item' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM items WHERE user_id = ? AND deleted_at IS NULL `+searchSQL+` `+filterSQL+` LIMIT `+stringLimit+`)
-			 OFFSET `+stringOffset+
-			` LIMIT `+stringLimit, userID, userID, userID, userID, userID, userID).Scan(&results).Error
+		// Build building query
+		if slices.Contains(filters, "building") || len(filters) == 0 {
+			query := `(SELECT 'building' AS category, id, name, notes, address, 0 AS parent_id, ' ' AS parent_category FROM buildings WHERE user_id = ? AND deleted_at IS NULL `
+			stringValues = append(stringValues, userID)
 
+			if addSearch {
+				query += buildingSearchSQL
+				stringValues = append(stringValues, search, search, search)
+			}
+
+			query += ` LIMIT ?)`
+			stringValues = append(stringValues, stringLimit)
+
+			mainSQL = append(mainSQL, query)
+		}
+
+		// Build room query
+		if slices.Contains(filters, "room") || len(filters) == 0 {
+			query := `(SELECT 'room' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM rooms WHERE user_id = ? AND deleted_at IS NULL `
+			stringValues = append(stringValues, userID)
+
+			if addSearch {
+				query += searchSQL
+				stringValues = append(stringValues, search, search)
+			}
+
+			query += ` LIMIT ?)`
+			stringValues = append(stringValues, stringLimit)
+
+			mainSQL = append(mainSQL, query)
+		}
+
+		// Build shelving unit query
+		if slices.Contains(filters, "shelving_unit") || len(filters) == 0 {
+			query := `(SELECT 'shelving_unit' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM shelving_units WHERE user_id = ? AND deleted_at IS NULL `
+			stringValues = append(stringValues, userID)
+
+			if addSearch {
+				query += searchSQL
+				stringValues = append(stringValues, search, search)
+			}
+
+			query += ` LIMIT ?)`
+			stringValues = append(stringValues, stringLimit)
+
+			mainSQL = append(mainSQL, query)
+		}
+
+		// Build shelf query
+		if slices.Contains(filters, "shelf") || len(filters) == 0 {
+			query := `(SELECT 'shelf' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM shelves WHERE user_id = ? AND deleted_at IS NULL `
+			stringValues = append(stringValues, userID)
+
+			if addSearch {
+				query += searchSQL
+				stringValues = append(stringValues, search, search)
+			}
+
+			query += ` LIMIT ?)`
+			stringValues = append(stringValues, stringLimit)
+
+			mainSQL = append(mainSQL, query)
+		}
+
+		// Build container query
+		if slices.Contains(filters, "container") || len(filters) == 0 {
+			query := `(SELECT 'container' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM containers WHERE user_id = ? AND deleted_at IS NULL `
+			stringValues = append(stringValues, userID)
+
+			if addSearch {
+				query += searchSQL
+				stringValues = append(stringValues, search, search)
+			}
+
+			query += ` LIMIT ?)`
+			stringValues = append(stringValues, stringLimit)
+
+			mainSQL = append(mainSQL, query)
+		}
+
+		// Build item query
+		if slices.Contains(filters, "item") || len(filters) == 0 {
+			query := `(SELECT 'item' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM items WHERE user_id = ? AND deleted_at IS NULL `
+			stringValues = append(stringValues, userID)
+
+			if addSearch {
+				query += searchSQL
+				stringValues = append(stringValues, search, search)
+			}
+
+			query += ` LIMIT ?)`
+			stringValues = append(stringValues, stringLimit)
+
+			mainSQL = append(mainSQL, query)
+		}
+
+		// Union all dynamically built queries
+		unionQuery := strings.Join(mainSQL, " UNION ALL ")
+
+		// Add offset
+		unionQuery += " OFFSET ?"
+		stringValues = append(stringValues, stringOffset)
+
+		// Add union limit if more than one filter applied
+		if len(filters) > 1 {
+			unionQuery += " LIMIT ?"
+			stringValues = append(stringValues, stringLimit)
+		}
+
+		// Convert string slice to interface slice
+		values := make([]interface{}, len(stringValues))
+		for i, stringID := range stringValues {
+			values[i] = stringID
+		}
+
+		// Run dynamically built query
+		dbErr := repo.Database.Raw(unionQuery, values...).Scan(&results).Error
 		if dbErr != nil {
 			logger.Errorf("error executing query: %v", dbErr)
 			return nil, dbErr
 		}
 
+		// Generate results
 		for _, entity := range results {
 			if entity.ParentID != 0 && entity.ParentCategory != "" {
 				var parents []models.GetEntitiesParentData
@@ -141,6 +256,7 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 			}
 		}
 
+		// Set cache
 		byteData, jsonErr := json.Marshal(data)
 		if jsonErr != nil {
 			logger.Errorf("error executing query: %v", dbErr)
@@ -159,7 +275,7 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 }
 
 // CountEntities is used to count the total number of entities that belong to a user.
-func (repo Repository) CountEntities(ctx context.Context, userID string, search string) int {
+func (repo Repository) CountEntities(ctx context.Context, userID string, search string, filters []string) int {
 	var entityCount int
 
 	cacheTTL := 5 * time.Minute
@@ -168,7 +284,8 @@ func (repo Repository) CountEntities(ctx context.Context, userID string, search 
 			User:     userID,
 			Function: "CountEntities",
 		},
-		Search: search,
+		Search:  search,
+		Filters: filters,
 	}
 
 	key, _ := json.Marshal(keyStructured)
@@ -181,24 +298,122 @@ func (repo Repository) CountEntities(ctx context.Context, userID string, search 
 	if value == "" {
 		searchSQL := ""
 		buildingSearchSQL := ""
-		filterSQL := ""
+		addSearch := false
+
+		stringValues := []string{}
+		mainSQL := []string{}
 
 		if search != "" {
-			searchSQL = "AND (name ILIKE '%" + search + "%' OR notes ILIKE '%" + search + "%')"
-			buildingSearchSQL = "AND (name ILIKE '%" + search + "%' OR notes ILIKE '%" + search + "%' OR address ILIKE '%" + search + "%')"
+			search = strings.ToLower(search)
+			search = "%" + search + "%"
+			searchSQL = "AND (LOWER(name) LIKE ? OR LOWER(notes) LIKE ?)"
+			buildingSearchSQL = "AND (LOWER(name) LIKE ? OR LOWER(notes) LIKE ? OR LOWER(address) LIKE ?)"
+			addSearch = true
 		}
 
-		err := repo.Database.Raw(`
-			SELECT
-				(SELECT COUNT(*) FROM buildings WHERE user_id = ? AND deleted_at IS NULL `+buildingSearchSQL+` `+filterSQL+`) +
-				(SELECT COUNT(*) FROM rooms WHERE user_id = ? AND deleted_at IS NULL `+searchSQL+` `+filterSQL+`) +
-				(SELECT COUNT(*) FROM shelving_units WHERE user_id = ? AND deleted_at IS NULL `+searchSQL+` `+filterSQL+`) +
-				(SELECT COUNT(*) FROM shelves WHERE user_id = ? AND deleted_at IS NULL `+searchSQL+` `+filterSQL+`) +
-				(SELECT COUNT(*) FROM containers WHERE user_id = ? AND deleted_at IS NULL `+searchSQL+` `+filterSQL+`) +
-				(SELECT COUNT(*) FROM items WHERE user_id = ? AND deleted_at IS NULL `+searchSQL+` `+filterSQL+`)
-			AS EntityCount
-		`, userID, userID, userID, userID, userID, userID).Scan(&entityCount).Error
+		// Build building query
+		if slices.Contains(filters, "building") || len(filters) == 0 {
+			query := `(SELECT COUNT(*) FROM buildings WHERE user_id = ? AND deleted_at IS NULL `
+			stringValues = append(stringValues, userID)
 
+			if addSearch {
+				query += buildingSearchSQL
+				stringValues = append(stringValues, search, search)
+			}
+
+			query += `)`
+
+			mainSQL = append(mainSQL, query)
+		}
+
+		// Build room query
+		if slices.Contains(filters, "room") || len(filters) == 0 {
+			query := `(SELECT COUNT(*) FROM rooms WHERE user_id = ? AND deleted_at IS NULL `
+			stringValues = append(stringValues, userID)
+
+			if addSearch {
+				query += searchSQL
+				stringValues = append(stringValues, search, search, search)
+			}
+
+			query += `)`
+
+			mainSQL = append(mainSQL, query)
+		}
+
+		// Build shelving unit query
+		if slices.Contains(filters, "shelving_unit") || len(filters) == 0 {
+			query := `(SELECT COUNT(*) FROM shelving_units WHERE user_id = ? AND deleted_at IS NULL `
+			stringValues = append(stringValues, userID)
+
+			if addSearch {
+				query += searchSQL
+				stringValues = append(stringValues, search, search)
+			}
+
+			query += `)`
+
+			mainSQL = append(mainSQL, query)
+		}
+
+		// Build shelf query
+		if slices.Contains(filters, "shelf") || len(filters) == 0 {
+			query := `(SELECT COUNT(*) FROM shelves WHERE user_id = ? AND deleted_at IS NULL `
+			stringValues = append(stringValues, userID)
+
+			if addSearch {
+				query += searchSQL
+				stringValues = append(stringValues, search, search)
+			}
+
+			query += `)`
+
+			mainSQL = append(mainSQL, query)
+		}
+
+		// Build container query
+		if slices.Contains(filters, "container") || len(filters) == 0 {
+			query := `(SELECT COUNT(*) FROM containers WHERE user_id = ? AND deleted_at IS NULL `
+			stringValues = append(stringValues, userID)
+
+			if addSearch {
+				query += searchSQL
+				stringValues = append(stringValues, search, search)
+			}
+
+			query += `)`
+
+			mainSQL = append(mainSQL, query)
+		}
+
+		// Build item query
+		if slices.Contains(filters, "item") || len(filters) == 0 {
+			query := `(SELECT COUNT(*) FROM items WHERE user_id = ? AND deleted_at IS NULL `
+			stringValues = append(stringValues, userID)
+
+			if addSearch {
+				query += searchSQL
+				stringValues = append(stringValues, search, search)
+			}
+
+			query += `)`
+
+			mainSQL = append(mainSQL, query)
+		}
+
+		// Union all dynamically built queries
+		joinedQueries := strings.Join(mainSQL, " + ")
+
+		additionQuery := "SELECT " + joinedQueries + " AS EntityCount"
+
+		// Convert string slice to interface slice
+		values := make([]interface{}, len(stringValues))
+		for i, stringID := range stringValues {
+			values[i] = stringID
+		}
+
+		logger.Errorf("\n\nQUERY:\n%s\n\n", additionQuery)
+		err := repo.Database.Raw(additionQuery, values...).Scan(&entityCount).Error
 		if err != nil {
 			logger.Errorf("error executing query: %v", err)
 			return entityCount

@@ -78,7 +78,7 @@ func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request)
 	var response models.GetEntitiesResponse
 
 	values := request.URL.Query()
-	offset, limit, search, err := getEntitiesParseQueryParams(values)
+	offset, limit, search, filters, err := getEntitiesParseQueryParams(values)
 	if err != nil {
 		logAndRespond(w, "Error reading query parameters", err)
 		return
@@ -86,9 +86,9 @@ func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request)
 
 	claims := request.Context().Value("user_claims").(jwt.MapClaims)
 	userID := claims["username"].(string)
-	response.Entities, _ = handler.Repository.GetAllEntities(request.Context(), userID, offset, limit, search)
+	response.Entities, _ = handler.Repository.GetAllEntities(request.Context(), userID, offset, limit, search, filters)
 
-	response.TotalCount = handler.Repository.CountEntities(request.Context(), userID, search)
+	response.TotalCount = handler.Repository.CountEntities(request.Context(), userID, search, filters)
 	helpers.SuccessResponse(w, &response)
 }
 
