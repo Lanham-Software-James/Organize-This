@@ -412,7 +412,6 @@ func (repo Repository) CountEntities(ctx context.Context, userID string, search 
 			values[i] = stringID
 		}
 
-		logger.Errorf("\n\nQUERY:\n%s\n\n", additionQuery)
 		err := repo.Database.Raw(additionQuery, values...).Scan(&entityCount).Error
 		if err != nil {
 			logger.Errorf("error executing query: %v", err)
