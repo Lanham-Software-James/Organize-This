@@ -43,6 +43,11 @@ type CountEntitiesCacheKey struct {
 	Filters  []string
 }
 
+type getEntitiesTables struct {
+	tableName   string
+	tableWeight int
+}
+
 // Save is used to create a new record in the DB
 func (repo Repository) Save(model interface{}) interface{} {
 	err := repo.Database.Save(model).Error
@@ -97,116 +102,58 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 		if search != "" {
 			search = strings.ToLower(search)
 			search = "%" + search + "%"
-			searchSQL = "AND (LOWER(name) LIKE ? OR LOWER(notes) LIKE ?)"
-			buildingSearchSQL = "AND (LOWER(name) LIKE ? OR LOWER(notes) LIKE ? OR LOWER(address) LIKE ?)"
+			searchSQL = " AND (LOWER(name) LIKE ? OR LOWER(notes) LIKE ?)"
+			buildingSearchSQL = " AND (LOWER(name) LIKE ? OR LOWER(notes) LIKE ? OR LOWER(address) LIKE ?)"
 			addSearch = true
 		}
 
-		// Build building query
-		if slices.Contains(filters, "building") || len(filters) == 0 {
-			query := `(SELECT 'building' AS category, id, name, notes, address, 0 AS parent_id, ' ' AS parent_category FROM buildings WHERE user_id = ? AND deleted_at IS NULL `
-			stringValues = append(stringValues, userID)
-
-			if addSearch {
-				query += buildingSearchSQL
-				stringValues = append(stringValues, search, search, search)
-			}
-
-			query += ` LIMIT ?)`
-			stringValues = append(stringValues, stringLimit)
-
-			mainSQL = append(mainSQL, query)
+		tables := map[string]getEntitiesTables{
+			"building":      {"buildings", 1},
+			"room":          {"rooms", 2},
+			"shelving_unit": {"shelving_units", 3},
+			"shelf":         {"shelves", 4},
+			"container":     {"containers", 5},
+			"item":          {"items", 6},
 		}
 
-		// Build room query
-		if slices.Contains(filters, "room") || len(filters) == 0 {
-			query := `(SELECT 'room' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM rooms WHERE user_id = ? AND deleted_at IS NULL `
-			stringValues = append(stringValues, userID)
+		for category, table := range tables {
+			if len(filters) == 0 || slices.Contains(filters, category) {
+				query := ""
+				if category == "building" {
+					query = fmt.Sprintf(`(SELECT %d AS tableWeight, created_at, '%s' AS category, id, name, notes, address, 0 AS parent_id, ' ' AS parent_category FROM %s WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at ASC`, table.tableWeight, category, table.tableName)
+				} else {
+					query = fmt.Sprintf(`(SELECT %d AS tableWeight, created_at, '%s' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM %s WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at ASC`, table.tableWeight, category, table.tableName)
+				}
 
-			if addSearch {
-				query += searchSQL
-				stringValues = append(stringValues, search, search)
+				stringValues = append(stringValues, userID)
+
+				if addSearch && category == "building" {
+					query += buildingSearchSQL
+					stringValues = append(stringValues, search, search, search)
+				} else if addSearch {
+					query += searchSQL
+					stringValues = append(stringValues, search, search)
+				}
+
+				query += ` LIMIT ?)`
+				stringValues = append(stringValues, stringLimit)
+
+				mainSQL = append(mainSQL, query)
 			}
-
-			query += ` LIMIT ?)`
-			stringValues = append(stringValues, stringLimit)
-
-			mainSQL = append(mainSQL, query)
-		}
-
-		// Build shelving unit query
-		if slices.Contains(filters, "shelving_unit") || len(filters) == 0 {
-			query := `(SELECT 'shelving_unit' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM shelving_units WHERE user_id = ? AND deleted_at IS NULL `
-			stringValues = append(stringValues, userID)
-
-			if addSearch {
-				query += searchSQL
-				stringValues = append(stringValues, search, search)
-			}
-
-			query += ` LIMIT ?)`
-			stringValues = append(stringValues, stringLimit)
-
-			mainSQL = append(mainSQL, query)
-		}
-
-		// Build shelf query
-		if slices.Contains(filters, "shelf") || len(filters) == 0 {
-			query := `(SELECT 'shelf' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM shelves WHERE user_id = ? AND deleted_at IS NULL `
-			stringValues = append(stringValues, userID)
-
-			if addSearch {
-				query += searchSQL
-				stringValues = append(stringValues, search, search)
-			}
-
-			query += ` LIMIT ?)`
-			stringValues = append(stringValues, stringLimit)
-
-			mainSQL = append(mainSQL, query)
-		}
-
-		// Build container query
-		if slices.Contains(filters, "container") || len(filters) == 0 {
-			query := `(SELECT 'container' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM containers WHERE user_id = ? AND deleted_at IS NULL `
-			stringValues = append(stringValues, userID)
-
-			if addSearch {
-				query += searchSQL
-				stringValues = append(stringValues, search, search)
-			}
-
-			query += ` LIMIT ?)`
-			stringValues = append(stringValues, stringLimit)
-
-			mainSQL = append(mainSQL, query)
-		}
-
-		// Build item query
-		if slices.Contains(filters, "item") || len(filters) == 0 {
-			query := `(SELECT 'item' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM items WHERE user_id = ? AND deleted_at IS NULL `
-			stringValues = append(stringValues, userID)
-
-			if addSearch {
-				query += searchSQL
-				stringValues = append(stringValues, search, search)
-			}
-
-			query += ` LIMIT ?)`
-			stringValues = append(stringValues, stringLimit)
-
-			mainSQL = append(mainSQL, query)
 		}
 
 		// Union all dynamically built queries
 		unionQuery := strings.Join(mainSQL, " UNION ALL ")
+
+		// Default Order
+		unionQuery += " ORDER BY tableWeight"
 
 		// Add offset
 		unionQuery += " OFFSET ?"
 		stringValues = append(stringValues, stringOffset)
 
 		// Add union limit if more than one filter applied
-		if len(filters) > 1 {
+		if len(filters) > 1 || len(filters) == 0 {
 			unionQuery += " LIMIT ?"
 			stringValues = append(stringValues, stringLimit)
 		}
