@@ -146,14 +146,16 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 		unionQuery := strings.Join(mainSQL, " UNION ALL ")
 
 		// Default Order
-		unionQuery += " ORDER BY tableWeight"
+		if len(filters) == 0 || len(filters) > 1 {
+			unionQuery += " ORDER BY tableWeight"
+		}
 
 		// Add offset
 		unionQuery += " OFFSET ?"
 		stringValues = append(stringValues, stringOffset)
 
 		// Add union limit if more than one filter applied
-		if len(filters) > 1 || len(filters) == 0 {
+		if len(filters) == 0 || len(filters) > 1 {
 			unionQuery += " LIMIT ?"
 			stringValues = append(stringValues, stringLimit)
 		}
@@ -258,94 +260,33 @@ func (repo Repository) CountEntities(ctx context.Context, userID string, search 
 			addSearch = true
 		}
 
-		// Build building query
-		if slices.Contains(filters, "building") || len(filters) == 0 {
-			query := `(SELECT COUNT(*) FROM buildings WHERE user_id = ? AND deleted_at IS NULL `
-			stringValues = append(stringValues, userID)
-
-			if addSearch {
-				query += buildingSearchSQL
-				stringValues = append(stringValues, search, search)
-			}
-
-			query += `)`
-
-			mainSQL = append(mainSQL, query)
+		tables := map[string]string{
+			"building":      "buildings",
+			"room":          "rooms",
+			"shelving_unit": "shelving_units",
+			"shelf":         "shelves",
+			"container":     "containers",
+			"item":          "items",
 		}
 
-		// Build room query
-		if slices.Contains(filters, "room") || len(filters) == 0 {
-			query := `(SELECT COUNT(*) FROM rooms WHERE user_id = ? AND deleted_at IS NULL `
-			stringValues = append(stringValues, userID)
+		for category, table := range tables {
+			if len(filters) == 0 || slices.Contains(filters, category) {
+				query := fmt.Sprintf(`(SELECT COUNT(*) FROM %s WHERE user_id = ? AND deleted_at IS NULL `, table)
 
-			if addSearch {
-				query += searchSQL
-				stringValues = append(stringValues, search, search, search)
+				stringValues = append(stringValues, userID)
+
+				if addSearch && category == "building" {
+					query += buildingSearchSQL
+					stringValues = append(stringValues, search, search, search)
+				} else if addSearch {
+					query += searchSQL
+					stringValues = append(stringValues, search, search)
+				}
+
+				query += `)`
+
+				mainSQL = append(mainSQL, query)
 			}
-
-			query += `)`
-
-			mainSQL = append(mainSQL, query)
-		}
-
-		// Build shelving unit query
-		if slices.Contains(filters, "shelving_unit") || len(filters) == 0 {
-			query := `(SELECT COUNT(*) FROM shelving_units WHERE user_id = ? AND deleted_at IS NULL `
-			stringValues = append(stringValues, userID)
-
-			if addSearch {
-				query += searchSQL
-				stringValues = append(stringValues, search, search)
-			}
-
-			query += `)`
-
-			mainSQL = append(mainSQL, query)
-		}
-
-		// Build shelf query
-		if slices.Contains(filters, "shelf") || len(filters) == 0 {
-			query := `(SELECT COUNT(*) FROM shelves WHERE user_id = ? AND deleted_at IS NULL `
-			stringValues = append(stringValues, userID)
-
-			if addSearch {
-				query += searchSQL
-				stringValues = append(stringValues, search, search)
-			}
-
-			query += `)`
-
-			mainSQL = append(mainSQL, query)
-		}
-
-		// Build container query
-		if slices.Contains(filters, "container") || len(filters) == 0 {
-			query := `(SELECT COUNT(*) FROM containers WHERE user_id = ? AND deleted_at IS NULL `
-			stringValues = append(stringValues, userID)
-
-			if addSearch {
-				query += searchSQL
-				stringValues = append(stringValues, search, search)
-			}
-
-			query += `)`
-
-			mainSQL = append(mainSQL, query)
-		}
-
-		// Build item query
-		if slices.Contains(filters, "item") || len(filters) == 0 {
-			query := `(SELECT COUNT(*) FROM items WHERE user_id = ? AND deleted_at IS NULL `
-			stringValues = append(stringValues, userID)
-
-			if addSearch {
-				query += searchSQL
-				stringValues = append(stringValues, search, search)
-			}
-
-			query += `)`
-
-			mainSQL = append(mainSQL, query)
 		}
 
 		// Union all dynamically built queries
