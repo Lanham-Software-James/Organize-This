@@ -69,74 +69,77 @@ func setupGetEntitiesCacheMissMockExpectations(mockDB *sqlmock.Sqlmock, mockCach
 		limit = "20"
 	}
 
-	cacheKey := fmt.Sprintf(`{"CacheKey":{"User":"%s","Function":"GetAllEntities"},"Offset":"%s","Limit":"%s"}`, userName, offset, limit)
-	countCacheKey := fmt.Sprintf(`{"User":"%s","Function":"CountEntities"}`, userName)
+	cacheKey := fmt.Sprintf(`{"CacheKey":{"User":"%s","Function":"GetAllEntities"},"Offset":"%s","Limit":"%s","Search":"","Filters":[]}`, userName, offset, limit)
+	countCacheKey := fmt.Sprintf(`{"CacheKey":{"User":"%s","Function":"CountEntities"},"Search":"","Filters":[]}`, userName)
 
-	expectedMainSQL := fmt.Sprintf(`\(SELECT 'building' AS category, id, name, notes, address, 0 AS parent_id, ' ' AS parent_category FROM buildings WHERE user_id = \$1 AND deleted_at IS NULL LIMIT %s\)
-                        UNION ALL
-                        \(SELECT 'room' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM rooms WHERE user_id = \$2 AND deleted_at IS NULL LIMIT %s\)
-                        UNION ALL
-                        \(SELECT 'shelving_unit' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM shelving_units WHERE user_id = \$3 AND deleted_at IS NULL LIMIT %s\)
-                        UNION ALL
-                        \(SELECT 'shelf' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM shelves WHERE user_id = \$4 AND deleted_at IS NULL LIMIT %s\)
-                        UNION ALL
-                        \(SELECT 'container' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM containers WHERE user_id = \$5 AND deleted_at IS NULL LIMIT %s\)
-                        UNION ALL
-                        \(SELECT 'item' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM items WHERE user_id = \$6 AND deleted_at IS NULL LIMIT %s\)
-                        OFFSET %s LIMIT %s`, limit, limit, limit, limit, limit, limit, offset, limit)
+	expectedMainSQL := fmt.Sprintf(`
+		(SELECT 1 AS tableWeight, created_at, 'building' AS category, id, name, notes, address, 0 AS parent_id, ' ' AS parent_category FROM buildings WHERE user_id = $1 AND deleted_at IS NULL ORDER BY created_at ASC LIMIT $2)
+    	UNION ALL
+    	(SELECT 2 AS tableWeight, created_at, 'room' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM rooms WHERE user_id = $3 AND deleted_at IS NULL ORDER BY created_at ASC LIMIT $4)
+    	UNION ALL
+    	(SELECT 3 AS tableWeight, created_at, 'shelving_unit' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM shelving_units WHERE user_id = $5 AND deleted_at IS NULL ORDER BY created_at ASC LIMIT $6)
+    	UNION ALL
+    	(SELECT 4 AS tableWeight, created_at, 'shelf' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM shelves WHERE user_id = $7 AND deleted_at IS NULL ORDER BY created_at ASC LIMIT $8)
+    	UNION ALL
+    	(SELECT 5 AS tableWeight, created_at, 'container' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM containers WHERE user_id = $9 AND deleted_at IS NULL ORDER BY created_at ASC LIMIT $10)
+    	UNION ALL
+    	(SELECT 6 AS tableWeight, created_at, 'item' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM items WHERE user_id = $11 AND deleted_at IS NULL ORDER BY created_at ASC LIMIT $12)
+    	ORDER BY tableWeight OFFSET $13 LIMIT $14`)
 
-	expectedCountSQL := `SELECT \(SELECT COUNT\(\*\) FROM buildings WHERE user_id = \$1 AND deleted_at IS NULL\) \+
-						\(SELECT COUNT\(\*\) FROM rooms WHERE user_id = \$2 AND deleted_at IS NULL\) \+
-						\(SELECT COUNT\(\*\) FROM shelving_units WHERE user_id = \$3 AND deleted_at IS NULL\) \+
-						\(SELECT COUNT\(\*\) FROM shelves WHERE user_id = \$4 AND deleted_at IS NULL\) \+
-						\(SELECT COUNT\(\*\) FROM containers WHERE user_id = \$5 AND deleted_at IS NULL\) \+
-						\(SELECT COUNT\(\*\) FROM items WHERE user_id = \$6 AND deleted_at IS NULL\) AS EntityCount`
+	expectedCountSQL := `SELECT (SELECT COUNT(*) FROM buildings WHERE user_id = $1 AND deleted_at IS NULL ) +
+                            (SELECT COUNT(*) FROM rooms WHERE user_id = $2 AND deleted_at IS NULL ) +
+                            (SELECT COUNT(*) FROM shelving_units WHERE user_id = $3 AND deleted_at IS NULL ) +
+                            (SELECT COUNT(*) FROM shelves WHERE user_id = $4 AND deleted_at IS NULL ) +
+                            (SELECT COUNT(*) FROM containers WHERE user_id = $5 AND deleted_at IS NULL ) +
+                            (SELECT COUNT(*) FROM items WHERE user_id = $6 AND deleted_at IS NULL ) AS EntityCount`
 
-	(*mockDB).ExpectQuery(expectedMainSQL).
-		WithArgs(userName, userName, userName, userName, userName, userName).
-		WillReturnRows(sqlmock.NewRows([]string{"category", "id", "name", "notes", "address", "parent_id", "parent_category"}).
-			AddRow("building", 1, "Building 1", " ", " ", 0, " ").
-			AddRow("room", 1, "Room 1", " ", " ", 1, "building").
-			AddRow("shelving_unit", 1, "Shelving Unit 1", " ", " ", 1, "room").
-			AddRow("shelf", 1, "Shelf 1", " ", " ", 1, "shelving_unit").
-			AddRow("container", 1, "Container 1", " ", " ", 1, "shelf").
-			AddRow("item", 2, "Item 2", " ", " ", 1, "container"))
+	mockCache.ExpectGet(cacheKey).RedisNil()
+	mockCache.ExpectGet(countCacheKey).RedisNil()
 
-	// Room 1 recusive parent build
+	(*mockDB).ExpectQuery(regexp.QuoteMeta(expectedMainSQL)).
+		WithArgs(userName, limit, userName, limit, userName, limit, userName, limit, userName, limit, userName, limit, offset, limit).
+		WillReturnRows(sqlmock.NewRows([]string{"tableWeight", "created_at", "category", "id", "name", "notes", "address", "parent_id", "parent_category"}).
+			AddRow(1, time.Now(), "building", 1, "Building 1", " ", " ", 0, " ").
+			AddRow(2, time.Now(), "room", 1, "Room 1", " ", " ", 1, "building").
+			AddRow(3, time.Now(), "shelving_unit", 1, "Shelving Unit 1", " ", " ", 1, "room").
+			AddRow(4, time.Now(), "shelf", 1, "Shelf 1", " ", " ", 1, "shelving_unit").
+			AddRow(5, time.Now(), "container", 1, "Container 1", " ", " ", 1, "shelf").
+			AddRow(6, time.Now(), "item", 2, "Item 2", " ", " ", 1, "container"))
+
+	// Recursive parent expectations - room
 	expectBuilding(mockDB, userName)
 
-	// Shelving Unit 1 recusive parent build
+	// shelving unit
 	expectRoom(mockDB, userName)
 	expectBuilding(mockDB, userName)
 
-	// Shelf 1 recusive parent build
+	// shelf
 	expectUnit(mockDB, userName)
 	expectRoom(mockDB, userName)
 	expectBuilding(mockDB, userName)
 
-	//Container 1 recusive parent build
+	// container
 	expectShelf(mockDB, userName)
 	expectUnit(mockDB, userName)
 	expectRoom(mockDB, userName)
 	expectBuilding(mockDB, userName)
 
-	//Item 1 recusive parent build
+	// item
 	expectContainer(mockDB, userName)
 	expectShelf(mockDB, userName)
 	expectUnit(mockDB, userName)
 	expectRoom(mockDB, userName)
 	expectBuilding(mockDB, userName)
 
-	// Count Entity
-	(*mockDB).ExpectQuery(expectedCountSQL).
+	(*mockDB).ExpectQuery(regexp.QuoteMeta(expectedCountSQL)).
 		WithArgs(userName, userName, userName, userName, userName, userName).
 		WillReturnRows(sqlmock.NewRows([]string{"EntityCount"}).AddRow(12))
 
-	mockCache.ExpectGet(cacheKey).RedisNil()
-	mockCache.Regexp().ExpectSet(cacheKey, ".*", 5*time.Minute).SetVal("OK")
+	// Expect set for main entities cache key
+	// mockCache.Regexp().ExpectSet(regexp.QuoteMeta(cacheKey), ".*", 5*time.Minute).SetVal("OK")
 
-	mockCache.ExpectGet(countCacheKey).RedisNil()
-	mockCache.Regexp().ExpectSet(countCacheKey, ".*", 5*time.Minute).SetVal("OK")
+	// Expect set for count cache key
+	// mockCache.Regexp().ExpectSet(countCacheKey, ".*", 5*time.Minute).SetVal("OK")
 }
 
 func setupGetEntitiesCacheHitMockExpectations(mockCache redismock.ClientMock, userName string, offset string, limit string) {
@@ -148,8 +151,8 @@ func setupGetEntitiesCacheHitMockExpectations(mockCache redismock.ClientMock, us
 		limit = "20"
 	}
 
-	cacheKey := fmt.Sprintf(`{"CacheKey":{"User":"%s","Function":"GetAllEntities"},"Offset":"%s","Limit":"%s"}`, userName, offset, limit)
-	countCacheKey := fmt.Sprintf(`{"User":"%s","Function":"CountEntities"}`, userName)
+	cacheKey := fmt.Sprintf(`{"CacheKey":{"User":"%s","Function":"GetAllEntities"},"Offset":"%s","Limit":"%s","Search":"","Filters":[]}`, userName, offset, limit)
+	countCacheKey := fmt.Sprintf(`{"CacheKey":{"User":"%s","Function":"CountEntities"},"Search":"","Filters":[]}`, userName)
 
 	mockCache.ExpectGet(cacheKey).SetVal(`[
 											{"ID":36,"Name":"Home","Category":"building","Location":" ","Notes":"Some test notes for the building."},

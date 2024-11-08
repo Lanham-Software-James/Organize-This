@@ -44,8 +44,14 @@ type CountEntitiesCacheKey struct {
 }
 
 type getEntitiesTables struct {
+	category    string
 	tableName   string
 	tableWeight int
+}
+
+type countEntitiesTables struct {
+	category  string
+	tableName string
 }
 
 // Save is used to create a new record in the DB
@@ -82,7 +88,12 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 		Search:  search,
 		Filters: filters,
 	}
-	key, _ := json.Marshal(keyStructured)
+	key, jsonErr := json.Marshal(keyStructured)
+	if jsonErr != nil {
+		logger.Errorf("Error encoding Redis key: %v", jsonErr)
+		return nil, jsonErr
+	}
+
 	value, redisErr := repo.Cache.Get(ctx, string(key)).Result()
 	if redisErr != nil && !errors.Is(redisErr, redis.Nil) {
 		logger.Errorf("Error retriving entites from Redis: %v", redisErr)
@@ -107,27 +118,27 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 			addSearch = true
 		}
 
-		tables := map[string]getEntitiesTables{
-			"building":      {"buildings", 1},
-			"room":          {"rooms", 2},
-			"shelving_unit": {"shelving_units", 3},
-			"shelf":         {"shelves", 4},
-			"container":     {"containers", 5},
-			"item":          {"items", 6},
+		tables := []getEntitiesTables{
+			{"building", "buildings", 1},
+			{"room", "rooms", 2},
+			{"shelving_unit", "shelving_units", 3},
+			{"shelf", "shelves", 4},
+			{"container", "containers", 5},
+			{"item", "items", 6},
 		}
 
-		for category, table := range tables {
-			if len(filters) == 0 || slices.Contains(filters, category) {
+		for _, table := range tables {
+			if len(filters) == 0 || slices.Contains(filters, table.category) {
 				query := ""
-				if category == "building" {
-					query = fmt.Sprintf(`(SELECT %d AS tableWeight, created_at, '%s' AS category, id, name, notes, address, 0 AS parent_id, ' ' AS parent_category FROM %s WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at ASC`, table.tableWeight, category, table.tableName)
+				if table.category == "building" {
+					query = fmt.Sprintf(`(SELECT %d AS tableWeight, created_at, '%s' AS category, id, name, notes, address, 0 AS parent_id, ' ' AS parent_category FROM %s WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at ASC`, table.tableWeight, table.category, table.tableName)
 				} else {
-					query = fmt.Sprintf(`(SELECT %d AS tableWeight, created_at, '%s' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM %s WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at ASC`, table.tableWeight, category, table.tableName)
+					query = fmt.Sprintf(`(SELECT %d AS tableWeight, created_at, '%s' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM %s WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at ASC`, table.tableWeight, table.category, table.tableName)
 				}
 
 				stringValues = append(stringValues, userID)
 
-				if addSearch && category == "building" {
+				if addSearch && table.category == "building" {
 					query += buildingSearchSQL
 					stringValues = append(stringValues, search, search, search)
 				} else if addSearch {
@@ -208,7 +219,7 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 		// Set cache
 		byteData, jsonErr := json.Marshal(data)
 		if jsonErr != nil {
-			logger.Errorf("error executing query: %v", dbErr)
+			logger.Errorf("error encoding data: %v", dbErr)
 			return nil, jsonErr
 		}
 
@@ -216,7 +227,7 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 	} else {
 		jsonErr := json.Unmarshal([]byte(value), &data)
 		if jsonErr != nil {
-			logger.Errorf("error executing query: %v", jsonErr)
+			logger.Errorf("error encoding data: %v", jsonErr)
 		}
 	}
 
@@ -260,22 +271,22 @@ func (repo Repository) CountEntities(ctx context.Context, userID string, search 
 			addSearch = true
 		}
 
-		tables := map[string]string{
-			"building":      "buildings",
-			"room":          "rooms",
-			"shelving_unit": "shelving_units",
-			"shelf":         "shelves",
-			"container":     "containers",
-			"item":          "items",
+		tables := []countEntitiesTables{
+			{"building", "buildings"},
+			{"room", "rooms"},
+			{"shelving_unit", "shelving_units"},
+			{"shelf", "shelves"},
+			{"container", "containers"},
+			{"item", "items"},
 		}
 
-		for category, table := range tables {
-			if len(filters) == 0 || slices.Contains(filters, category) {
-				query := fmt.Sprintf(`(SELECT COUNT(*) FROM %s WHERE user_id = ? AND deleted_at IS NULL `, table)
+		for _, table := range tables {
+			if len(filters) == 0 || slices.Contains(filters, table.category) {
+				query := fmt.Sprintf(`(SELECT COUNT(*) FROM %s WHERE user_id = ? AND deleted_at IS NULL `, table.tableName)
 
 				stringValues = append(stringValues, userID)
 
-				if addSearch && category == "building" {
+				if addSearch && table.category == "building" {
 					query += buildingSearchSQL
 					stringValues = append(stringValues, search, search, search)
 				} else if addSearch {
