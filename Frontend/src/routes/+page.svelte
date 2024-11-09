@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { Paginator, type PaginationSettings, getModalStore, type ModalSettings } from '@skeletonlabs/skeleton';
+	import { Paginator, type PaginationSettings, getModalStore, popup, type ModalSettings, type PopupSettings } from '@skeletonlabs/skeleton';
 	import { getContext, onMount } from 'svelte';
 	import { _getEntities as getEntities, type GetEntitiesData } from './+page';
 	import AddNewModal from '$lib/AddNewModal/AddNewModal.svelte';
+	import { slide } from 'svelte/transition';
 
 	let entities: GetEntitiesData[] = [];
 	let offset = 0;
@@ -29,21 +30,26 @@
 	});
 
 	async function loadData() {
-		[entities, paginationSettings.size] = await getEntities(offset, limit);
+		[entities, paginationSettings.size] = await getEntities(offset, limit, search, filters);
 	}
 
 	async function limitChange(e: CustomEvent) {
 		limit = e.detail;
 
-		[entities, paginationSettings.size] = await getEntities(offset, limit);
+		[entities, paginationSettings.size] = await getEntities(offset, limit, search, filters);
 	}
 
 	async function pageChange(e: CustomEvent) {
 		page = e.detail;
 		offset = page * limit;
 
-		[entities, paginationSettings.size] = await getEntities(offset, limit);
+		[entities, paginationSettings.size] = await getEntities(offset, limit, search, filters);
 	}
+
+	async function searchFilter() {
+		[entities, paginationSettings.size] = await getEntities(offset, limit, search, filters);
+	}
+
 	const modalStore = getModalStore();
 
 	async function editEntity(id: number, category: string) {
@@ -64,14 +70,95 @@
 
 		return cleanedCategory
 	}
+
+	let filters: {[key: string]: boolean} = {
+		'building': true,
+		'room': true,
+		'shelving_unit': true,
+		'shelf': true,
+		'container': true,
+		'item': true,
+	}
+
+	let search = ''
+
+	let isVisible = false;
+
+	const popupFeatured: PopupSettings = {
+		event: 'click',
+		target: 'popupFeatured',
+		placement: 'bottom',
+		state: (e: Record<string, boolean>) => popUpOpenClose(e)
+	};
+
+	function popUpOpenClose(e: Record<string, boolean>) {
+		if(!e.state) {
+			searchFilter()
+		}
+	}
+
+	function toggleSearch() {
+		isVisible = !isVisible;
+	}
 </script>
 
-<div class="flex flex-row justify-between items-center pb-2">
+<div class="card p-4 w-72 shadow-xl" data-popup="popupFeatured">
+	<label class="flex items-center space-x-2">
+		<input class="checkbox" type="checkbox" bind:checked={filters['building']}/>
+		<p>Buildings</p>
+	</label>
+
+	<label class="flex items-center space-x-2">
+		<input class="checkbox" type="checkbox" bind:checked={filters['room']}/>
+		<p>Rooms</p>
+	</label>
+
+	<label class="flex items-center space-x-2">
+		<input class="checkbox" type="checkbox" bind:checked={filters['shelving_unit']}/>
+		<p>Shelving Units</p>
+	</label>
+
+	<label class="flex items-center space-x-2">
+		<input class="checkbox" type="checkbox" bind:checked={filters['shelf']}/>
+		<p>Shelves</p>
+	</label>
+
+	<label class="flex items-center space-x-2">
+		<input class="checkbox" type="checkbox" bind:checked={filters['container']}/>
+		<p>Containers</p>
+	</label>
+
+	<label class="flex items-center space-x-2">
+		<input class="checkbox" type="checkbox" bind:checked={filters['item']}/>
+		<p>Items</p>
+	</label>
+</div>
+
+<div class="flex flex-row justify-between items-center h-16">
 	<h2 class="text-xl">All Things</h2>
 
-	<button id="filter" type="button" class="btn-icon btn-icon-sm variant-filled"
-		><i class="fa-solid fa-filter fa-xs"></i></button
-	>
+	<div class="flex flex-row justify-end items-center w-3/12">
+		{#if isVisible}
+			<input
+				class="input w-3/4"
+				transition:slide={{ duration: 300, axis: 'x' }}
+				type="text"
+				bind:value={search}
+				placeholder="search"
+				on:blur = {searchFilter}
+			/>
+		{/if}
+
+		<div class="flex flex-row justify-evenly items-center w-1/4">
+			<button id="filter" type="button" class="btn-icon btn-icon-sm variant-filled" on:click={toggleSearch}>
+				<i class="fa-solid fa-magnifying-glass fa-s"></i>
+			</button>
+
+			<button id="filter" type="button" class="btn-icon btn-icon-sm variant-filled" use:popup={popupFeatured}>
+				<i class="fa-solid fa-filter fa-xs"></i>
+			</button>
+		</div>
+	</div>
 </div>
 
 <div class="flex flex-col justify-between">

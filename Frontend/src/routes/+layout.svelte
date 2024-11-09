@@ -143,7 +143,7 @@
 <Toast />
 
 <div class="container p-3 m-h-full mx-auto">
-	<div class="flex flex-row justify-between items-center pb-2">
+	<div class="flex flex-row justify-between items-center">
 		<h1 class="text-3xl">Organize This!</h1>
 
 		<button id="hamburgerMenu" type="button" class="btn-icon bg-initial" on:click={showNavigation}

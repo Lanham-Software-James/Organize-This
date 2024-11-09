@@ -126,15 +126,21 @@ func setupDeleteEntityMockExpectations(mockDB *sqlmock.Sqlmock, mockCache redism
 		(*mockDB).ExpectCommit()
 
 		keyVals := []string{
-			`{"CacheKey":{"User":"` + testUser + `","Function":"GetAllEntities"},"Offset":"0","Limit":"15"}`,
-			`{"CacheKey":{"User":"` + testUser + `","Function":"GetAllEntities"},"Offset":"15","Limit":"15"}`,
+			`{"CacheKey":{"User":"` + testUser + `","Function":"GetAllEntities"},"Offset":"0","Limit":"15","Search":"","Filter":"[]"}`,
+			`{"CacheKey":{"User":"` + testUser + `","Function":"GetAllEntities"},"Offset":"15","Limit":"15","Search":"","Filter":"[]"}`,
 		}
-
 		mockCache.ExpectKeys(`{"CacheKey":{"User":"` + testUser + `","Function":"GetAllEntities"},*`).SetVal(keyVals)
+
+		countKeys := []string{
+			`{"CacheKey":{"User":"` + testUser + `","Function":"CountEntities"},"Search":"","Filter":"[]"}`,
+			`{"CacheKey":{"User":"` + testUser + `","Function":"CountEntities"},"Search":"seachtext","Filter":"[]"}`,
+		}
+		mockCache.ExpectKeys(`{"CacheKey":{"User":"` + testUser + `","Function":"CountEntities"},*`).SetVal(countKeys)
+
+		keyVals = append(keyVals, countKeys...)
 
 		expectedDelKeys := append(
 			keyVals,
-			`{"User":"`+testUser+`","Function":"CountEntities"}`,
 			`{"User":"`+testUser+`","Function":"GetItemParents"}`,
 			`{"User":"`+testUser+`","Function":"GetContainerParents"}`,
 			`{"User":"`+testUser+`","Function":"GetShelfParents"}`,

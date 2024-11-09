@@ -9,7 +9,9 @@ import (
 	"organize-this/infra/cache"
 	"organize-this/infra/logger"
 	"organize-this/models"
+	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -30,6 +32,26 @@ type GetEntitiesCacheKey struct {
 	CacheKey cache.CacheKey
 	Offset   string
 	Limit    string
+	Search   string
+	Filters  []string
+}
+
+// CountEntitiesCacheKey is an extension of cachekey that represents the structure of the keys in our cache for the count entities data.
+type CountEntitiesCacheKey struct {
+	CacheKey cache.CacheKey
+	Search   string
+	Filters  []string
+}
+
+type getEntitiesTables struct {
+	category    string
+	tableName   string
+	tableWeight int
+}
+
+type countEntitiesTables struct {
+	category  string
+	tableName string
 }
 
 // Save is used to create a new record in the DB
@@ -50,7 +72,7 @@ func (repo Repository) GetOne(model interface{}, userID string) interface{} {
 }
 
 // GetAllEntities returns all entities that belong to the user.
-func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset int, limit int) ([]models.GetEntitiesEntity, error) {
+func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset int, limit int, search string, filters []string) ([]models.GetEntitiesEntity, error) {
 	stringOffset := strconv.Itoa(offset)
 	stringLimit := strconv.Itoa(limit)
 	var data []models.GetEntitiesEntity
@@ -61,10 +83,17 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 			User:     userID,
 			Function: "GetAllEntities",
 		},
-		Offset: stringOffset,
-		Limit:  stringLimit,
+		Offset:  stringOffset,
+		Limit:   stringLimit,
+		Search:  search,
+		Filters: filters,
 	}
-	key, _ := json.Marshal(keyStructured)
+	key, jsonErr := json.Marshal(keyStructured)
+	if jsonErr != nil {
+		logger.Errorf("Error encoding Redis key: %v", jsonErr)
+		return nil, jsonErr
+	}
+
 	value, redisErr := repo.Cache.Get(ctx, string(key)).Result()
 	if redisErr != nil && !errors.Is(redisErr, redis.Nil) {
 		logger.Errorf("Error retriving entites from Redis: %v", redisErr)
@@ -73,26 +102,89 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 
 	if value == "" {
 		var results []models.GetEntitiesResponseData
-		dbErr := repo.Database.Raw(`
-			(SELECT 'building' AS category, id, name, notes, address, 0 AS parent_id, ' ' AS parent_category FROM buildings WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
-			UNION ALL
-			(SELECT 'room' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM rooms WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
-			UNION ALL
-			(SELECT 'shelving_unit' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM shelving_units WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
-			UNION ALL
-			(SELECT 'shelf' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM shelves WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
-			UNION ALL
-			(SELECT 'container' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM containers WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
-			UNION ALL
-			(SELECT 'item' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM items WHERE user_id = ? AND deleted_at IS NULL LIMIT `+stringLimit+`)
-			 OFFSET `+stringOffset+
-			` LIMIT `+stringLimit, userID, userID, userID, userID, userID, userID).Scan(&results).Error
+		stringValues := []string{}
+		mainSQL := []string{}
 
+		searchSQL := ""
+		buildingSearchSQL := ""
+		addSearch := false
+
+		// Dynamically build search query
+		if search != "" {
+			search = strings.ToLower(search)
+			search = "%" + search + "%"
+			searchSQL = " AND (LOWER(name) LIKE ? OR LOWER(notes) LIKE ?)"
+			buildingSearchSQL = " AND (LOWER(name) LIKE ? OR LOWER(notes) LIKE ? OR LOWER(address) LIKE ?)"
+			addSearch = true
+		}
+
+		tables := []getEntitiesTables{
+			{"building", "buildings", 1},
+			{"room", "rooms", 2},
+			{"shelving_unit", "shelving_units", 3},
+			{"shelf", "shelves", 4},
+			{"container", "containers", 5},
+			{"item", "items", 6},
+		}
+
+		for _, table := range tables {
+			if len(filters) == 0 || slices.Contains(filters, table.category) {
+				query := ""
+				if table.category == "building" {
+					query = fmt.Sprintf(`(SELECT %d AS tableWeight, created_at, '%s' AS category, id, name, notes, address, 0 AS parent_id, ' ' AS parent_category FROM %s WHERE user_id = ? AND deleted_at IS NULL`, table.tableWeight, table.category, table.tableName)
+				} else {
+					query = fmt.Sprintf(`(SELECT %d AS tableWeight, created_at, '%s' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM %s WHERE user_id = ? AND deleted_at IS NULL`, table.tableWeight, table.category, table.tableName)
+				}
+
+				stringValues = append(stringValues, userID)
+
+				if addSearch && table.category == "building" {
+					query += buildingSearchSQL
+					stringValues = append(stringValues, search, search, search)
+				} else if addSearch {
+					query += searchSQL
+					stringValues = append(stringValues, search, search)
+				}
+
+				query += ` ORDER BY created_at ASC LIMIT ?)`
+				stringValues = append(stringValues, stringLimit)
+
+				mainSQL = append(mainSQL, query)
+			}
+		}
+
+		// Union all dynamically built queries
+		unionQuery := strings.Join(mainSQL, " UNION ALL ")
+
+		// Default Order
+		if len(filters) == 0 || len(filters) > 1 {
+			unionQuery += " ORDER BY tableWeight"
+		}
+
+		// Add offset
+		unionQuery += " OFFSET ?"
+		stringValues = append(stringValues, stringOffset)
+
+		// Add union limit if more than one filter applied
+		if len(filters) == 0 || len(filters) > 1 {
+			unionQuery += " LIMIT ?"
+			stringValues = append(stringValues, stringLimit)
+		}
+
+		// Convert string slice to interface slice
+		values := make([]interface{}, len(stringValues))
+		for i, stringID := range stringValues {
+			values[i] = stringID
+		}
+
+		// Run dynamically built query
+		dbErr := repo.Database.Raw(unionQuery, values...).Scan(&results).Error
 		if dbErr != nil {
 			logger.Errorf("error executing query: %v", dbErr)
 			return nil, dbErr
 		}
 
+		// Generate results
 		for _, entity := range results {
 			if entity.ParentID != 0 && entity.ParentCategory != "" {
 				var parents []models.GetEntitiesParentData
@@ -124,9 +216,10 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 			}
 		}
 
+		// Set cache
 		byteData, jsonErr := json.Marshal(data)
 		if jsonErr != nil {
-			logger.Errorf("error executing query: %v", dbErr)
+			logger.Errorf("error encoding data: %v", dbErr)
 			return nil, jsonErr
 		}
 
@@ -134,7 +227,7 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 	} else {
 		jsonErr := json.Unmarshal([]byte(value), &data)
 		if jsonErr != nil {
-			logger.Errorf("error executing query: %v", jsonErr)
+			logger.Errorf("error encoding data: %v", jsonErr)
 		}
 	}
 
@@ -142,14 +235,19 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 }
 
 // CountEntities is used to count the total number of entities that belong to a user.
-func (repo Repository) CountEntities(ctx context.Context, userID string) int {
+func (repo Repository) CountEntities(ctx context.Context, userID string, search string, filters []string) int {
 	var entityCount int
 
 	cacheTTL := 5 * time.Minute
-	keyStructured := cache.CacheKey{
-		User:     userID,
-		Function: "CountEntities",
+	keyStructured := CountEntitiesCacheKey{
+		CacheKey: cache.CacheKey{
+			User:     userID,
+			Function: "CountEntities",
+		},
+		Search:  search,
+		Filters: filters,
 	}
+
 	key, _ := json.Marshal(keyStructured)
 	value, redisErr := repo.Cache.Get(ctx, string(key)).Result()
 	if redisErr != nil && !errors.Is(redisErr, redis.Nil) {
@@ -158,17 +256,62 @@ func (repo Repository) CountEntities(ctx context.Context, userID string) int {
 	}
 
 	if value == "" {
-		err := repo.Database.Raw(`
-			SELECT
-				(SELECT COUNT(*) FROM buildings WHERE user_id = ? AND deleted_at IS NULL) +
-				(SELECT COUNT(*) FROM rooms WHERE user_id = ? AND deleted_at IS NULL) +
-				(SELECT COUNT(*) FROM shelving_units WHERE user_id = ? AND deleted_at IS NULL) +
-				(SELECT COUNT(*) FROM shelves WHERE user_id = ? AND deleted_at IS NULL) +
-				(SELECT COUNT(*) FROM containers WHERE user_id = ? AND deleted_at IS NULL) +
-				(SELECT COUNT(*) FROM items WHERE user_id = ? AND deleted_at IS NULL)
-			AS EntityCount
-		`, userID, userID, userID, userID, userID, userID).Scan(&entityCount).Error
+		searchSQL := ""
+		buildingSearchSQL := ""
+		addSearch := false
 
+		stringValues := []string{}
+		mainSQL := []string{}
+
+		if search != "" {
+			search = strings.ToLower(search)
+			search = "%" + search + "%"
+			searchSQL = "AND (LOWER(name) LIKE ? OR LOWER(notes) LIKE ?)"
+			buildingSearchSQL = "AND (LOWER(name) LIKE ? OR LOWER(notes) LIKE ? OR LOWER(address) LIKE ?)"
+			addSearch = true
+		}
+
+		tables := []countEntitiesTables{
+			{"building", "buildings"},
+			{"room", "rooms"},
+			{"shelving_unit", "shelving_units"},
+			{"shelf", "shelves"},
+			{"container", "containers"},
+			{"item", "items"},
+		}
+
+		for _, table := range tables {
+			if len(filters) == 0 || slices.Contains(filters, table.category) {
+				query := fmt.Sprintf(`(SELECT COUNT(*) FROM %s WHERE user_id = ? AND deleted_at IS NULL `, table.tableName)
+
+				stringValues = append(stringValues, userID)
+
+				if addSearch && table.category == "building" {
+					query += buildingSearchSQL
+					stringValues = append(stringValues, search, search, search)
+				} else if addSearch {
+					query += searchSQL
+					stringValues = append(stringValues, search, search)
+				}
+
+				query += `)`
+
+				mainSQL = append(mainSQL, query)
+			}
+		}
+
+		// Union all dynamically built queries
+		joinedQueries := strings.Join(mainSQL, " + ")
+
+		additionQuery := "SELECT " + joinedQueries + " AS EntityCount"
+
+		// Convert string slice to interface slice
+		values := make([]interface{}, len(stringValues))
+		for i, stringID := range stringValues {
+			values[i] = stringID
+		}
+
+		err := repo.Database.Raw(additionQuery, values...).Scan(&entityCount).Error
 		if err != nil {
 			logger.Errorf("error executing query: %v", err)
 			return entityCount
@@ -348,9 +491,9 @@ func (repo Repository) HasChildren(id uint64, category string, userID string) (b
 func (repo Repository) FlushEntities(ctx context.Context, userID string) {
 
 	getAllEntitiesPattern := `{"CacheKey":{"User":"` + userID + `","Function":"GetAllEntities"},*`
+	countEntitiesPattern := `{"CacheKey":{"User":"` + userID + `","Function":"CountEntities"},*`
 
 	patterns := []string{
-		`{"User":"` + userID + `","Function":"CountEntities"}`,
 		`{"User":"` + userID + `","Function":"GetItemParents"}`,
 		`{"User":"` + userID + `","Function":"GetContainerParents"}`,
 		`{"User":"` + userID + `","Function":"GetShelfParents"}`,
@@ -358,24 +501,25 @@ func (repo Repository) FlushEntities(ctx context.Context, userID string) {
 		`{"User":"` + userID + `","Function":"GetRoomParents"}`,
 	}
 
-	keys, err := repo.Cache.Keys(ctx, getAllEntitiesPattern).Result()
+	entitiesKeys, err := repo.Cache.Keys(ctx, getAllEntitiesPattern).Result()
 	if err != nil {
 		logger.Errorf("error getting cache keys: %v", err)
 		return
 	}
 
+	countKeys, err := repo.Cache.Keys(ctx, countEntitiesPattern).Result()
+	if err != nil {
+		logger.Errorf("error getting cache keys: %v", err)
+		return
+	}
+
+	keys := append(entitiesKeys, countKeys...)
+	keys = append(keys, patterns...)
+
 	for _, key := range keys {
 		err := repo.Cache.Del(ctx, key).Err()
 		if err != nil {
 			logger.Errorf("error clearing cache: %v", err)
-			return
-		}
-	}
-
-	for name, key := range patterns {
-		err = repo.Cache.Del(ctx, key).Err()
-		if err != nil {
-			logger.Errorf("error clearing cache key: %v. Error: %v", name, err)
 			return
 		}
 	}
