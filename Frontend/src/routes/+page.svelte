@@ -30,27 +30,24 @@
 	});
 
 	async function loadData() {
-		[entities, paginationSettings.size] = await getEntities(offset, limit);
+		[entities, paginationSettings.size] = await getEntities(offset, limit, search, filters);
 	}
 
 	async function limitChange(e: CustomEvent) {
 		limit = e.detail;
 
-		[entities, paginationSettings.size] = await getEntities(offset, limit);
+		[entities, paginationSettings.size] = await getEntities(offset, limit, search, filters);
 	}
 
 	async function pageChange(e: CustomEvent) {
 		page = e.detail;
 		offset = page * limit;
 
-		[entities, paginationSettings.size] = await getEntities(offset, limit);
+		[entities, paginationSettings.size] = await getEntities(offset, limit, search, filters);
 	}
 
 	async function searchFilter() {
-		console.log("\n\nSearch: ")
-		console.log(search)
-		console.log("\nFilters: ")
-		console.log(filters)
+		[entities, paginationSettings.size] = await getEntities(offset, limit, search, filters);
 	}
 
 	const modalStore = getModalStore();

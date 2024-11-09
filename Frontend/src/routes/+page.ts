@@ -20,12 +20,21 @@ export interface Parent {
     Category: string,
 }
 
-export const _getEntities = async (offset: number, limit: number): Promise<[GetEntitiesData[], number]> => {
+export const _getEntities = async (offset: number, limit: number, search: string, filters: {[key: string]: boolean}): Promise<[GetEntitiesData[], number]> => {
     let entities: GetEntitiesData[] = []
     let size: number = 0
+    let filterQuery: string = ''
+
+    for(let key in filters) {
+        if(filters[key] && filterQuery.length > 0) {
+            filterQuery += ',' + key
+        } else if(filters[key]) {
+            filterQuery += key
+        }
+    }
 
     try{
-        const response = await fetch(`${PUBLIC_API_URL}api/v1/entities?offset=${offset}&limit=${limit}`);
+        const response = await fetch(`${PUBLIC_API_URL}api/v1/entities?offset=${offset}&limit=${limit}&search=${search}&filter=${filterQuery}`);
         const data = await response.json()
 
         if (data.message == "success") {
