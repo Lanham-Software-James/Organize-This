@@ -131,9 +131,9 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 			if len(filters) == 0 || slices.Contains(filters, table.category) {
 				query := ""
 				if table.category == "building" {
-					query = fmt.Sprintf(`(SELECT %d AS tableWeight, created_at, '%s' AS category, id, name, notes, address, 0 AS parent_id, ' ' AS parent_category FROM %s WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at ASC`, table.tableWeight, table.category, table.tableName)
+					query = fmt.Sprintf(`(SELECT %d AS tableWeight, created_at, '%s' AS category, id, name, notes, address, 0 AS parent_id, ' ' AS parent_category FROM %s WHERE user_id = ? AND deleted_at IS NULL`, table.tableWeight, table.category, table.tableName)
 				} else {
-					query = fmt.Sprintf(`(SELECT %d AS tableWeight, created_at, '%s' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM %s WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at ASC`, table.tableWeight, table.category, table.tableName)
+					query = fmt.Sprintf(`(SELECT %d AS tableWeight, created_at, '%s' AS category, id, name, notes, '' AS address, parent_id, parent_category FROM %s WHERE user_id = ? AND deleted_at IS NULL`, table.tableWeight, table.category, table.tableName)
 				}
 
 				stringValues = append(stringValues, userID)
@@ -146,7 +146,7 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 					stringValues = append(stringValues, search, search)
 				}
 
-				query += ` LIMIT ?)`
+				query += ` ORDER BY created_at ASC LIMIT ?)`
 				stringValues = append(stringValues, stringLimit)
 
 				mainSQL = append(mainSQL, query)
