@@ -77,10 +77,10 @@ describe("Unit Tests for _getEntities()", () => {
 
         (fetch as ReturnType<typeof vi.fn>).mockResolvedValue(createFetchResponse(getEntitiesResponse));
 
-        let [entities, size] = await getEntities(offset, limit);
+        let [entities, size] = await getEntities(offset, limit, '', {});
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}api/v1/entities?offset=${offset}&limit=${limit}`
+            `${PUBLIC_API_URL}api/v1/entities?offset=${offset}&limit=${limit}&search=&filter=`
         );
 
         expect(size).toEqual(getEntitiesResponse.data.TotalCount)
@@ -100,10 +100,10 @@ describe("Unit Tests for _getEntities()", () => {
 
         (fetch as ReturnType<typeof vi.fn>).mockResolvedValue(createFetchResponse(getEntitiesResponse));
 
-        let [entities, size] = await getEntities(offset, limit);
+        let [entities, size] = await getEntities(offset, limit, '', {});
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}api/v1/entities?offset=${offset}&limit=${limit}`
+            `${PUBLIC_API_URL}api/v1/entities?offset=${offset}&limit=${limit}&search=&filter=`
         );
 
         expect(size).toEqual(0)

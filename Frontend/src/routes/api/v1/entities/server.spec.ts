@@ -25,7 +25,7 @@ describe('GET function', () => {
 
   it('FEUT-57: Get Entities Sever Request Success', async () => {
     const mockCookies = {};
-    const mockUrl = new URL('http://example.com?offset=0&limit=10');
+    const mockUrl = new URL('http://example.com?offset=0&limit=10&search=test&filter=item,container');
 
     // Mock cookieStore.get to return a token
     vi.mocked(cookieStore.get).mockReturnValue('mock-token');
@@ -37,7 +37,7 @@ describe('GET function', () => {
 
     // Check if fetch was called with correct arguments
     expect(global.fetch).toHaveBeenCalledWith(
-      'http://mock-api.com/v1/entities?offset=0&limit=10',
+      'http://mock-api.com/v1/entities?offset=0&limit=10&search=test&filter=item,container',
       {
         headers: {
           Authorization: 'Bearer mock-token'
