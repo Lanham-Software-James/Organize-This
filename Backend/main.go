@@ -7,6 +7,7 @@ import (
 	"organize-this/infra/cognito"
 	"organize-this/infra/database"
 	"organize-this/infra/logger"
+	"organize-this/infra/s3"
 	"organize-this/migrations"
 	"organize-this/routers"
 	"time"
@@ -38,7 +39,11 @@ func main() {
 	}
 
 	if err := cognito.CognitoClientInit(); err != nil {
-		logger.Fatalf("redis CognitoConnection error: %s", err)
+		logger.Fatalf("Cognito Connection error: %s", err)
+	}
+
+	if err := s3.S3ClientInit(); err != nil {
+		logger.Fatalf("S3 Connection error: %s", err)
 	}
 
 	router := routers.SetupRoute()
