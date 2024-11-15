@@ -11,6 +11,7 @@
 	import { _getEntities as getEntities, type GetEntitiesData } from './+page';
 	import AddNewModal from '$lib/AddNewModal/AddNewModal.svelte';
 	import { slide } from 'svelte/transition';
+	import QrCodeModal from '$lib/QRCodeModal/QRCodeModal.svelte';
 
 	let entities: GetEntitiesData[] = [];
 	let offset = 0;
@@ -67,6 +68,19 @@
 			(target.tagName === 'I' && target.classList.contains('fa-qrcode'))
 		) {
 			// Display QR Modal
+			const modal: ModalSettings = {
+				type: 'component',
+				component: {
+					ref: QrCodeModal,
+					props: {
+						id: id,
+						category: category,
+					}
+				},
+				title: 'QR Code',
+				body: `Please scan or download the QR code for this ${cleanCategory(category)}`
+			};
+			modalStore.trigger(modal);
 		} else {
 			// Display Edit Modal
 			const modal: ModalSettings = {
