@@ -93,7 +93,7 @@ func (handler Handler) Generate(w http.ResponseWriter, request *http.Request) {
 		}
 
 		// Build QR
-		url := "http://localhost:5173/" + category + "/" + stringID
+		url := fmt.Sprintf("%s/%s/%s", config.FrontEndURL(), category, stringID)
 		fileLocation := "assets/" + fileName
 
 		qrc, err := qrcode.New(url)

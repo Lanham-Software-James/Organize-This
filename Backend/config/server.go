@@ -20,3 +20,7 @@ func ServerConfig() string {
 
 	return appServer
 }
+
+func FrontEndURL() string {
+	return viper.GetString("FRONT_END_URL")
+}
