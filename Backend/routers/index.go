@@ -22,9 +22,10 @@ func RegisterRoutes(r *chi.Mux) {
 			Database: database.GetDB(),
 			Cache:    cache.GetClient(),
 		},
-		CognitoClient: cognito.GetClient(),
-		S3Client:      s3.GetClient(),
-		TokenHelper:   &helpers.DefaultTokenHelper{},
+		CognitoClient:   cognito.GetClient(),
+		S3Client:        s3.GetClient(),
+		S3PresignClient: s3.GetPresignClient(),
+		TokenHelper:     &helpers.DefaultTokenHelper{},
 	}
 
 	r.Get("/", func(w http.ResponseWriter, _ *http.Request) {

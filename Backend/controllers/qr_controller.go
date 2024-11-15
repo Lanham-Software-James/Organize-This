@@ -6,9 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"organize-this/config"
 	"organize-this/helpers"
+	"organize-this/infra/cache"
 	"organize-this/models"
 	"os"
 	"strconv"
@@ -18,9 +20,16 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/redis/go-redis/v9"
 	"github.com/yeqown/go-qrcode/v2"
 	"github.com/yeqown/go-qrcode/writer/standard"
 )
+
+type PresignedURLCacheKey struct {
+	CacheKey cache.CacheKey
+	Category string
+	ID       string
+}
 
 // Generate creates a new QR code, uploads it to S3, and then returns the url to the frontend.
 func (handler Handler) Generate(w http.ResponseWriter, request *http.Request) {
@@ -58,90 +67,128 @@ func (handler Handler) Generate(w http.ResponseWriter, request *http.Request) {
 	claims := request.Context().Value("user_claims").(jwt.MapClaims)
 	userID := claims["username"].(string)
 
-	// Verify entity exists
-	entity := models.Entity{
-		ID: id,
+	cacheTTL := 500 * time.Second
+
+	keyStructured := PresignedURLCacheKey{
+		CacheKey: cache.CacheKey{
+			User:     userID,
+			Function: "GenerateQR",
+		},
+		Category: category,
+		ID:       stringID,
 	}
 
-	validEntity, model := buildEntity(entity, models.Parent{}, category, "")
-	if !validEntity {
-		logAndRespond(w, fmt.Sprintf("Invalid category %v.", category), nil)
-		return
-	}
-
-	dberr := handler.Repository.GetOne(model, userID)
-	if dberr != nil {
-		logAndRespond(w, fmt.Sprintf("Entity category of %v with id %v not found.", category, stringID), nil)
-		return
-	}
-
-	// Check if object exists
-	bucketName := config.S3BucketName()
-	fileName := base64.StdEncoding.EncodeToString([]byte(userID + "_QR_" + category + "_" + stringID)) // + ".jpeg"
-	fileURL := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", bucketName, config.AWSRegion(), fileName)
-
-	_, err = handler.S3Client.HeadObject(request.Context(), &s3.HeadObjectInput{
-		Bucket: aws.String(bucketName),
-		Key:    aws.String(fileName),
-	})
-
+	key, err := json.Marshal(keyStructured)
 	if err != nil {
-		var notFound *types.NotFound
-		if !errors.As(err, &notFound) {
-			logAndRespond(w, fmt.Sprintf("Could not upload file: %v", err), err)
+		logAndRespond(w, fmt.Sprintf("Error encoding Redis key: %v", err), err)
+		return
+	}
+
+	value, redisErr := handler.Repository.Cache.Get(request.Context(), string(key)).Result()
+	if redisErr != nil && !errors.Is(redisErr, redis.Nil) {
+		logAndRespond(w, fmt.Sprintf("Error retriving entites from Redis: %v", redisErr), err)
+		return
+	}
+
+	if value == "" {
+		// Verify entity exists
+		entity := models.Entity{
+			ID: id,
+		}
+
+		validEntity, model := buildEntity(entity, models.Parent{}, category, "")
+		if !validEntity {
+			logAndRespond(w, fmt.Sprintf("Invalid category %v.", category), nil)
 			return
 		}
 
-		// Build QR
-		url := fmt.Sprintf("%s/%s/%s", config.FrontEndURL(), category, stringID)
-		fileLocation := "assets/" + fileName
-
-		qrc, err := qrcode.New(url)
-		if err != nil {
-			logAndRespond(w, "could not generate QRCode: %v", err)
+		dberr := handler.Repository.GetOne(model, userID)
+		if dberr != nil {
+			logAndRespond(w, fmt.Sprintf("Entity category of %v with id %v not found.", category, stringID), nil)
 			return
 		}
 
-		writer, err := standard.New(fileLocation)
-		if err != nil {
-			logAndRespond(w, "standard.New failed: %v", err)
-			return
-		}
+		// Check if object exists
+		bucketName := config.S3BucketName()
+		fileName := base64.StdEncoding.EncodeToString([]byte(userID + "_QR_" + category + "_" + stringID))
 
-		// Save TMP file
-		if err = qrc.Save(writer); err != nil {
-			logAndRespond(w, "could not save image: %v", err)
-			return
-		}
-
-		// Upload to S3
-		file, err := os.Open(fileLocation)
-		if err != nil {
-			logAndRespond(w, "Couldn't open file: %v", err)
-			return
-		}
-
-		defer file.Close()
-		defer os.Remove(fileLocation)
-
-		_, err = handler.S3Client.PutObject(request.Context(), &s3.PutObjectInput{
+		_, err = handler.S3Client.HeadObject(request.Context(), &s3.HeadObjectInput{
 			Bucket: aws.String(bucketName),
 			Key:    aws.String(fileName),
-			Body:   file,
+		})
+
+		if err != nil {
+			var notFound *types.NotFound
+			if !errors.As(err, &notFound) {
+				logAndRespond(w, fmt.Sprintf("Could not upload file: %v", err), err)
+				return
+			}
+
+			// Build QR
+			url := fmt.Sprintf("%s/%s/%s", config.FrontEndURL(), category, stringID)
+			fileLocation := "assets/" + fileName
+
+			qrc, err := qrcode.New(url)
+			if err != nil {
+				logAndRespond(w, "could not generate QRCode: %v", err)
+				return
+			}
+
+			writer, err := standard.New(fileLocation)
+			if err != nil {
+				logAndRespond(w, "standard.New failed: %v", err)
+				return
+			}
+
+			// Save TMP file
+			if err = qrc.Save(writer); err != nil {
+				logAndRespond(w, "could not save image: %v", err)
+				return
+			}
+
+			// Upload to S3
+			file, err := os.Open(fileLocation)
+			if err != nil {
+				logAndRespond(w, "Couldn't open file: %v", err)
+				return
+			}
+
+			defer file.Close()
+			defer os.Remove(fileLocation)
+
+			_, err = handler.S3Client.PutObject(request.Context(), &s3.PutObjectInput{
+				Bucket: aws.String(bucketName),
+				Key:    aws.String(fileName),
+				Body:   file,
+			})
+			if err != nil {
+				logAndRespond(w, fmt.Sprintf("Couldn't upload file: %v\n", err), err)
+				return
+			}
+
+			err = s3.NewObjectExistsWaiter(handler.S3Client).Wait(
+				request.Context(), &s3.HeadObjectInput{Bucket: aws.String(bucketName), Key: aws.String(fileName)}, time.Minute)
+			if err != nil {
+				logAndRespond(w, fmt.Sprintf("Failed attempt to wait for object %s to exist.\n", fileName), err)
+				return
+			}
+		}
+
+		presigned, err := handler.S3PresignClient.PresignGetObject(request.Context(), &s3.GetObjectInput{
+			Bucket: aws.String(bucketName),
+			Key:    aws.String(fileName),
+		}, func(opts *s3.PresignOptions) {
+			opts.Expires = time.Duration(cacheTTL)
 		})
 		if err != nil {
-			logAndRespond(w, fmt.Sprintf("Couldn't upload file: %v\n", err), err)
-			return
+			log.Printf("Couldn't get a presigned request to get %v:%v. Here's why: %v\n",
+				bucketName, fileName, err)
 		}
 
-		err = s3.NewObjectExistsWaiter(handler.S3Client).Wait(
-			request.Context(), &s3.HeadObjectInput{Bucket: aws.String(bucketName), Key: aws.String(fileName)}, time.Minute)
-		if err != nil {
-			logAndRespond(w, fmt.Sprintf("Failed attempt to wait for object %s to exist.\n", fileName), err)
-			return
-		}
+		value = presigned.URL
+		handler.Repository.Cache.Set(request.Context(), string(key), value, cacheTTL)
 	}
 
-	helpers.SuccessResponse(w, fileURL)
+	helpers.SuccessResponse(w, value)
 	return
 }
