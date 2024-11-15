@@ -1,12 +1,13 @@
 package controllers
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"organize-this/config"
 	"organize-this/helpers"
@@ -14,6 +15,7 @@ import (
 	"organize-this/models"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -110,11 +112,19 @@ func (handler Handler) Generate(w http.ResponseWriter, request *http.Request) {
 
 		// Check if object exists
 		bucketName := config.S3BucketName()
-		fileName := base64.StdEncoding.EncodeToString([]byte(userID + "_QR_" + category + "_" + stringID))
+		folderName, err := Encrypt(userID, "abc&1*~#^2^#s0^=)^^7b34d")
+		if err != nil {
+			logAndRespond(w, fmt.Sprintf("error encrypting your classified text: %v", err), err)
+			return
+		}
+
+		folderName = strings.Replace(folderName, "/", "-", -1)
+		fileName := fmt.Sprintf("QR-%s-%s.jpg", category, stringID)
+		objectKey := fmt.Sprintf("%s/%s", folderName, fileName)
 
 		_, err = handler.S3Client.HeadObject(request.Context(), &s3.HeadObjectInput{
 			Bucket: aws.String(bucketName),
-			Key:    aws.String(fileName),
+			Key:    aws.String(objectKey),
 		})
 
 		if err != nil {
@@ -158,7 +168,7 @@ func (handler Handler) Generate(w http.ResponseWriter, request *http.Request) {
 
 			_, err = handler.S3Client.PutObject(request.Context(), &s3.PutObjectInput{
 				Bucket: aws.String(bucketName),
-				Key:    aws.String(fileName),
+				Key:    aws.String(objectKey),
 				Body:   file,
 			})
 			if err != nil {
@@ -167,7 +177,7 @@ func (handler Handler) Generate(w http.ResponseWriter, request *http.Request) {
 			}
 
 			err = s3.NewObjectExistsWaiter(handler.S3Client).Wait(
-				request.Context(), &s3.HeadObjectInput{Bucket: aws.String(bucketName), Key: aws.String(fileName)}, time.Minute)
+				request.Context(), &s3.HeadObjectInput{Bucket: aws.String(bucketName), Key: aws.String(objectKey)}, time.Minute)
 			if err != nil {
 				logAndRespond(w, fmt.Sprintf("Failed attempt to wait for object %s to exist.\n", fileName), err)
 				return
@@ -176,13 +186,13 @@ func (handler Handler) Generate(w http.ResponseWriter, request *http.Request) {
 
 		presigned, err := handler.S3PresignClient.PresignGetObject(request.Context(), &s3.GetObjectInput{
 			Bucket: aws.String(bucketName),
-			Key:    aws.String(fileName),
+			Key:    aws.String(objectKey),
 		}, func(opts *s3.PresignOptions) {
 			opts.Expires = time.Duration(cacheTTL)
 		})
 		if err != nil {
-			log.Printf("Couldn't get a presigned request to get %v:%v. Here's why: %v\n",
-				bucketName, fileName, err)
+			logAndRespond(w, fmt.Sprintf("Couldn't get a presigned request: %v", err), err)
+			return
 		}
 
 		value = presigned.URL
@@ -191,4 +201,18 @@ func (handler Handler) Generate(w http.ResponseWriter, request *http.Request) {
 
 	helpers.SuccessResponse(w, value)
 	return
+}
+
+// Encrypt method is to encrypt or hide any classified text
+func Encrypt(text, MySecret string) (string, error) {
+	var bytes = []byte{35, 46, 57, 24, 85, 35, 24, 74, 87, 35, 88, 98, 66, 32, 14, 05}
+	block, err := aes.NewCipher([]byte(MySecret))
+	if err != nil {
+		return "", err
+	}
+	plainText := []byte(text)
+	cfb := cipher.NewCFBEncrypter(block, bytes)
+	cipherText := make([]byte, len(plainText))
+	cfb.XORKeyStream(cipherText, plainText)
+	return base64.StdEncoding.EncodeToString(cipherText), nil
 }
