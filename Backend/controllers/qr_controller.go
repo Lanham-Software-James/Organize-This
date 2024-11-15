@@ -122,12 +122,13 @@ func (handler Handler) Generate(w http.ResponseWriter, request *http.Request) {
 		}
 
 		defer file.Close()
+		defer os.Remove(fileLocation)
+
 		_, err = handler.S3Client.PutObject(request.Context(), &s3.PutObjectInput{
 			Bucket: aws.String(bucketName),
 			Key:    aws.String(fileName),
 			Body:   file,
 		})
-
 		if err != nil {
 			logAndRespond(w, fmt.Sprintf("Couldn't upload file: %v\n", err), err)
 			return
@@ -137,13 +138,6 @@ func (handler Handler) Generate(w http.ResponseWriter, request *http.Request) {
 			request.Context(), &s3.HeadObjectInput{Bucket: aws.String(bucketName), Key: aws.String(fileName)}, time.Minute)
 		if err != nil {
 			logAndRespond(w, fmt.Sprintf("Failed attempt to wait for object %s to exist.\n", fileName), err)
-			return
-		}
-
-		// Clean Up TMP file
-		err = os.Remove(fileLocation)
-		if err != nil {
-			logAndRespond(w, "could not remove tmp image: %v", err)
 			return
 		}
 	}
