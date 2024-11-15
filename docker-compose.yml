@@ -54,6 +54,7 @@ services:
       AWS_CLIENT_ID: ${AWS_CLIENT_ID}
       AWS_CLIENT_SECRET: ${AWS_CLIENT_SECRET}
       AWS_USER_POOL_ID: ${AWS_USER_POOL_ID}
+      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
     depends_on:
       - db
     networks:

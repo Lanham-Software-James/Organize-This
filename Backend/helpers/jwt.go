@@ -17,7 +17,7 @@ type TokenHelper interface {
 type DefaultTokenHelper struct{}
 
 func (h *DefaultTokenHelper) VerifyToken(tokenString string, performValidation bool) (*jwt.Token, error) {
-	region := config.CognitoRegion()
+	region := config.AWSRegion()
 	userPool := config.CognitoUserPoolID()
 	jwksURL := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s/.well-known/jwks.json", region, userPool)
 	issuer := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s", region, userPool)

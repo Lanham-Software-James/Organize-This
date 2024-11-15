@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"organize-this/config"
 	"organize-this/helpers"
 	"organize-this/models"
 	"os"
@@ -75,9 +76,9 @@ func (handler Handler) Generate(w http.ResponseWriter, request *http.Request) {
 	}
 
 	// Check if object exists
-	bucketName := "organize-this-local"
-	fileName := base64.StdEncoding.EncodeToString([]byte(userID+"_QR_"+category+"_"+stringID)) + ".jpeg"
-	fileURL := "https://organize-this-local.s3.us-east-2.amazonaws.com/" + fileName
+	bucketName := config.S3BucketName()
+	fileName := base64.StdEncoding.EncodeToString([]byte(userID + "_QR_" + category + "_" + stringID)) // + ".jpeg"
+	fileURL := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", bucketName, config.AWSRegion(), fileName)
 
 	_, err = handler.S3Client.HeadObject(request.Context(), &s3.HeadObjectInput{
 		Bucket: aws.String(bucketName),
@@ -86,65 +87,65 @@ func (handler Handler) Generate(w http.ResponseWriter, request *http.Request) {
 
 	if err != nil {
 		var notFound *types.NotFound
-		if errors.As(err, &notFound) {
-			helpers.SuccessResponse(w, fileURL)
+		if !errors.As(err, &notFound) {
+			logAndRespond(w, fmt.Sprintf("Could not upload file: %v", err), err)
 			return
 		}
-	}
 
-	// Build QR
-	url := "http://localhost:5173/" + category + "/" + stringID
-	fileLocation := "assets/" + fileName
+		// Build QR
+		url := "http://localhost:5173/" + category + "/" + stringID
+		fileLocation := "assets/" + fileName
 
-	qrc, err := qrcode.New(url)
-	if err != nil {
-		logAndRespond(w, "could not generate QRCode: %v", err)
-		return
-	}
+		qrc, err := qrcode.New(url)
+		if err != nil {
+			logAndRespond(w, "could not generate QRCode: %v", err)
+			return
+		}
 
-	writer, err := standard.New(fileLocation)
-	if err != nil {
-		logAndRespond(w, "standard.New failed: %v", err)
-		return
-	}
+		writer, err := standard.New(fileLocation)
+		if err != nil {
+			logAndRespond(w, "standard.New failed: %v", err)
+			return
+		}
 
-	// Save TMP file
-	if err = qrc.Save(writer); err != nil {
-		logAndRespond(w, "could not save image: %v", err)
-		return
-	}
+		// Save TMP file
+		if err = qrc.Save(writer); err != nil {
+			logAndRespond(w, "could not save image: %v", err)
+			return
+		}
 
-	// Upload to S3
-	file, err := os.Open(fileLocation)
-	if err != nil {
-		logAndRespond(w, "Couldn't open file: %v", err)
-		return
-	}
+		// Upload to S3
+		file, err := os.Open(fileLocation)
+		if err != nil {
+			logAndRespond(w, "Couldn't open file: %v", err)
+			return
+		}
 
-	defer file.Close()
-	_, err = handler.S3Client.PutObject(request.Context(), &s3.PutObjectInput{
-		Bucket: aws.String(bucketName),
-		Key:    aws.String(fileName),
-		Body:   file,
-	})
+		defer file.Close()
+		_, err = handler.S3Client.PutObject(request.Context(), &s3.PutObjectInput{
+			Bucket: aws.String(bucketName),
+			Key:    aws.String(fileName),
+			Body:   file,
+		})
 
-	if err != nil {
-		logAndRespond(w, fmt.Sprintf("Couldn't upload file: %v\n", err), err)
-		return
-	}
+		if err != nil {
+			logAndRespond(w, fmt.Sprintf("Couldn't upload file: %v\n", err), err)
+			return
+		}
 
-	err = s3.NewObjectExistsWaiter(handler.S3Client).Wait(
-		request.Context(), &s3.HeadObjectInput{Bucket: aws.String(bucketName), Key: aws.String(fileName)}, time.Minute)
-	if err != nil {
-		logAndRespond(w, fmt.Sprintf("Failed attempt to wait for object %s to exist.\n", fileName), err)
-		return
-	}
+		err = s3.NewObjectExistsWaiter(handler.S3Client).Wait(
+			request.Context(), &s3.HeadObjectInput{Bucket: aws.String(bucketName), Key: aws.String(fileName)}, time.Minute)
+		if err != nil {
+			logAndRespond(w, fmt.Sprintf("Failed attempt to wait for object %s to exist.\n", fileName), err)
+			return
+		}
 
-	// Clean Up TMP file
-	e := os.Remove(fileLocation)
-	if e != nil {
-		logAndRespond(w, "could not remove tmp image: %v", e)
-		return
+		// Clean Up TMP file
+		err = os.Remove(fileLocation)
+		if err != nil {
+			logAndRespond(w, "could not remove tmp image: %v", err)
+			return
+		}
 	}
 
 	helpers.SuccessResponse(w, fileURL)
