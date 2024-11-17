@@ -264,6 +264,33 @@ func (handler Handler) GetParents(w http.ResponseWriter, request *http.Request) 
 	helpers.SuccessResponse(w, parents)
 }
 
+// GetChildren return void, but sends a paginated list of all entities back to the client.
+func (handler Handler) GetChildren(w http.ResponseWriter, request *http.Request) {
+	var response []models.GetChildrenResponseData
+
+	category := chi.URLParam(request, "category")
+	idParam := chi.URLParam(request, "id")
+
+	if category == "" {
+		logAndRespond(w, "Missing category", nil)
+	}
+
+	if idParam == "" {
+		logAndRespond(w, "Missing id", nil)
+	}
+
+	id, err := strconv.ParseUint(idParam, 10, 64)
+	if err != nil {
+		err = errors.New("ID must be type integer")
+	}
+
+	claims := request.Context().Value("user_claims").(jwt.MapClaims)
+	userID := claims["username"].(string)
+	response, _ = handler.Repository.GetChildren(id, category, userID)
+
+	helpers.SuccessResponse(w, &response)
+}
+
 func validateParams(parsedData map[string]string, edit bool) (uint64, string, string, uint64, string, error) {
 	var err error
 	var id uint64

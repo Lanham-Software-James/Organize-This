@@ -53,6 +53,7 @@ func RegisterRoutes(r *chi.Mux) {
 			r.Delete("/entity/{category}/{id}", handler.DeleteEntity)
 			r.Get("/entities", handler.GetEntities)
 			r.Get("/parents/{category}", handler.GetParents)
+			r.Get("/children/{category}/{id}", handler.GetChildren)
 
 			//QR Code
 			r.Post("/qr", handler.Generate)
