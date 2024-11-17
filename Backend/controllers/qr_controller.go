@@ -112,7 +112,7 @@ func (handler Handler) Generate(w http.ResponseWriter, request *http.Request) {
 
 		// Check if object exists
 		bucketName := config.S3BucketName()
-		folderName, err := Encrypt(userID, "abc&1*~#^2^#s0^=)^^7b34d")
+		folderName, err := Encrypt(userID, config.EncryptionSecert())
 		if err != nil {
 			logAndRespond(w, fmt.Sprintf("error encrypting your classified text: %v", err), err)
 			return
