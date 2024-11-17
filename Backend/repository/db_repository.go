@@ -503,11 +503,9 @@ func (repo Repository) GetChildren(id uint64, category string, userID string) ([
 		break
 	case "room":
 		dbErr = repo.Database.Raw(`
-			SELECT
-				(SELECT id, name, 'shelving_unit' AS category FROM shelving_units WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL) +
-				(SELECT id, name, 'container' AS category FROM containers WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL) +
-				(SELECT id, name, 'item' AS category FROM items WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL)
-			AS childrenCount`,
+			(SELECT id, name, 'shelving_unit' AS category FROM shelving_units WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL) UNION ALL
+			(SELECT id, name, 'container' AS category FROM containers WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL) UNION ALL
+			(SELECT id, name, 'item' AS category FROM items WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL)`,
 			userID, id, category,
 			userID, id, category,
 			userID, id, category,
@@ -515,7 +513,7 @@ func (repo Repository) GetChildren(id uint64, category string, userID string) ([
 		break
 	case "shelving_unit":
 		dbErr = repo.Database.Raw(`
-			(SELECT id, name, 'shelf' AS childrenCount FROM shelves WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL)`,
+			(SELECT id, name, 'shelf' AS category FROM shelves WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL)`,
 			userID,
 			id,
 			category,
@@ -523,17 +521,15 @@ func (repo Repository) GetChildren(id uint64, category string, userID string) ([
 		break
 	case "shelf":
 		dbErr = repo.Database.Raw(`
-			SELECT
-				(SELECT id, name, 'container' FROM containers WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL) +
-				(SELECT id, name, 'item' FROM items WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL)
-			AS childrenCount`,
+			(SELECT id, name, 'container' AS category FROM containers WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL) UNION ALL
+			(SELECT id, name, 'item' AS category FROM items WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL)`,
 			userID, id, category,
 			userID, id, category,
 		).Scan(&results).Error
 		break
 	case "container":
 		dbErr = repo.Database.Raw(`
-			(SELECT id, name, 'item' AS childrenCount FROM items WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL)`,
+			(SELECT id, name, 'item' AS category FROM items WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL)`,
 			userID,
 			id,
 			category,
