@@ -236,7 +236,11 @@
 							<td class="invisible lg:visible">{entity.Notes ?? ''}</td>
 							<td class="qr">
 								<button type="button">
-									<i class="fa-solid fa-qrcode"></i>
+									{#if entity.ID != 0}
+										<i class="fa-solid fa-qrcode"></i>
+									{:else}
+										&nbsp;
+									{/if}
 								</button>
 							</td>
 						</tr>
