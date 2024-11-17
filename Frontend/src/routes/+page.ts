@@ -38,7 +38,10 @@ export const _getEntities = async (offset: number, limit: number, search: string
         const data = await response.json()
 
         if (data.message == "success") {
-            entities = data.data.Entities
+            if(data.data.Entities != null) {
+                entities = data.data.Entities
+            }
+
             size = +data.data.TotalCount
         }
 
