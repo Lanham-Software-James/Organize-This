@@ -12,6 +12,7 @@
 	import AddNewModal from '$lib/AddNewModal/AddNewModal.svelte';
 	import { slide } from 'svelte/transition';
 	import QrCodeModal from '$lib/QRCodeModal/QRCodeModal.svelte';
+	import { cleanCategory } from '$lib/CleanCategory/CleanCategory';
 
 	let entities: GetEntitiesData[] = [];
 	let offset = 0;
@@ -99,15 +100,6 @@
 			};
 			modalStore.trigger(modal);
 		}
-	}
-
-	function cleanCategory(category: string): string {
-		var cleanedCategory = category;
-		if (cleanedCategory == 'shelving_unit') {
-			cleanedCategory = 'shelving unit';
-		}
-
-		return cleanedCategory;
 	}
 
 	let filters: { [key: string]: boolean } = {
