@@ -35,26 +35,46 @@ export const load = (async ({ params }) => {
         }
     }
     let parentName : string = ""
+    let children: getEntityEntity[] = []
 
     const promises = [
         fetch(`${PUBLIC_API_URL}api/v1/entity/${params.category}/${params.id}`),
-        fetch(`${PUBLIC_API_URL}api/v1/entity/${params.category}/${params.id}`), //Replace this with get children
+        fetch(`${PUBLIC_API_URL}api/v1/children/${params.category}/${params.id}`),
     ]
 
     try {
         const [getEntityResponse, getChildrenResponse] = await Promise.all(promises)
         const [getEntityData, getChildrenData] = await Promise.all([getEntityResponse.json(), getChildrenResponse.json()]);
 
-        const getParentResponse = await fetch(`${PUBLIC_API_URL}api/v1/entity/${getEntityData.data.Parent.ParentCategory}/${getEntityData.data.Parent.ParentID}`);
-        const getParentData = await getParentResponse.json();
+        let getParentResponse: Response
+        let getParentData: any
+        let success: boolean
 
-        if (getEntityData.message == getChildrenData.message &&
-            getChildrenData.message == getParentData.message &&
-            getParentData.message == "success") {
+        if(params.category != "building"){
+            getParentResponse = await fetch(`${PUBLIC_API_URL}api/v1/entity/${getEntityData.data.Parent.ParentCategory}/${getEntityData.data.Parent.ParentID}`);
+            getParentData = await getParentResponse.json();
+            success = getEntityData.message == getChildrenData.message &&
+                getChildrenData.message == getParentData.message &&
+                getParentData.message == "success"
+        } else {
+            getParentData = undefined
+            success = getEntityData.message == getChildrenData.message &&
+                getChildrenData.message == "success"
+        }
+
+        if (success) {
 
             entity = getEntityData.data
             entity.Entity.Category = params.category
-            parentName = getParentData.data.Entity.Name
+
+            if(getParentData != undefined) {
+                parentName = getParentData.data.Entity.Name
+            }
+
+            if(getChildrenData.data != null) {
+               children = getChildrenData.data
+            }
+
             message = "success"
         }
     } catch (error) {
@@ -65,5 +85,6 @@ export const load = (async ({ params }) => {
         message: message,
         entity: entity,
         parentName: parentName,
+        children: children,
     }
 }) satisfies PageLoad;
