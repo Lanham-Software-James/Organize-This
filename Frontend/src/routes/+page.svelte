@@ -63,6 +63,9 @@
 
 	async function rowClick(event: MouseEvent, id: number, category: string) {
 		const target = event.target as HTMLElement;
+		if(id == 0) {
+			return
+		}
 
 		if (
 			(target.tagName === 'TD' && target.classList.contains('qr')) ||
