@@ -16,10 +16,6 @@ func CognitoUserPoolID() string {
 	return viper.GetString("AWS_USER_POOL_ID")
 }
 
-func CognitoRegion() string {
-	return viper.GetString("AWS_REGION")
-}
-
 func CognitoClientSecret() string {
 	return viper.GetString("AWS_CLIENT_SECRET")
 }

@@ -487,6 +487,67 @@ func (repo Repository) HasChildren(id uint64, category string, userID string) (b
 	return hasChildren, childrenCount, nil
 }
 
+// GetChildren returns all the children for an entity.
+func (repo Repository) GetChildren(id uint64, category string, userID string) ([]models.GetChildrenResponseData, error) {
+	var results []models.GetChildrenResponseData
+
+	var dbErr error
+	switch category {
+	case "building":
+		dbErr = repo.Database.Raw(`
+			(SELECT id, name, 'room' AS category FROM rooms WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL)`,
+			userID,
+			id,
+			category,
+		).Scan(&results).Error
+		break
+	case "room":
+		dbErr = repo.Database.Raw(`
+			(SELECT id, name, 'shelving_unit' AS category FROM shelving_units WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL) UNION ALL
+			(SELECT id, name, 'container' AS category FROM containers WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL) UNION ALL
+			(SELECT id, name, 'item' AS category FROM items WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL)`,
+			userID, id, category,
+			userID, id, category,
+			userID, id, category,
+		).Scan(&results).Error
+		break
+	case "shelving_unit":
+		dbErr = repo.Database.Raw(`
+			(SELECT id, name, 'shelf' AS category FROM shelves WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL)`,
+			userID,
+			id,
+			category,
+		).Scan(&results).Error
+		break
+	case "shelf":
+		dbErr = repo.Database.Raw(`
+			(SELECT id, name, 'container' AS category FROM containers WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL) UNION ALL
+			(SELECT id, name, 'item' AS category FROM items WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL)`,
+			userID, id, category,
+			userID, id, category,
+		).Scan(&results).Error
+		break
+	case "container":
+		dbErr = repo.Database.Raw(`
+			(SELECT id, name, 'item' AS category FROM items WHERE user_id = ? AND parent_id = ? AND parent_category = ? AND deleted_at IS NULL)`,
+			userID,
+			id,
+			category,
+		).Scan(&results).Error
+		break
+	default:
+		logger.Errorf("Invalid category for retriving children.")
+		return nil, fmt.Errorf("Invalid category for retriving children: %v", category)
+	}
+
+	if dbErr != nil {
+		logger.Errorf("error executing query: %v", dbErr)
+		return nil, dbErr
+	}
+
+	return results, nil
+}
+
 // FlushEntities clears the redis cache of all things relating to entities
 func (repo Repository) FlushEntities(ctx context.Context, userID string) {
 

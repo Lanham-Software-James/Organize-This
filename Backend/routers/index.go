@@ -8,6 +8,7 @@ import (
 	"organize-this/infra/cache"
 	"organize-this/infra/cognito"
 	"organize-this/infra/database"
+	"organize-this/infra/s3"
 	"organize-this/repository"
 	"organize-this/routers/middlewares"
 
@@ -21,8 +22,10 @@ func RegisterRoutes(r *chi.Mux) {
 			Database: database.GetDB(),
 			Cache:    cache.GetClient(),
 		},
-		CognitoClient: cognito.GetClient(),
-		TokenHelper:   &helpers.DefaultTokenHelper{},
+		CognitoClient:   cognito.GetClient(),
+		S3Client:        s3.GetClient(),
+		S3PresignClient: s3.GetPresignClient(),
+		TokenHelper:     &helpers.DefaultTokenHelper{},
 	}
 
 	r.Get("/", func(w http.ResponseWriter, _ *http.Request) {
@@ -50,6 +53,10 @@ func RegisterRoutes(r *chi.Mux) {
 			r.Delete("/entity/{category}/{id}", handler.DeleteEntity)
 			r.Get("/entities", handler.GetEntities)
 			r.Get("/parents/{category}", handler.GetParents)
+			r.Get("/children/{category}/{id}", handler.GetChildren)
+
+			//QR Code
+			r.Post("/qr", handler.Generate)
 		})
 
 	})
