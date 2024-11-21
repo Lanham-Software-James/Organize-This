@@ -1,24 +1,38 @@
 # Build Stage
-FROM node:20.17.0 AS build
+FROM node:20.17.0-alpine AS build
 
 WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install
+RUN npm ci
+
+COPY . .
+
+RUN npm run build
 
 # Dev Stage
 FROM build AS dev
 
 ENV NODE_ENV=development
-ENV PATH /app/node_modules/.bin:$PATH
-
-COPY . .
+ENV PATH=/app/node_modules/.bin:$PATH
 
 EXPOSE 5173
 
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+
+# Production Stage
+FROM node:20.17.0-alpine AS prd
+
+ENV NODE_ENV=production
+
 WORKDIR /app
 
-RUN npm install vite
+COPY --from=build /app/package*.json ./
+COPY --from=build /app/build ./build
 
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+RUN npm ci --omit dev
+
+EXPOSE 80
+
+CMD ["node", "build"]
