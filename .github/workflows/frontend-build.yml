@@ -19,12 +19,12 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Build and push backend image
+    - name: Build and push frontend image
       uses: docker/build-push-action@v4
       with:
-        context: ./Backend
+        context: ./Frontend
         target: prd
         push: true
         tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/organize-this-backend:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/organize-this-backend:${{ github.run_number }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/organize-this-frontend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/organize-this-frontend:${{ github.run_number }}
