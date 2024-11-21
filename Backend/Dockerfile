@@ -15,9 +15,7 @@ RUN --mount=type=ssh go mod download
 COPY ./ ./
 RUN go build -o ./tmp/main ./main.go
 
-
 # Development stage
-
 FROM build AS dev
 
 RUN apk add --no-cache git
@@ -29,3 +27,16 @@ EXPOSE 2345
 WORKDIR /app
 
 CMD ["air", "-c", ".air.toml"]
+
+# Production stage
+FROM alpine:latest AS prd
+
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /root/
+
+COPY --from=build /app/tmp/main .
+
+EXPOSE 3000
+
+CMD ["./main"]
