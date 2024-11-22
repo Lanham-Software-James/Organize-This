@@ -25,6 +25,8 @@ CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 FROM node:20.17.0-alpine AS prd
 
 ENV NODE_ENV=production
+ENV PUBLIC_API_URL=${PUBLIC_API_URL}
+ENV API_URL=${API_URL}
 
 WORKDIR /app
 
@@ -33,6 +35,6 @@ COPY --from=build /app/build ./build
 
 RUN npm ci --omit dev
 
-EXPOSE 80
+EXPOSE 3000
 
 CMD ["node", "build"]

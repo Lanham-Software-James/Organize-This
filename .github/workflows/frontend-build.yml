@@ -10,6 +10,7 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    environment: prd
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
     - uses: actions/checkout@v3
@@ -28,6 +29,9 @@ jobs:
       with:
         context: ./Frontend
         target: prd
+        build-args: |
+          "PUBLIC_API_URL=${{ secrets.PUBLIC_API_URL }}"
+          "API_URL=${{ secrets.API_URL }}"
         push: true
         tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/organize-this-frontend:latest

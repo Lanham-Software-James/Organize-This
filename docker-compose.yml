@@ -75,6 +75,9 @@ services:
       context: ./Frontend
       target: dev
     container_name: organize-this-frontend
+    environment:
+      PUBLIC_API_URL: ${PUBLIC_API_URL}
+      API_URL: ${API_URL}
     depends_on:
       - backend
     networks:
