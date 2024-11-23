@@ -24,6 +24,9 @@ CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 # Production Stage
 FROM node:20.17.0-alpine AS prd
 
+ARG PUBLIC_API_URL
+ARG API_URL
+
 ENV NODE_ENV=production
 ENV PUBLIC_API_URL=${PUBLIC_API_URL}
 ENV API_URL=${API_URL}
