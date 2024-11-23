@@ -9,6 +9,12 @@ RUN npm ci
 
 COPY . .
 
+ARG PUBLIC_API_URL
+ARG API_URL
+
+RUN echo "PUBLIC_API_URL=$PUBLIC_API_URL" > .env
+RUN echo "API_URL=$API_URL" >> .env
+
 RUN npm run build
 
 # Dev Stage
@@ -30,12 +36,6 @@ WORKDIR /app
 
 COPY --from=build /app/package*.json ./
 COPY --from=build /app/build ./build
-
-ARG PUBLIC_API_URL
-ARG API_URL
-
-RUN echo "PUBLIC_API_URL=$PUBLIC_API_URL" > .env
-RUN echo "API_URL=$API_URL" >> .env
 
 RUN npm ci --omit dev
 
