@@ -1,0 +1,97 @@
+services:
+  db:
+    image: postgres:15.8-alpine3.20
+    container_name: organize-this-db
+    environment:
+      POSTGRES_DB: ${MASTER_DB_NAME}
+      POSTGRES_USER: ${MASTER_DB_USER}
+      POSTGRES_PASSWORD: ${MASTER_DB_PASSWORD}
+    networks:
+      - organize-this-backend
+    ports:
+      - "5432:5432"
+    volumes:
+      - organize-this-db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis/redis-stack:7.4.0-v0
+    container_name: organize-this-redis
+    environment:
+      REDIS_ARGS: "--requirepass password --user ${REDIS_USER} on >${REDIS_PASSWORD} ~* allcommands --user default off nopass nocommands"
+    networks:
+      - organize-this-backend
+    ports:
+      - "6379:6379"
+      - "8001:8001"
+    volumes:
+      - organize-this-redis-data:/data
+    restart: unless-stopped
+
+  backend:
+    image: jameslanham/organize-this-backend:latest
+    container_name: organize-this-backend
+    environment:
+      MASTER_DB_NAME: ${MASTER_DB_NAME}
+      MASTER_DB_USER: ${MASTER_DB_USER}
+      MASTER_DB_PASSWORD: ${MASTER_DB_PASSWORD}
+      MASTER_DB_HOST: ${MASTER_DB_HOST}
+      MASTER_DB_PORT: ${MASTER_DB_PORT}
+      MASTER_DB_LOG_MODE: ${MASTER_DB_LOG_MODE}
+      MASTER_SSL_MODE: ${MASTER_SSL_MODE}
+      SECRET: ${SECRET}
+      DEBUG: ${DEBUG}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS}
+      SERVER_HOST: ${SERVER_HOST}
+      SERVER_PORT: ${SERVER_PORT}
+      FRONT_END_URL: ${FRONT_END_URL}
+      ENCRYPTION_SECERT: ${ENCRYPTION_SECERT}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_USER: ${REDIS_USER}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      AWS_ACCESS_KEY: ${AWS_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION}
+      AWS_CLIENT_ID: ${AWS_CLIENT_ID}
+      AWS_CLIENT_SECRET: ${AWS_CLIENT_SECRET}
+      AWS_USER_POOL_ID: ${AWS_USER_POOL_ID}
+      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
+    depends_on:
+      - db
+    networks:
+      - organize-this-backend
+      - organize-this-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - "./Backend:/app"
+    restart: unless-stopped
+
+  frontend:
+    image: jameslanham/organize-this-frontend:latest
+    container_name: organize-this-frontend
+    environment:
+      PUBLIC_API_URL: ${PUBLIC_API_URL}
+      API_URL: ${API_URL}
+    depends_on:
+      - backend
+    networks:
+      - organize-this-frontend
+    ports:
+      - "80:3000"
+    volumes:
+      - "./Frontend/src:/app/src"
+      - "./Frontend/tests:/app/tests"
+      - "./Frontend/static:/app/static"
+
+    restart: unless-stopped
+
+networks:
+  organize-this-backend:
+    driver: bridge
+  organize-this-frontend:
+    driver: bridge
+
+volumes:
+  organize-this-db-data:
+  organize-this-redis-data:
