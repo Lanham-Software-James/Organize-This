@@ -15,7 +15,8 @@ export async function POST({ request, cookies }) {
             {
                 method: "POST",
                 headers: {
-                    Authorization: "Bearer " + cookieStore.get(cookies, "accessToken")
+                    Authorization: "Bearer " + cookieStore.get(cookies, "accessToken"),
+                    ContentType: "application/json",
                 },
                 body: JSON.stringify({
                     id: id+"",
