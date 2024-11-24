@@ -75,13 +75,40 @@ services:
     networks:
       - organize-this-frontend
     ports:
-      - "80:3000"
+      - "3001:3000"
     volumes:
       - "./Frontend/src:/app/src"
       - "./Frontend/tests:/app/tests"
       - "./Frontend/static:/app/static"
 
     restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - organize-this-frontend
+      - organize-this-backend
+    restart: unless-stopped
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    depends_on:
+      - nginx
 
 networks:
   organize-this-backend:

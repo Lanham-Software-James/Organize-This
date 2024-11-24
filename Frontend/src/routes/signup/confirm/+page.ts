@@ -8,6 +8,9 @@ export const _confirmUser = async (formData: { confirmationCode: string; }): Pro
     try {
         const response = await fetch(`/api/v1/user`, {
             method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({
                 confirmationCode: formData.confirmationCode,
             })
