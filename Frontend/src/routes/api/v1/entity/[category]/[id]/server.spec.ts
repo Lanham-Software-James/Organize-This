@@ -113,7 +113,7 @@ describe('DELETE function', () => {
         expect.objectContaining({
           method: 'DELETE',
           headers: {
-            Authorization: 'Bearer mockAccessToken'
+            'Authorization': 'Bearer mockAccessToken',
           }
         })
       );
