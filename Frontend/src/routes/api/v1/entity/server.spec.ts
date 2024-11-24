@@ -50,7 +50,8 @@ describe('POST function', () => {
       {
         method: 'POST',
         headers: {
-          Authorization: 'Bearer mock-token'
+          'Authorization': 'Bearer mock-token',
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(mockRequestBody)
       }
@@ -116,7 +117,8 @@ describe('PUT function', () => {
       {
         method: 'PUT',
         headers: {
-          Authorization: 'Bearer mock-token'
+          'Authorization': 'Bearer mock-token',
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({...mockRequestBody, id: '456'})
       }

@@ -23,7 +23,7 @@ export interface getEntityData {
     Address?: string
 }
 
-export const createEntity = async (formData: { category: string; address: string; name: string; notes: string; parent: string;}): Promise<[string, number]> => {
+export const createEntity = async (formData: { category: string; address: string; name: string; notes: string; parent: string; }): Promise<[string, number]> => {
     let message: string = ""
     let id: number = 0
 
@@ -32,6 +32,9 @@ export const createEntity = async (formData: { category: string; address: string
 
     const response = await fetch(`${PUBLIC_API_URL}api/v1/entity`, {
         method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
             address: formData.address,
             category: formData.category,
@@ -52,7 +55,7 @@ export const createEntity = async (formData: { category: string; address: string
     return [message, id];
 }
 
-export const editEntity = async (formData: { id: number, category: string; address: string; name: string; notes: string; parent: string;}): Promise<[string, getEntityData]> => {
+export const editEntity = async (formData: { id: number, category: string; address: string; name: string; notes: string; parent: string; }): Promise<[string, getEntityData]> => {
     let message: string = ""
     let entity: getEntityData = {
         Entity: {
@@ -70,6 +73,9 @@ export const editEntity = async (formData: { id: number, category: string; addre
 
     const response = await fetch(`${PUBLIC_API_URL}api/v1/entity`, {
         method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
             id: formData.id,
             address: formData.address,
@@ -91,7 +97,7 @@ export const editEntity = async (formData: { id: number, category: string; addre
     return [message, entity];
 }
 
-export const getEntity = async(id: number, category: string): Promise<[string, getEntityData]> => {
+export const getEntity = async (id: number, category: string): Promise<[string, getEntityData]> => {
     let message: string = ""
     let entity: getEntityData = {
         Entity: {
@@ -107,9 +113,9 @@ export const getEntity = async(id: number, category: string): Promise<[string, g
     const response = await fetch(`${PUBLIC_API_URL}api/v1/entity/${category}/${id}`);
 
     try {
-       const data = await response.json()
+        const data = await response.json()
 
-       message = data.message
+        message = data.message
         if (message == "success") {
             entity = data.data
         }
@@ -120,7 +126,7 @@ export const getEntity = async(id: number, category: string): Promise<[string, g
     return [message, entity]
 }
 
-export const getParents = async(category: string): Promise<[string, parentData[]]> => {
+export const getParents = async (category: string): Promise<[string, parentData[]]> => {
     let message: string = ""
     let parents: parentData[] = []
 
@@ -136,21 +142,23 @@ export const getParents = async(category: string): Promise<[string, parentData[]
     return [message, parents]
 }
 
-export const deleteEntity = async(id: number, category: string): Promise<[string, string]> => {
+export const deleteEntity = async (id: number, category: string): Promise<[string, string]> => {
     let message: string = ""
     let error: string = ""
 
-    const response = await fetch(
-        `${PUBLIC_API_URL}api/v1/entity/${category}/${id}`,
+    const response = await fetch(`${PUBLIC_API_URL}api/v1/entity/${category}/${id}`,
         {
-            method: "DELETE"
+            method: "DELETE",
+            headers: {
+                'Content-Type': 'application/json',
+            },
         }
     );
 
     try {
-       const data = await response.json()
+        const data = await response.json()
 
-       message = data.message
+        message = data.message
         if (message != "success") {
             error = data.data
         }

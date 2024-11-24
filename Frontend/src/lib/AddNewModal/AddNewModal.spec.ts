@@ -43,6 +43,9 @@ describe("Unit Tests for createEntity()", () => {
             `${PUBLIC_API_URL}api/v1/entity`,
             {
                 method: 'POST',
+                headers:{
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify({
                     address: formData.address,
                     category: formData.category,
@@ -81,6 +84,9 @@ describe("Unit Tests for createEntity()", () => {
             `${PUBLIC_API_URL}api/v1/entity`,
             {
                 method: 'POST',
+                headers:{
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify({
                     address: formData.address,
                     category: formData.category,
@@ -119,6 +125,9 @@ describe("Unit Tests for createEntity()", () => {
             `${PUBLIC_API_URL}api/v1/entity`,
             {
                 method: 'POST',
+                headers:{
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify({
                     address: formData.address,
                     category: formData.category,
@@ -157,6 +166,9 @@ describe("Unit Tests for createEntity()", () => {
             `${PUBLIC_API_URL}api/v1/entity`,
             {
                 method: 'POST',
+                headers:{
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify({
                     address: formData.address,
                     category: formData.category,
@@ -195,6 +207,9 @@ describe("Unit Tests for createEntity()", () => {
             `${PUBLIC_API_URL}api/v1/entity`,
             {
                 method: 'POST',
+                headers:{
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify({
                     address: formData.address,
                     category: formData.category,
@@ -233,6 +248,9 @@ describe("Unit Tests for createEntity()", () => {
             `${PUBLIC_API_URL}api/v1/entity`,
             {
                 method: 'POST',
+                headers:{
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify({
                     address: formData.address,
                     category: formData.category,
@@ -270,6 +288,9 @@ describe("Unit Tests for createEntity()", () => {
             `${PUBLIC_API_URL}api/v1/entity`,
             {
                 method: 'POST',
+                headers:{
+                    'Content-Type': 'application/json',
+                },
                 body: JSON.stringify({
                     address: formData.address,
                     category: formData.category,
@@ -333,6 +354,9 @@ describe("Unit Tests for Entity Functions", () => {
                 `${PUBLIC_API_URL}api/v1/entity`,
                 {
                     method: 'PUT',
+                    headers:{
+                        'Content-Type': 'application/json',
+                    },
                     body: JSON.stringify({
                         id: formData.id,
                         address: formData.address,
@@ -484,7 +508,10 @@ describe("Unit Tests for Entity Functions", () => {
             expect(global.fetch).toHaveBeenCalledWith(
                 `${PUBLIC_API_URL}api/v1/entity/${category}/${id}`,
                 {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers:{
+                        'Content-Type': 'application/json',
+                    },
                 }
             );
             expect(message).toEqual(deleteEntityResponse.message);
@@ -507,7 +534,10 @@ describe("Unit Tests for Entity Functions", () => {
             expect(global.fetch).toHaveBeenCalledWith(
                 `${PUBLIC_API_URL}api/v1/entity/${category}/${id}`,
                 {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers:{
+                        'Content-Type': 'application/json',
+                    },
                 }
             );
             expect(message).toEqual(deleteEntityResponse.message);
