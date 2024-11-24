@@ -19,7 +19,8 @@ export async function POST({ request, cookies }) {
             {
                 method: "POST",
                 headers: {
-                    Authorization: "Bearer " + cookieStore.get(cookies, "accessToken")
+                    'Authorization': 'Bearer ' + cookieStore.get(cookies, 'accessToken'),
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                     address: address,
@@ -33,7 +34,7 @@ export async function POST({ request, cookies }) {
         );
     } catch (error) {
         console.error(error);
-        response = new Response(JSON.stringify(error),{
+        response = new Response(JSON.stringify(error), {
             status: 400,
             headers: {
                 'Content-Type': 'application/json'
@@ -62,10 +63,11 @@ export async function PUT({ request, cookies }) {
             {
                 method: "PUT",
                 headers: {
-                    Authorization: "Bearer " + cookieStore.get(cookies, "accessToken")
+                    'Authorization': 'Bearer ' + cookieStore.get(cookies, 'accessToken'),
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    id: id+"",
+                    id: id + "",
                     address: address,
                     category: category,
                     name: name,
@@ -77,7 +79,7 @@ export async function PUT({ request, cookies }) {
         );
     } catch (error) {
         console.error(error);
-        response = new Response(JSON.stringify(error),{
+        response = new Response(JSON.stringify(error), {
             status: 400,
             headers: {
                 'Content-Type': 'application/json'

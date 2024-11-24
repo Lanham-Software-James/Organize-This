@@ -15,11 +15,11 @@ export async function POST({ request, cookies }) {
             {
                 method: "POST",
                 headers: {
-                    Authorization: "Bearer " + cookieStore.get(cookies, "accessToken"),
+                    'Authorization': 'Bearer ' + cookieStore.get(cookies, 'accessToken'),
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    id: id+"",
+                    id: id + "",
                     category: category,
                 })
             }
@@ -35,7 +35,7 @@ export async function POST({ request, cookies }) {
         });
     } catch (error) {
         console.error(error);
-        response = new Response(JSON.stringify(error),{
+        response = new Response(JSON.stringify(error), {
             status: 400,
             headers: {
                 'Content-Type': 'application/json'
