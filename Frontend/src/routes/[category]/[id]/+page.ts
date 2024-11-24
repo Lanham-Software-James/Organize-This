@@ -1,4 +1,3 @@
-import { PUBLIC_API_URL } from "$env/static/public";
 import type { PageLoad } from "./$types";
 
 export interface getEntityEntity {
@@ -38,8 +37,8 @@ export const load = (async ({ params }) => {
     let children: getEntityEntity[] = []
 
     const promises = [
-        fetch(`${PUBLIC_API_URL}api/v1/entity/${params.category}/${params.id}`),
-        fetch(`${PUBLIC_API_URL}api/v1/children/${params.category}/${params.id}`),
+        fetch(`/api/v1/entity/${params.category}/${params.id}`),
+        fetch(`/api/v1/children/${params.category}/${params.id}`),
     ]
 
     try {
@@ -51,7 +50,7 @@ export const load = (async ({ params }) => {
         let success: boolean
 
         if(params.category != "building"){
-            getParentResponse = await fetch(`${PUBLIC_API_URL}api/v1/entity/${getEntityData.data.Parent.ParentCategory}/${getEntityData.data.Parent.ParentID}`);
+            getParentResponse = await fetch(`/api/v1/entity/${getEntityData.data.Parent.ParentCategory}/${getEntityData.data.Parent.ParentID}`);
             getParentData = await getParentResponse.json();
             success = getEntityData.message == getChildrenData.message &&
                 getChildrenData.message == getParentData.message &&
