@@ -30,7 +30,6 @@ jobs:
         context: ./Frontend
         target: prd
         build-args: |
-          PUBLIC_API_URL=${{ secrets.PUBLIC_API_URL }}
           API_URL=${{ secrets.API_URL }}
         push: true
         tags: |
