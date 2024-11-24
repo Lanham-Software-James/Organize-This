@@ -18,7 +18,7 @@ services:
     image: redis/redis-stack:7.4.0-v0
     container_name: organize-this-redis
     environment:
-      REDIS_ARGS: "--requirepass password --user ${REDIS_USER} on >${REDIS_PASSWORD} ~* allcommands --user default off nopass nocommands"
+      REDIS_ARGS: "--requirepass ${REDIS_PASSWORD} --user ${REDIS_USER} on >${REDIS_PASSWORD} ~* allcommands --user default off nopass nocommands"
     networks:
       - organize-this-backend
     ports:
@@ -70,9 +70,6 @@ services:
   frontend:
     image: jameslanham/organize-this-frontend:latest
     container_name: organize-this-frontend
-    environment:
-      PUBLIC_API_URL: ${PUBLIC_API_URL}
-      API_URL: ${API_URL}
     depends_on:
       - backend
     networks:

@@ -1,5 +1,3 @@
-import { PUBLIC_API_URL } from '$env/static/public';
-
 export interface GetEntitiesResponse {
     TotalCount: number,
     Entities: GetEntitiesData[]
@@ -34,7 +32,7 @@ export const _getEntities = async (offset: number, limit: number, search: string
     }
 
     try{
-        const response = await fetch(`${PUBLIC_API_URL}api/v1/entities?offset=${offset}&limit=${limit}&search=${search}&filter=${filterQuery}`);
+        const response = await fetch(`/api/v1/entities?offset=${offset}&limit=${limit}&search=${search}&filter=${filterQuery}`);
         const data = await response.json()
 
         if (data.message == "success") {

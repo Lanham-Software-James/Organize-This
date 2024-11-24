@@ -1,5 +1,4 @@
 import { goto } from '$app/navigation';
-import { PUBLIC_API_URL } from '$env/static/public';
 
 export const _signUpUser = async (formData: { userEmail: string; password: string; firstName: string, lastName: string, birthday: string }): Promise<[boolean, string]> => {
 
@@ -7,7 +6,7 @@ export const _signUpUser = async (formData: { userEmail: string; password: strin
     let message = "Error";
 
     try {
-        const response = await fetch(`${PUBLIC_API_URL}api/v1/user`, {
+        const response = await fetch(`/api/v1/user`, {
             method: 'POST',
             body: JSON.stringify({
                 userEmail: formData.userEmail,

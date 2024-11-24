@@ -1,7 +1,9 @@
 .env
 .env.local
+.env.prod
 tmp/
 test-results/
 coverage/
 coverage.out
 coverage.html
+SSL/

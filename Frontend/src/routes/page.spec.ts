@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { _getEntities as getEntities } from './+page';
-import { PUBLIC_API_URL } from '$env/static/public';
 
 function createFetchResponse(data: unknown) {
     return { json: () => new Promise((resolve) => resolve(data)) }
@@ -80,7 +79,7 @@ describe("Unit Tests for _getEntities()", () => {
         let [entities, size] = await getEntities(offset, limit, '', {});
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}api/v1/entities?offset=${offset}&limit=${limit}&search=&filter=`
+            `/api/v1/entities?offset=${offset}&limit=${limit}&search=&filter=`
         );
 
         expect(size).toEqual(getEntitiesResponse.data.TotalCount)
@@ -103,7 +102,7 @@ describe("Unit Tests for _getEntities()", () => {
         let [entities, size] = await getEntities(offset, limit, '', {});
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}api/v1/entities?offset=${offset}&limit=${limit}&search=&filter=`
+            `/api/v1/entities?offset=${offset}&limit=${limit}&search=&filter=`
         );
 
         expect(size).toEqual(0)

@@ -8,10 +8,6 @@ vi.mock('$app/navigation', () => ({
   invalidateAll: vi.fn(),
 }));
 
-vi.mock('$env/static/public', () => ({
-  PUBLIC_API_URL: 'http://test-api.com/',
-}));
-
 describe('_logoutUser', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -27,7 +23,7 @@ describe('_logoutUser', () => {
     const result = await _logoutUser();
 
     expect(global.fetch).toHaveBeenCalledWith(
-      'http://test-api.com/api/v1/token',
+      '/api/v1/token',
       expect.objectContaining({
         method: 'DELETE',
       })
@@ -45,7 +41,7 @@ describe('_logoutUser', () => {
     const result = await _logoutUser();
 
     expect(global.fetch).toHaveBeenCalledWith(
-      'http://test-api.com/api/v1/token',
+      '/api/v1/token',
       expect.objectContaining({
         method: 'DELETE',
       })

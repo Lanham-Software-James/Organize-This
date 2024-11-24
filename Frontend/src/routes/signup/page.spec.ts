@@ -7,10 +7,6 @@ vi.mock('$app/navigation', () => ({
   goto: vi.fn(),
 }));
 
-vi.mock('$env/static/public', () => ({
-  PUBLIC_API_URL: 'http://test-api.com/',
-}));
-
 describe('_signUpUser', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -36,7 +32,7 @@ describe('_signUpUser', () => {
 
     expect(result).toEqual([true, 'Error']);
     expect(global.fetch).toHaveBeenCalledWith(
-      'http://test-api.com/api/v1/user',
+      '/api/v1/user',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify(formData),

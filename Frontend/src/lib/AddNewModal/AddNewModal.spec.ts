@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createEntity, deleteEntity, editEntity, getEntity, getParents } from './AddNewModal';
-import { PUBLIC_API_URL } from '$env/static/public';
 
 // Define a type for the mock fetch function
 type FetchMock = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
@@ -40,7 +39,7 @@ describe("Unit Tests for createEntity()", () => {
         const [message, id] = await createEntity(formData);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}api/v1/entity`,
+            `/api/v1/entity`,
             {
                 method: 'POST',
                 headers:{
@@ -81,7 +80,7 @@ describe("Unit Tests for createEntity()", () => {
         const [message, id] = await createEntity(formData);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}api/v1/entity`,
+            `/api/v1/entity`,
             {
                 method: 'POST',
                 headers:{
@@ -122,7 +121,7 @@ describe("Unit Tests for createEntity()", () => {
         const [message, id] = await createEntity(formData);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}api/v1/entity`,
+            `/api/v1/entity`,
             {
                 method: 'POST',
                 headers:{
@@ -163,7 +162,7 @@ describe("Unit Tests for createEntity()", () => {
         const [message, id] = await createEntity(formData);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}api/v1/entity`,
+            `/api/v1/entity`,
             {
                 method: 'POST',
                 headers:{
@@ -204,7 +203,7 @@ describe("Unit Tests for createEntity()", () => {
         const [message, id] = await createEntity(formData);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}api/v1/entity`,
+            `/api/v1/entity`,
             {
                 method: 'POST',
                 headers:{
@@ -245,7 +244,7 @@ describe("Unit Tests for createEntity()", () => {
         const [message, id] = await createEntity(formData);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}api/v1/entity`,
+            `/api/v1/entity`,
             {
                 method: 'POST',
                 headers:{
@@ -285,7 +284,7 @@ describe("Unit Tests for createEntity()", () => {
         const [message, id] = await createEntity(formData);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            `${PUBLIC_API_URL}api/v1/entity`,
+            `/api/v1/entity`,
             {
                 method: 'POST',
                 headers:{
@@ -351,7 +350,7 @@ describe("Unit Tests for Entity Functions", () => {
             const [message, entity] = await editEntity(formData);
 
             expect(global.fetch).toHaveBeenCalledWith(
-                `${PUBLIC_API_URL}api/v1/entity`,
+                `/api/v1/entity`,
                 {
                     method: 'PUT',
                     headers:{
@@ -424,7 +423,7 @@ describe("Unit Tests for Entity Functions", () => {
             const [message, entity] = await getEntity(id, category);
 
             expect(global.fetch).toHaveBeenCalledWith(
-                `${PUBLIC_API_URL}api/v1/entity/${category}/${id}`
+                `/api/v1/entity/${category}/${id}`
             );
             expect(message).toEqual(getEntityResponse.message);
             expect(entity).toEqual(getEntityResponse.data);
@@ -468,7 +467,7 @@ describe("Unit Tests for Entity Functions", () => {
             const [message, parents] = await getParents(category);
 
             expect(global.fetch).toHaveBeenCalledWith(
-                `${PUBLIC_API_URL}api/v1/parents/${category}`
+                `/api/v1/parents/${category}`
             );
             expect(message).toEqual(getParentsResponse.message);
             expect(parents).toEqual(getParentsResponse.data);
@@ -506,7 +505,7 @@ describe("Unit Tests for Entity Functions", () => {
             const [message, error] = await deleteEntity(id, category);
 
             expect(global.fetch).toHaveBeenCalledWith(
-                `${PUBLIC_API_URL}api/v1/entity/${category}/${id}`,
+                `/api/v1/entity/${category}/${id}`,
                 {
                     method: 'DELETE',
                     headers:{
@@ -532,7 +531,7 @@ describe("Unit Tests for Entity Functions", () => {
             const [message, error] = await deleteEntity(id, category);
 
             expect(global.fetch).toHaveBeenCalledWith(
-                `${PUBLIC_API_URL}api/v1/entity/${category}/${id}`,
+                `/api/v1/entity/${category}/${id}`,
                 {
                     method: 'DELETE',
                     headers:{

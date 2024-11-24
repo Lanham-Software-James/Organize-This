@@ -1,5 +1,3 @@
-import { PUBLIC_API_URL } from '$env/static/public';
-
 export interface parentData {
     ID: number
     Name: string
@@ -30,7 +28,7 @@ export const createEntity = async (formData: { category: string; address: string
     const parents = formData.parent.split('-')
 
 
-    const response = await fetch(`${PUBLIC_API_URL}api/v1/entity`, {
+    const response = await fetch(`/api/v1/entity`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -71,7 +69,7 @@ export const editEntity = async (formData: { id: number, category: string; addre
     const parents = formData.parent.split('-')
 
 
-    const response = await fetch(`${PUBLIC_API_URL}api/v1/entity`, {
+    const response = await fetch(`/api/v1/entity`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -110,7 +108,7 @@ export const getEntity = async (id: number, category: string): Promise<[string, 
         }
     }
 
-    const response = await fetch(`${PUBLIC_API_URL}api/v1/entity/${category}/${id}`);
+    const response = await fetch(`/api/v1/entity/${category}/${id}`);
 
     try {
         const data = await response.json()
@@ -130,7 +128,7 @@ export const getParents = async (category: string): Promise<[string, parentData[
     let message: string = ""
     let parents: parentData[] = []
 
-    const response = await fetch(`${PUBLIC_API_URL}api/v1/parents/${category}`);
+    const response = await fetch(`/api/v1/parents/${category}`);
 
     const data = await response.json()
 
@@ -146,7 +144,7 @@ export const deleteEntity = async (id: number, category: string): Promise<[strin
     let message: string = ""
     let error: string = ""
 
-    const response = await fetch(`${PUBLIC_API_URL}api/v1/entity/${category}/${id}`,
+    const response = await fetch(`/api/v1/entity/${category}/${id}`,
         {
             method: "DELETE",
             headers: {
