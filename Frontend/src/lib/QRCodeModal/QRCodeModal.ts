@@ -7,7 +7,7 @@ export const generateQR = async (category: string, id: number): Promise<[string,
     const response = await fetch(`${PUBLIC_API_URL}api/v1/qr`, {
         method: 'POST',
         headers:{
-            ContentType: "application/json",
+            'Content-Type': 'application/json',
         },
         body: JSON.stringify({
             id: id,
