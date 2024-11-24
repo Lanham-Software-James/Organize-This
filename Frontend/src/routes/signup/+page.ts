@@ -8,6 +8,9 @@ export const _signUpUser = async (formData: { userEmail: string; password: strin
     try {
         const response = await fetch(`/api/v1/user`, {
             method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({
                 userEmail: formData.userEmail,
                 password: formData.password,
