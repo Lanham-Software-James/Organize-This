@@ -17,7 +17,7 @@
 
 	const formData = {
 		id: 0,
-		category: 'item',
+		category: 'building',
 		name: '',
 		address: '',
 		notes: '',
@@ -41,10 +41,12 @@
 
 	var isFormInvalid = true && !edit;
 	var formError = {
-		name: ''
+		name: '',
+		parent: '',
 	};
 	var formErrorClass = {
-		name: ''
+		name: '',
+		parent: '',
 	};
 
 	var parents: parentData[] = [];
@@ -85,7 +87,7 @@
 	async function updateParents() {
 		if(formData.category != 'building') {
 			var [message, data] = await getParents(formData.category);
-			if (message == 'success') {
+			if (message == 'success' && data != null) {
 				parents = data;
 				formData.parent = '0-zero';
 			}
@@ -93,7 +95,7 @@
 
 	}
 
-	function validateForm() {
+	function validateName() {
 		if (formData.name == '') {
 			isFormInvalid = true;
 			formError.name = 'Name is required!';
@@ -102,6 +104,18 @@
 			isFormInvalid = false;
 			formError.name = '';
 			formErrorClass.name = '';
+		}
+	}
+
+	function validateParent() {
+		if(formData.category != 'building' && formData.parent == '') {
+			isFormInvalid = true;
+			formError.parent = 'Parent is required!';
+			formErrorClass.parent = 'input-error';
+		} else {
+			isFormInvalid = false;
+			formError.parent = '';
+			formErrorClass.parent = '';
 		}
 	}
 
@@ -163,8 +177,8 @@
 				class="input {formErrorClass.name}"
 				type="text"
 				bind:value={formData.name}
-				on:input={validateForm}
-				on:focusout={validateForm}
+				on:input={validateName}
+				on:focusout={validateName}
 				placeholder="Enter name..."
 			/>
 			{#if formError.name}
@@ -173,12 +187,19 @@
 
 			{#if formData.category != 'building'}
 				<label class="label" for="parents">Parent:</label>
-				<select id="parents" class="select" bind:value={formData.parent}>
-					{#each parents as parent}
-						<option value={parent.ID + '-' + parent.Category}>{parent.Name}</option>
-					{/each}
+				<select id="parents" class="select {formErrorClass.parent}" bind:value={formData.parent} on:focusout={validateParent}>
+					{#if parents.length > 0}
+						{#each parents as parent}
+							<option value={parent.ID + '-' + parent.Category}>{parent.Name}</option>
+						{/each}
+					{/if}
 				</select>
+
+				{#if formError.parent}
+					<p class="text-red-500 !mt-0">{formError.parent}</p>
+				{/if}
 			{/if}
+
 
 			{#if formData.category == 'building'}
 				<label for="address" class="label">Address:</label>
