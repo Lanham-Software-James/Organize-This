@@ -88,7 +88,7 @@ func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request)
 	userID := claims["username"].(string)
 	response.Entities, err = handler.Repository.GetAllEntities(request.Context(), userID, offset, limit, search, filters)
 	if err != nil {
-		logAndRespond(w, "Error getting entries", err)
+		logAndRespond(w, fmt.Sprintf("Error getting entries: %v", err), err)
 		return
 	}
 
