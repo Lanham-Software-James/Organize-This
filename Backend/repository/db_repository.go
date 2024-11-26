@@ -91,13 +91,13 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 	key, jsonErr := json.Marshal(keyStructured)
 	if jsonErr != nil {
 		logger.Errorf("Error encoding Redis key: %v", jsonErr)
-		return nil, jsonErr
+		return nil, fmt.Errorf("JSON: %v", jsonErr)
 	}
 
 	value, redisErr := repo.Cache.Get(ctx, string(key)).Result()
 	if redisErr != nil && !errors.Is(redisErr, redis.Nil) {
 		logger.Errorf("Error retriving entites from Redis: %v", redisErr)
-		return nil, redisErr
+		return nil, fmt.Errorf("Redis: %v", redisErr)
 	}
 
 	if value == "" {
@@ -181,7 +181,7 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 		dbErr := repo.Database.Raw(unionQuery, values...).Scan(&results).Error
 		if dbErr != nil {
 			logger.Errorf("error executing query: %v", dbErr)
-			return nil, dbErr
+			return nil, fmt.Errorf("DB: %v", dbErr)
 		}
 
 		// Generate results
@@ -220,7 +220,7 @@ func (repo Repository) GetAllEntities(ctx context.Context, userID string, offset
 		byteData, jsonErr := json.Marshal(data)
 		if jsonErr != nil {
 			logger.Errorf("error encoding data: %v", dbErr)
-			return nil, jsonErr
+			return nil, fmt.Errorf("Set Redis JSON: %v", jsonErr)
 		}
 
 		repo.Cache.Set(ctx, string(key), byteData, cacheTTL)
