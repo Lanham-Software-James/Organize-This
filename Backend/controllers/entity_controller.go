@@ -86,7 +86,11 @@ func (handler Handler) GetEntities(w http.ResponseWriter, request *http.Request)
 
 	claims := request.Context().Value("user_claims").(jwt.MapClaims)
 	userID := claims["username"].(string)
-	response.Entities, _ = handler.Repository.GetAllEntities(request.Context(), userID, offset, limit, search, filters)
+	response.Entities, err = handler.Repository.GetAllEntities(request.Context(), userID, offset, limit, search, filters)
+	if err != nil {
+		logAndRespond(w, "Error getting entries", err)
+		return
+	}
 
 	response.TotalCount = handler.Repository.CountEntities(request.Context(), userID, search, filters)
 	helpers.SuccessResponse(w, &response)
