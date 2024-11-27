@@ -35,6 +35,8 @@ RUN apk --no-cache add ca-certificates
 
 WORKDIR /root/
 
+RUN mkdir -p assets
+
 COPY --from=build /app/tmp/main .
 
 EXPOSE 3000
