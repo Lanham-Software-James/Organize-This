@@ -13,6 +13,7 @@
 	import { slide } from 'svelte/transition';
 	import QrCodeModal from '$lib/QRCodeModal/QRCodeModal.svelte';
 	import { cleanCategory } from '$lib/CleanCategory/CleanCategory';
+	import { goto } from '$app/navigation';
 
 	let entities: GetEntitiesData[] = [];
 	let offset = 0;
@@ -100,6 +101,12 @@
 				body: `Please scan or download the QR code for this ${cleanCategory(category)}`
 			};
 			modalStore.trigger(modal);
+		} else if (
+			(target.tagName === 'TD' && target.classList.contains('info')) ||
+			(target.tagName === 'I' && target.classList.contains('fa-circle-info'))
+		) {
+			// Navigate to details page
+			goto(`${category}/${id}`)
 		} else {
 			// Display Edit Modal
 			const modal: ModalSettings = {
@@ -231,6 +238,7 @@
 						<th id="th-location" class="!py-2">Location</th>
 						<th id="th-notes" class="!py-2 hidden lg:table-cell">Notes</th>
 						<th>&nbsp;</th>
+						<th>&nbsp;</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -252,6 +260,15 @@
 								{/if}
 							</td>
 							<td class="hidden lg:table-cell">{entity.Notes ?? ''}</td>
+							<td class="info">
+								<button type="button">
+									{#if entity.ID != 0}
+										<i class="fa-solid fa-circle-info"></i>
+									{:else}
+										&nbsp;
+									{/if}
+								</button>
+							</td>
 							<td class="qr">
 								<button type="button">
 									{#if entity.ID != 0}
