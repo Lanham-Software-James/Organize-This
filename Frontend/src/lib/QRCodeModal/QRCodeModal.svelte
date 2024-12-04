@@ -47,7 +47,7 @@
 
 		<!-- prettier-ignore -->
 		<footer class="modal-footer flex justify-end items-center">
-			<div class="w-5/12 flex justify-evenly">
+			<div class="w-5/6 md:w-5/12 flex justify-evenly">
 				<button class="btn {parent.buttonNeutral}" on:click={parent.onClose}>{parent.buttonTextCancel}</button>
 				<button class="btn {parent.buttonPositive}"on:click={downloadFile}>Download</button>
 			</div>
