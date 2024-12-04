@@ -39,7 +39,7 @@
 </script>
 
 <h2 class="text-center text-xl">Confirm User Account</h2>
-<form class="w-3/6 p-8 my-0 mx-auto flex flex-col justify-center">
+<form class="w-11/12 md:w-9/12 lg:w-3/6 p-8 my-0 mx-auto flex flex-col justify-center">
 	<label for="confirmation" class="label">Confirmation Code:</label>
 	<input
 		id="confirmation"

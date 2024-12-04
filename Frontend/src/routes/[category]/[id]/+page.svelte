@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { goto, afterNavigate  } from '$app/navigation';
+    import { base } from '$app/paths'
 	import { page } from '$app/stores';
 	import { cleanCategory } from '$lib/CleanCategory/CleanCategory';
 	import type { getEntityData, getEntityEntity } from './+page';
@@ -9,6 +10,12 @@
     $: parentName = $page.data.parentName satisfies string;
     $: children = $page.data.children satisfies getEntityEntity[];
 
+    let previousPage : string = base ;
+
+    afterNavigate(({from}) => {
+        previousPage = from?.url.pathname || previousPage
+    })
+
     function navParent() {
         goto(`/${entity.Parent.ParentCategory}/${entity.Parent.ParentID}`)
     }
@@ -16,15 +23,27 @@
     function navChild(category: string , id: string) {
         goto(`/${category}/${id}`)
     }
+
+    function navBack() {
+        goto(previousPage)
+    }
 </script>
 
 <div class="flex flex-row justify-between items-center h-16">
 	<h2 class="text-xl capitalize">View Entity</h2>
 </div>
 
+<div class="flex flex-row justify-between items-center pb-5">
+    <button type="button" class="btn !bg-transparent inline leading-4 align-middle" on:click={navBack}>
+        <i class="fa-solid fa-arrow-left">
+        </i>&nbsp;Back
+    </button>
+</div>
+
+
 <div class="flex flex-col justify-between">
 	{#if message == 'success'}
-		<table class="table table-compact table-hover w-1/4">
+		<table class="table table-compact table-hover w-2/3 lg:w-1/4">
             <tbody>
                 <tr>
                     <th class="text-left w-1/4 pl-2">Name:</th>
@@ -60,19 +79,19 @@
 
         {#if entity.Entity.Category != "item"}
             <h3 class="text-l capitalize pt-6">Children</h3>
-            <div class="table-container pt-3 w-1/2">
+            <div class="table-container pt-3 2/3 md:w-1/2">
                 <table class="table table-compact table-hover">
                     <thead>
                         <tr>
                             <th id="th-name" class="!py-2">Name</th>
-                            <th id="th-category" class="!py-2 invisible md:visible">Category</th>
+                            <th id="th-category" class="!py-2">Category</th>
                         </tr>
                     </thead>
                     <tbody>
                         {#each children as child}
                             <tr on:click={() => navChild(child.Category, child.ID)}>
                                 <td class="capitalize">{child.Name}</td>
-                                <td class="invisible md:visible capitalize">{cleanCategory(child.Category)}</td>
+                                <td class="capitalize">{cleanCategory(child.Category)}</td>
                             </tr>
                         {/each}
                     </tbody>

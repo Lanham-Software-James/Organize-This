@@ -13,6 +13,7 @@
 	import { slide } from 'svelte/transition';
 	import QrCodeModal from '$lib/QRCodeModal/QRCodeModal.svelte';
 	import { cleanCategory } from '$lib/CleanCategory/CleanCategory';
+	import { goto } from '$app/navigation';
 
 	let entities: GetEntitiesData[] = [];
 	let offset = 0;
@@ -26,6 +27,21 @@
 	} satisfies PaginationSettings;
 
 	const refreshPage = getContext('refreshPage');
+
+	let width: number;
+	let parentMax = 0;
+
+	$: {
+		if (typeof width !== 'undefined') {
+			if(width <= 640) {
+				parentMax = 2;
+			} else if (width <= 768) {
+				parentMax = 5;
+			} else {
+				parentMax = 15;
+			}
+		}
+	}
 
 	onMount(async function () {
 		loadData();
@@ -85,6 +101,12 @@
 				body: `Please scan or download the QR code for this ${cleanCategory(category)}`
 			};
 			modalStore.trigger(modal);
+		} else if (
+			(target.tagName === 'TD' && target.classList.contains('info')) ||
+			(target.tagName === 'I' && target.classList.contains('fa-circle-info'))
+		) {
+			// Navigate to details page
+			goto(`${category}/${id}`)
 		} else {
 			// Display Edit Modal
 			const modal: ModalSettings = {
@@ -136,7 +158,7 @@
 	}
 </script>
 
-<div class="card p-4 w-72 shadow-xl" data-popup="popupFeatured">
+<div class="card p-4 w-72 shadow-xl z-50" data-popup="popupFeatured">
 	<label class="flex items-center space-x-2">
 		<input class="checkbox" type="checkbox" bind:checked={filters['building']} />
 		<p>Buildings</p>
@@ -171,10 +193,10 @@
 <div class="flex flex-row justify-between items-center h-16">
 	<h2 class="text-xl">All Things</h2>
 
-	<div class="flex flex-row justify-end items-center w-3/12">
+	<div class="flex flex-row justify-end items-center w-2/3 md:5/12 lg:w-1/4">
 		{#if isVisible}
 			<input
-				class="input w-3/4"
+				class="input w-2/3"
 				transition:slide={{ duration: 300, axis: 'x' }}
 				type="text"
 				bind:value={search}
@@ -183,7 +205,7 @@
 			/>
 		{/if}
 
-		<div class="flex flex-row justify-evenly items-center w-1/4">
+		<div class="flex flex-row justify-evenly items-center w-1/3">
 			<button
 				id="filter"
 				type="button"
@@ -207,14 +229,15 @@
 
 <div class="flex flex-col justify-between">
 	{#if entities.length > 0}
-		<div class="table-container pb-4">
+		<div class="table-container pb-4" bind:clientWidth={width}>
 			<table class="table table-compact table-hover">
 				<thead>
 					<tr>
 						<th id="th-name" class="!py-2">Name</th>
-						<th id="th-category" class="!py-2 invisible md:visible">Category</th>
+						<th id="th-category" class="!py-2 hidden md:table-cell">Category</th>
 						<th id="th-location" class="!py-2">Location</th>
-						<th id="th-notes" class="!py-2 invisible lg:visible">Notes</th>
+						<th id="th-notes" class="!py-2 hidden lg:table-cell">Notes</th>
+						<th>&nbsp;</th>
 						<th>&nbsp;</th>
 					</tr>
 				</thead>
@@ -222,21 +245,30 @@
 					{#each entities as entity}
 						<tr on:click={(event) => rowClick(event, entity.ID, entity.Category)}>
 							<td class="capitalize">{entity.Name}</td>
-							<td class="invisible md:visible capitalize">{cleanCategory(entity.Category)}</td>
+							<td class="hidden md:table-cell capitalize">{cleanCategory(entity.Category)}</td>
 							<td>
 								{#if entity.Category == 'building'}
 									{entity.Address}
 								{:else}
-									{#each [...entity.Parent].reverse() as parent, index}
+									{#each [...entity.Parent].slice(0, parentMax).reverse() as parent, index}
 										<span class="capitalize">{parent.Name}</span>
 
-										{#if index < entity.Parent.length - 1}
+										{#if (index < entity.Parent.length - 1) && (index < parentMax - 1)}
 											<span>&nbsp;<i class="fa-solid fa-arrow-right"></i>&nbsp;</span>
 										{/if}
 									{/each}
 								{/if}
 							</td>
-							<td class="invisible lg:visible">{entity.Notes ?? ''}</td>
+							<td class="hidden lg:table-cell">{entity.Notes ?? ''}</td>
+							<td class="info">
+								<button type="button">
+									{#if entity.ID != 0}
+										<i class="fa-solid fa-circle-info"></i>
+									{:else}
+										&nbsp;
+									{/if}
+								</button>
+							</td>
 							<td class="qr">
 								<button type="button">
 									{#if entity.ID != 0}
