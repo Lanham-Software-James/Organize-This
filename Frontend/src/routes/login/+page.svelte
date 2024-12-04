@@ -54,7 +54,7 @@
 
 <h2 class="text-center text-xl">Login</h2>
 
-<form class="w-3/6 p-8 my-0 mx-auto flex flex-col justify-center">
+<form class="w-11/12 md:w-9/12 lg:w-3/6 p-8 my-0 mx-auto flex flex-col justify-center">
 	<label for="username" class="label">Username:</label>
 	<input
 		id="username"

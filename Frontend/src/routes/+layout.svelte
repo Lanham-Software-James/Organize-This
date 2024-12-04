@@ -47,7 +47,7 @@
 			padding: 'p-4',
 			rounded: 'rounded-xl',
 			position: 'right',
-			width: 'w-6/12 md:w-4/12 lg:w-2/12'
+			width: 'w-7/12 md:w-4/12 lg:w-2/12'
 		};
 		drawerStore.open(drawerSettings);
 	}
