@@ -7,3 +7,5 @@ coverage/
 coverage.out
 coverage.html
 SSL/
+Terraform/*/.terraform.lock.hcl
+Terraform/*/.terraform/
