@@ -7,7 +7,7 @@ variable "aws_profile" {
 variable "project_readable_name" {
   description = "The human readable name of the project."
   type        = string
-  default     = "Organize This!"
+  default     = "Organize This"
 }
 
 variable "project_name" {
