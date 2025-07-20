@@ -10,3 +10,6 @@ SSL/
 Terraform/*/.terraform.lock.hcl
 Terraform/*/.terraform/
 Terraform/*/*.tfvars
+Terraform/*/*.tfstate
+Terraform/*/*.tfstate.backup
+Terraform/*/outputs.txt
