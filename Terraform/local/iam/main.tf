@@ -16,7 +16,7 @@ data "aws_iam_policy_document" "organize-this-local-system-s3-policy" {
             "s3:ListBucket",
             "s3:DeleteObject"
         ]
-        resources = ["arn:aws:s3:::${var.project_name}-${var.environment}/*"]
+        resources = ["${var.bucket_arn}/*"]
     }
 }
 
@@ -30,7 +30,7 @@ data "aws_iam_policy_document" "organize-this-local-system-cognito-policy" {
             "cognito-idp:AdminInitiateAuth",
             "cognito-idp:AdminUserGlobalSignOut",
         ]
-        resources = ["arn:aws:cognito-idp:${var.region}:${var.account_id}:userpool/${var.user_pool_id}"]
+        resources = [var.user_pool_arn]
     }
 }
 

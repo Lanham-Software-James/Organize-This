@@ -13,3 +13,8 @@ output "user_pool_id" {
   description = "The ID of the Cognito user pool."
   value       = aws_cognito_user_pool.organize-this-local.id
 }
+
+output "user_pool_arn" {
+  description = "The ARN of the Cognito user pool."
+  value       = aws_cognito_user_pool.organize-this-local.arn
+}

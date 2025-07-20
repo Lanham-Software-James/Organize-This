@@ -12,10 +12,10 @@ output "user_pool_id" {
 }
 
 output "access_key" {
-  value = module.iam.system_user_access_key_id
+  value = module.iam.access_key
 }
 
-output "secretaccess_key" {
-  value     = module.iam.system_user_access_key_secret
+output "secret_access_key" {
+  value     = module.iam.secret_access_key
   sensitive = true
 }

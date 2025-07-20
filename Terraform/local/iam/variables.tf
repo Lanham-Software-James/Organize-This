@@ -2,8 +2,6 @@ variable "project_name" {}
 
 variable "environment" {}
 
-variable "region" {}
+variable "bucket_arn" {}
 
-variable "account_id" {}
-
-variable "user_pool_id" {}
+variable "user_pool_arn" {}
