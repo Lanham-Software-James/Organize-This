@@ -1,3 +1,9 @@
+variable "aws_profile" {
+  description = "The AWS profile to use."
+  type        = string
+  default     = "lanham-software-james"
+}
+
 variable "project_readable_name" {
   description = "The human readable name of the project."
   type        = string

@@ -1,5 +1,5 @@
 provider "aws" {
-  profile = "lanham-software-james"
+  profile = var.aws_profile
 
   default_tags {
     tags = {
