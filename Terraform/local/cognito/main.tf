@@ -1,6 +1,8 @@
 resource "aws_cognito_user_pool" "organize-this-local" {
   name                = "${var.project_name}-${var.environment}"
   username_attributes = ["email"]
+  auto_verified_attributes = ["email"]
+
   password_policy {
     minimum_length    = 8
     require_lowercase = true
@@ -73,7 +75,7 @@ resource "aws_cognito_user_pool_client" "organize-this-local" {
   name = "${var.project_name}-${var.environment}"
 
   user_pool_id                  = aws_cognito_user_pool.organize-this-local.id
-  generate_secret               = false
+  generate_secret               = true
   refresh_token_validity        = 90
   prevent_user_existence_errors = "ENABLED"
   explicit_auth_flows = [
