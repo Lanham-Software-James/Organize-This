@@ -19,3 +19,7 @@ output "secret_access_key" {
   value     = module.iam.secret_access_key
   sensitive = true
 }
+
+output "bucket_name" {
+  value = module.s3.bucket_name
+}
