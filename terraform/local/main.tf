@@ -24,10 +24,9 @@ module "cognito" {
 }
 
 module "iam" {
-  source       = "./iam"
-  project_name = var.project_name
-  environment  = var.environment
-  region       = var.region
-  account_id   = var.account_id
-  user_pool_id = module.cognito.user_pool_id
+  source        = "./iam"
+  project_name  = var.project_name
+  environment   = var.environment
+  bucket_arn    = module.s3.bucket_arn
+  user_pool_arn = module.cognito.user_pool_arn
 }
