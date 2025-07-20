@@ -9,3 +9,4 @@ coverage.html
 SSL/
 Terraform/*/.terraform.lock.hcl
 Terraform/*/.terraform/
+Terraform/*/*.tfvars
