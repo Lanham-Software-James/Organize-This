@@ -10,3 +10,12 @@ output "client_secret" {
 output "user_pool_id" {
   value = module.cognito.user_pool_id
 }
+
+output "access_key" {
+  value = module.iam.system_user_access_key_id
+}
+
+output "secretaccess_key" {
+  value     = module.iam.system_user_access_key_secret
+  sensitive = true
+}

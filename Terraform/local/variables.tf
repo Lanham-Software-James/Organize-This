@@ -21,3 +21,14 @@ variable "environment" {
   type        = string
   default     = "local"
 }
+
+variable "region" {
+  description = "The region of the project."
+  type        = string
+  default     = "us-east-2"
+}
+
+variable "account_id" {
+  description = "The account ID of the project."
+  type        = string
+}
