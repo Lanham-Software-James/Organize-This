@@ -1,5 +1,5 @@
 resource "aws_iam_user" "organize-this-local-system-user" {
-    name = "${var.project_name}-${var.environment}-admin"
+    name = "${var.project_name}-${var.environment}-system"
 }
 
 resource "aws_iam_access_key" "organize-this-local-system-key" {
@@ -14,9 +14,13 @@ data "aws_iam_policy_document" "organize-this-local-system-s3-policy" {
             "s3:PutObject",
             "s3:GetObject",
             "s3:ListBucket",
-            "s3:DeleteObject"
+            "s3:DeleteObject",
+            "s3:HeadObject"
         ]
-        resources = ["${var.bucket_arn}/*"]
+        resources = [
+            "${var.bucket_arn}",
+            "${var.bucket_arn}/*"
+            ]
     }
 }
 
