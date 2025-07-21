@@ -1,3 +1,29 @@
+data "aws_ses_domain_identity" "organize-this-local" {
+    domain = var.domain
+}
+
+resource "aws_ses_identity_policy" "allow_cognito_send" {
+  identity = data.aws_ses_domain_identity.organize-this-local.domain
+  name     = "AllowCognitoSend"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "cognito-idp.amazonaws.com"
+        }
+        Action = [
+          "SES:SendEmail",
+          "SES:SendRawEmail"
+        ]
+        Resource = data.aws_ses_domain_identity.organize-this-local.arn
+      }
+    ]
+  })
+}
+
 resource "aws_cognito_user_pool" "organize-this-local" {
   name                = "${var.project_name}-${var.environment}"
   username_attributes = ["email"]
@@ -15,6 +41,12 @@ resource "aws_cognito_user_pool" "organize-this-local" {
     default_email_option = "CONFIRM_WITH_CODE"
     email_subject        = "${var.project_readable_name} - Verify your email address!"
     email_message        = "Your code is {####}"
+  }
+
+  email_configuration {
+    email_sending_account = "DEVELOPER"
+    from_email_address    = "noreply-${var.environment}@${var.domain}"
+    source_arn            = data.aws_ses_domain_identity.organize-this-local.arn
   }
 
   schema {

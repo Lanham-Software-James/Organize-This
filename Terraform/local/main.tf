@@ -21,6 +21,7 @@ module "cognito" {
   project_readable_name = var.project_readable_name
   project_name          = var.project_name
   environment           = var.environment
+  domain                = var.domain
 }
 
 module "iam" {

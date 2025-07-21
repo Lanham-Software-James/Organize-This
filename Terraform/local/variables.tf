@@ -32,3 +32,9 @@ variable "account_id" {
   description = "The account ID of the project."
   type        = string
 }
+
+variable "domain" {
+  description = "The domain of the project."
+  type        = string
+  default     = "getwillowsuite.com"
+}
