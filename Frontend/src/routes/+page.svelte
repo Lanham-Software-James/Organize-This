@@ -98,6 +98,14 @@
 		}
 	}
 
+	function handleKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			searchString = '';
+			searchVisible = false;
+			searchFilter(); // Clear the search results
+		}
+	}
+
 	const modalStore = getModalStore();
 
 	async function rowClick(event: MouseEvent, id: number, category: string) {
@@ -240,6 +248,7 @@
 				type="text"
 				bind:value={searchString}
 				placeholder="search"
+				on:keydown={handleKeydown}
 			/>
 		{/if}
 
