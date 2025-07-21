@@ -2,8 +2,8 @@ package controllers
 
 import (
 	"net/http"
-	"organize-this/helpers"
-	"organize-this/infra/logger"
+	"willowsuite-vault/helpers"
+	"willowsuite-vault/infra/logger"
 )
 
 // logAndRespond logs an error message and sends a bad request response.

@@ -2,8 +2,8 @@
 package cache
 
 import (
-	"organize-this/infra/logger"
 	"sync"
+	"willowsuite-vault/infra/logger"
 
 	"github.com/redis/go-redis/v9"
 )

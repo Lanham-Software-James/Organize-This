@@ -3,7 +3,7 @@ package helpers
 import (
 	"errors"
 	"fmt"
-	"organize-this/config"
+	"willowsuite-vault/config"
 
 	"github.com/MicahParks/keyfunc/v2"
 	"github.com/golang-jwt/jwt/v5"

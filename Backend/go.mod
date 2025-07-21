@@ -1,4 +1,4 @@
-module organize-this
+module willowsuite-vault
 
 go 1.23
 

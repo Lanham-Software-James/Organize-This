@@ -2,7 +2,7 @@
 package mocks
 
 import (
-	"organize-this/infra/logger"
+	"willowsuite-vault/infra/logger"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"gorm.io/driver/postgres"

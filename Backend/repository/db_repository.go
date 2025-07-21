@@ -1,4 +1,4 @@
-// Package repository contains all functions for data manipulation for Organize-This
+// Package repository contains all functions for data manipulation for WillowSuite Vault
 package repository
 
 import (
@@ -6,13 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"organize-this/infra/cache"
-	"organize-this/infra/logger"
-	"organize-this/models"
 	"slices"
 	"strconv"
 	"strings"
 	"time"
+	"willowsuite-vault/infra/cache"
+	"willowsuite-vault/infra/logger"
+	"willowsuite-vault/models"
 
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/text/cases"

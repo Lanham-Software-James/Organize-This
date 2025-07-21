@@ -2,15 +2,15 @@ package main
 
 import (
 	"net/http"
-	"organize-this/config"
-	"organize-this/infra/cache"
-	"organize-this/infra/cognito"
-	"organize-this/infra/database"
-	"organize-this/infra/logger"
-	"organize-this/infra/s3"
-	"organize-this/migrations"
-	"organize-this/routers"
 	"time"
+	"willowsuite-vault/config"
+	"willowsuite-vault/infra/cache"
+	"willowsuite-vault/infra/cognito"
+	"willowsuite-vault/infra/database"
+	"willowsuite-vault/infra/logger"
+	"willowsuite-vault/infra/s3"
+	"willowsuite-vault/migrations"
+	"willowsuite-vault/routers"
 
 	"github.com/spf13/viper"
 )

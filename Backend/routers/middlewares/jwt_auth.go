@@ -3,10 +3,10 @@ package middlewares
 import (
 	"context"
 	"net/http"
-	"organize-this/controllers"
-	"organize-this/helpers"
 	"strings"
 	"time"
+	"willowsuite-vault/controllers"
+	"willowsuite-vault/helpers"
 )
 
 func JWTAuth(handler controllers.Handler) func(http.Handler) http.Handler {

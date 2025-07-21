@@ -2,8 +2,8 @@
 package migrations
 
 import (
-	"organize-this/infra/database"
-	"organize-this/models"
+	"willowsuite-vault/infra/database"
+	"willowsuite-vault/models"
 )
 
 // Migrate is called in main.go to migrate out DB to the latest version.
