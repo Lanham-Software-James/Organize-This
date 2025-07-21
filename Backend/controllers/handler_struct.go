@@ -1,11 +1,11 @@
-// Package controllers provides all the various controllers for requests coming to the Organize This API.
+// Package controllers provides all the various controllers for requests coming to the WillowSuite Vault API.
 package controllers
 
 import (
-	"organize-this/helpers"
-	"organize-this/infra/cognito"
-	"organize-this/infra/s3"
-	"organize-this/repository"
+	"willowsuite-vault/helpers"
+	"willowsuite-vault/infra/cognito"
+	"willowsuite-vault/infra/s3"
+	"willowsuite-vault/repository"
 )
 
 // Handler is used to allow us to pass our database to the controllers enabling us to mock during unit testing.

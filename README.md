@@ -1,10 +1,10 @@
-# Organize-This
+# WillowSuite Vault
 
 A comprehensive inventory and organization management system that helps you track and organize your belongings across multiple hierarchical levels - from buildings down to individual items.
 
 ## 🏗️ Overview
 
-Organize-This is a full-stack web application that provides a hierarchical organization system for managing physical spaces and items. The system supports a 6-level hierarchy:
+WillowSuite Vault is a full-stack web application that provides a hierarchical organization system for managing physical spaces and items. The system supports a 6-level hierarchy:
 
 - **Buildings** → **Rooms** → **Shelving Units** → **Shelves** → **Containers** → **Items**
 
@@ -57,7 +57,7 @@ Each level can contain multiple children of the level below it, creating a flexi
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd Organize-This
+   cd WillowSuite-Vault
    ```
 
 2. **Set up environment variables**
@@ -83,7 +83,7 @@ Create a `.env` file with the following variables:
 
 ```env
 # Database
-MASTER_DB_NAME=organize_this
+MASTER_DB_NAME=willowsuite_vault
 MASTER_DB_USER=postgres
 MASTER_DB_PASSWORD=your_password
 MASTER_DB_HOST=db
@@ -136,7 +136,7 @@ npm run test           # All tests
 ## 🏗️ Project Structure
 
 ```
-Organize-This/
+WillowSuite-Vault/
 ├── Backend/                 # Go backend application
 │   ├── config/             # Configuration management
 │   ├── controllers/        # HTTP request handlers
@@ -232,10 +232,6 @@ The frontend uses SvelteKit with modern tooling:
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🐛 Known Issues
-
-- The current Go version (1.23) is incompatible with the latest air package (requires Go 1.24+). Consider upgrading Go or using an older version of air for development.
 
 ## 🆘 Support
 

@@ -3,9 +3,9 @@ package controllers
 import (
 	"errors"
 	"net/url"
-	"organize-this/infra/logger"
 	"strconv"
 	"strings"
+	"willowsuite-vault/infra/logger"
 )
 
 func getEntitiesParseQueryParams(values url.Values) (int, int, string, []string, error) {

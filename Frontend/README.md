@@ -1,6 +1,6 @@
-# create-svelte
+# WillowSuite Vault
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/main/packages/create-svelte).
+A modern web application for organizing and managing your belongings, built with SvelteKit.
 
 ## Creating a project
 

@@ -1,36 +1,36 @@
 services:
   db:
     image: postgres:15.8-alpine3.20
-    container_name: organize-this-db
+    container_name: willowsuite-vault-db
     environment:
       POSTGRES_DB: ${MASTER_DB_NAME}
       POSTGRES_USER: ${MASTER_DB_USER}
       POSTGRES_PASSWORD: ${MASTER_DB_PASSWORD}
     networks:
-      - organize-this-backend
+      - willowsuite-vault-backend
     ports:
       - "5432:5432"
     volumes:
-      - organize-this-db-data:/var/lib/postgresql/data
+      - willowsuite-vault-db-data:/var/lib/postgresql/data
     restart: unless-stopped
 
   redis:
     image: redis/redis-stack:7.4.0-v0
-    container_name: organize-this-redis
+    container_name: willowsuite-vault-redis
     environment:
       REDIS_ARGS: "--requirepass ${REDIS_PASSWORD} --user ${REDIS_USER} on >${REDIS_PASSWORD} ~* allcommands --user default off nopass nocommands"
     networks:
-      - organize-this-backend
+      - willowsuite-vault-backend
     ports:
       - "6379:6379"
       - "8001:8001"
     volumes:
-      - organize-this-redis-data:/data
+      - willowsuite-vault-redis-data:/data
     restart: unless-stopped
 
   backend:
-    image: jameslanham/organize-this-backend:latest
-    container_name: organize-this-backend
+    image: jameslanham/willowsuite-vault-backend:latest
+    container_name: willowsuite-vault-backend
     environment:
       MASTER_DB_NAME: ${MASTER_DB_NAME}
       MASTER_DB_USER: ${MASTER_DB_USER}
@@ -59,19 +59,19 @@ services:
     depends_on:
       - db
     networks:
-      - organize-this-backend
-      - organize-this-frontend
+      - willowsuite-vault-backend
+      - willowsuite-vault-frontend
     ports:
       - "3000:3000"
     restart: unless-stopped
 
   frontend:
-    image: jameslanham/organize-this-frontend:latest
-    container_name: organize-this-frontend
+    image: jameslanham/willowsuite-vault-frontend:latest
+    container_name: willowsuite-vault-frontend
     depends_on:
       - backend
     networks:
-      - organize-this-frontend
+      - willowsuite-vault-frontend
     ports:
       - "3001:3000"
 
@@ -91,8 +91,8 @@ services:
       - frontend
       - backend
     networks:
-      - organize-this-frontend
-      - organize-this-backend
+      - willowsuite-vault-frontend
+      - willowsuite-vault-backend
     restart: unless-stopped
 
   certbot:
@@ -105,11 +105,11 @@ services:
       - nginx
 
 networks:
-  organize-this-backend:
+  willowsuite-vault-backend:
     driver: bridge
-  organize-this-frontend:
+  willowsuite-vault-frontend:
     driver: bridge
 
 volumes:
-  organize-this-db-data:
-  organize-this-redis-data:
+  willowsuite-vault-db-data:
+  willowsuite-vault-redis-data:

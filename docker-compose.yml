@@ -1,38 +1,38 @@
 services:
   db:
     image: postgres:15.8-alpine3.20
-    container_name: organize-this-db
+    container_name: willowsuite-vault-db
     environment:
       POSTGRES_DB: ${MASTER_DB_NAME}
       POSTGRES_USER: ${MASTER_DB_USER}
       POSTGRES_PASSWORD: ${MASTER_DB_PASSWORD}
     networks:
-      - organize-this-backend
+      - willowsuite-vault-backend
     ports:
       - "5432:5432"
     volumes:
-      - organize-this-db-data:/var/lib/postgresql/data
+      - willowsuite-vault-db-data:/var/lib/postgresql/data
     restart: unless-stopped
 
   redis:
     image: redis/redis-stack:7.4.0-v0
-    container_name: organize-this-redis
+    container_name: willowsuite-vault-redis
     environment:
       REDIS_ARGS: "--requirepass password --user ${REDIS_USER} on >${REDIS_PASSWORD} ~* allcommands --user default off nopass nocommands"
     networks:
-      - organize-this-backend
+      - willowsuite-vault-backend
     ports:
       - "6379:6379"
       - "8001:8001"
     volumes:
-      - organize-this-redis-data:/data
+      - willowsuite-vault-redis-data:/data
     restart: unless-stopped
 
   backend:
     build:
       context: ./Backend
       target: dev
-    container_name: organize-this-backend
+    container_name: willowsuite-vault-backend
     environment:
       MASTER_DB_NAME: ${MASTER_DB_NAME}
       MASTER_DB_USER: ${MASTER_DB_USER}
@@ -61,8 +61,8 @@ services:
     depends_on:
       - db
     networks:
-      - organize-this-backend
-      - organize-this-frontend
+      - willowsuite-vault-backend
+      - willowsuite-vault-frontend
     ports:
       - "3000:3000"
       - "2345:2345"
@@ -74,13 +74,13 @@ services:
     build:
       context: ./Frontend
       target: dev
-    container_name: organize-this-frontend
+    container_name: willowsuite-vault-frontend
     environment:
       API_URL: ${API_URL}
     depends_on:
       - backend
     networks:
-      - organize-this-frontend
+      - willowsuite-vault-frontend
     ports:
       - "5173:5173"
     volumes:
@@ -91,7 +91,7 @@ services:
 
   nginx:
     image: nginx:alpine
-    container_name: nginx-proxy
+    container_name: willowsuite-vault-nginx
     ports:
       - "80:80"
       - "443:443"
@@ -102,16 +102,16 @@ services:
       - frontend
       - backend
     networks:
-      - organize-this-frontend
-      - organize-this-backend
+      - willowsuite-vault-frontend
+      - willowsuite-vault-backend
     restart: unless-stopped
 
 networks:
-  organize-this-backend:
+  willowsuite-vault-backend:
     driver: bridge
-  organize-this-frontend:
+  willowsuite-vault-frontend:
     driver: bridge
 
 volumes:
-  organize-this-db-data:
-  organize-this-redis-data:
+  willowsuite-vault-db-data:
+  willowsuite-vault-redis-data:

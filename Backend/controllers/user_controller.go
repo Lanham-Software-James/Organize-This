@@ -5,10 +5,10 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"organize-this/config"
-	"organize-this/helpers"
-	"organize-this/infra/logger"
 	"strconv"
+	"willowsuite-vault/config"
+	"willowsuite-vault/helpers"
+	"willowsuite-vault/infra/logger"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/cognitoidentityprovider"

@@ -33,5 +33,5 @@ jobs:
           API_URL=${{ secrets.API_URL }}
         push: true
         tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/organize-this-frontend:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/organize-this-frontend:${{ github.run_number }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/willowsuite-vault-frontend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/willowsuite-vault-frontend:${{ github.run_number }}

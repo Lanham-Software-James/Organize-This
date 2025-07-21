@@ -7,13 +7,13 @@ variable "aws_profile" {
 variable "project_readable_name" {
   description = "The human readable name of the project."
   type        = string
-  default     = "Organize This"
+  default     = "WillowSuite Vault"
 }
 
 variable "project_name" {
   description = "The name of the project as it will be used in AWS."
   type        = string
-  default     = "organize-this"
+  default     = "willowsuite-vault"
 }
 
 variable "environment" {

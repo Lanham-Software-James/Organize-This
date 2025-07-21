@@ -1,4 +1,4 @@
-// Package controllers provides all the various controllers for requests coming to the Organize This API.
+// Package controllers provides all the various controllers for requests coming to the WillowSuite Vault API.
 package controllers
 
 import (
@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"organize-this/helpers"
-	"organize-this/infra/logger"
-	"organize-this/models"
 	"strconv"
+	"willowsuite-vault/helpers"
+	"willowsuite-vault/infra/logger"
+	"willowsuite-vault/models"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"

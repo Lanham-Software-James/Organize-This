@@ -3,14 +3,14 @@ package routers
 
 import (
 	"net/http"
-	"organize-this/controllers"
-	"organize-this/helpers"
-	"organize-this/infra/cache"
-	"organize-this/infra/cognito"
-	"organize-this/infra/database"
-	"organize-this/infra/s3"
-	"organize-this/repository"
-	"organize-this/routers/middlewares"
+	"willowsuite-vault/controllers"
+	"willowsuite-vault/helpers"
+	"willowsuite-vault/infra/cache"
+	"willowsuite-vault/infra/cognito"
+	"willowsuite-vault/infra/database"
+	"willowsuite-vault/infra/s3"
+	"willowsuite-vault/repository"
+	"willowsuite-vault/routers/middlewares"
 
 	"github.com/go-chi/chi/v5"
 )

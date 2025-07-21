@@ -144,7 +144,7 @@
 
 <div class="container p-3 m-h-full mx-auto">
 	<div class="flex flex-row justify-between items-center">
-		<h1 class="text-3xl">Organize This!</h1>
+		<h1 class="text-3xl">WillowSuite Vault</h1>
 
 		<button id="hamburgerMenu" type="button" class="btn-icon bg-initial" on:click={showNavigation}
 			><i class="fa-solid fa-bars fa-xl"></i></button
