@@ -80,13 +80,12 @@
 		[entities, paginationSettings.size] = await getEntities(offset, limit, searchString, filters);
 	}
 
-	function handleSearchInput() {
+	function triggerSearchWithDebounce() {
 		// Clear existing timeout
 		if (searchTimeout) {
 			clearTimeout(searchTimeout);
 		}
 
-		// Only search if we have 2+ characters
 		if (searchString.length > 0) {
 			// Debounce for 400ms
 			searchTimeout = setTimeout(() => {
@@ -175,7 +174,7 @@
 
 	// Reactive statement to handle search when visibility changes
 	$: if (searchVisible && searchString.length >= 0) {
-		handleSearchInput();
+		triggerSearchWithDebounce();
 	}
 
 	// Reactive statement to focus the input when it becomes visible
@@ -247,6 +246,7 @@
 				bind:value={searchString}
 				placeholder="search"
 				on:keydown={handleKeydown}
+				aria-label="Search"
 			/>
 		{/if}
 
