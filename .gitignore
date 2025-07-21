@@ -13,3 +13,4 @@ Terraform/*/*.tfvars
 Terraform/*/*.tfstate
 Terraform/*/*.tfstate.backup
 Terraform/*/outputs.txt
+.DS_Store
