@@ -7,13 +7,14 @@
 		type ModalSettings,
 		type PopupSettings
 	} from '@skeletonlabs/skeleton';
-	import { getContext, onMount } from 'svelte';
+	import { getContext, onMount, tick } from 'svelte';
 	import { _getEntities as getEntities, type GetEntitiesData } from './+page';
 	import AddNewModal from '$lib/AddNewModal/AddNewModal.svelte';
 	import { slide } from 'svelte/transition';
 	import QrCodeModal from '$lib/QRCodeModal/QRCodeModal.svelte';
 	import { cleanCategory } from '$lib/CleanCategory/CleanCategory';
 	import { goto } from '$app/navigation';
+	import { onDestroy } from 'svelte';
 
 	let entities: GetEntitiesData[] = [];
 	let offset = 0;
@@ -33,7 +34,7 @@
 
 	$: {
 		if (typeof width !== 'undefined') {
-			if(width <= 640) {
+			if (width <= 640) {
 				parentMax = 2;
 			} else if (width <= 768) {
 				parentMax = 5;
@@ -54,33 +55,62 @@
 		return unsubscribe;
 	});
 
+	onDestroy(() => {
+		if (searchTimeout) clearTimeout(searchTimeout);
+	});
+
 	async function loadData() {
-		[entities, paginationSettings.size] = await getEntities(offset, limit, search, filters);
+		[entities, paginationSettings.size] = await getEntities(offset, limit, searchString, filters);
 	}
 
 	async function limitChange(e: CustomEvent) {
 		limit = e.detail;
 
-		[entities, paginationSettings.size] = await getEntities(offset, limit, search, filters);
+		[entities, paginationSettings.size] = await getEntities(offset, limit, searchString, filters);
 	}
 
 	async function pageChange(e: CustomEvent) {
 		page = e.detail;
 		offset = page * limit;
 
-		[entities, paginationSettings.size] = await getEntities(offset, limit, search, filters);
+		[entities, paginationSettings.size] = await getEntities(offset, limit, searchString, filters);
 	}
 
 	async function searchFilter() {
-		[entities, paginationSettings.size] = await getEntities(offset, limit, search, filters);
+		[entities, paginationSettings.size] = await getEntities(offset, limit, searchString, filters);
+	}
+
+	function triggerSearchWithDebounce() {
+		// Clear existing timeout
+		if (searchTimeout) {
+			clearTimeout(searchTimeout);
+		}
+
+		if (searchString.length > 0) {
+			// Debounce for 400ms
+			searchTimeout = setTimeout(() => {
+				searchFilter();
+			}, 400);
+		} else if (searchString.length === 0) {
+			// If search is cleared, search immediately
+			searchFilter();
+		}
+	}
+
+	function handleKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			searchString = '';
+			searchVisible = false;
+			searchFilter(); // Clear the search results
+		}
 	}
 
 	const modalStore = getModalStore();
 
 	async function rowClick(event: MouseEvent, id: number, category: string) {
 		const target = event.target as HTMLElement;
-		if(id == 0) {
-			return
+		if (id == 0) {
+			return;
 		}
 
 		if (
@@ -94,7 +124,7 @@
 					ref: QrCodeModal,
 					props: {
 						id: id,
-						category: category,
+						category: category
 					}
 				},
 				title: 'QR Code',
@@ -106,7 +136,7 @@
 			(target.tagName === 'I' && target.classList.contains('fa-circle-info'))
 		) {
 			// Navigate to details page
-			goto(`${category}/${id}`)
+			goto(`${category}/${id}`);
 		} else {
 			// Display Edit Modal
 			const modal: ModalSettings = {
@@ -136,9 +166,22 @@
 		item: true
 	};
 
-	let search = '';
+	let searchString = '';
+	let searchTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
 
-	let isVisible = false;
+	let searchVisible = false;
+	let searchInput: HTMLInputElement | null = null;
+
+	// Reactive statement to handle search when visibility changes
+	$: if (searchVisible && searchString.length >= 0) {
+		triggerSearchWithDebounce();
+	}
+
+	// Reactive statement to focus the input when it becomes visible
+	$: if (searchVisible && searchInput) {
+		// Use setTimeout to ensure the input is rendered before focusing
+		tick().then(() => searchInput?.focus());
+	}
 
 	const popupFeatured: PopupSettings = {
 		event: 'click',
@@ -154,7 +197,7 @@
 	}
 
 	function toggleSearch() {
-		isVisible = !isVisible;
+		searchVisible = !searchVisible;
 	}
 </script>
 
@@ -191,17 +234,19 @@
 </div>
 
 <div class="flex flex-row justify-between items-center h-16">
-	<h2 class="text-xl">All Things</h2>
+	<h2 class="text-xl">My Vault</h2>
 
 	<div class="flex flex-row justify-end items-center w-2/3 md:5/12 lg:w-1/4">
-		{#if isVisible}
+		{#if searchVisible}
 			<input
+				bind:this={searchInput}
 				class="input w-2/3"
 				transition:slide={{ duration: 300, axis: 'x' }}
 				type="text"
-				bind:value={search}
+				bind:value={searchString}
 				placeholder="search"
-				on:blur={searchFilter}
+				on:keydown={handleKeydown}
+				aria-label="Search"
 			/>
 		{/if}
 
@@ -253,7 +298,7 @@
 									{#each [...entity.Parent].slice(0, parentMax).reverse() as parent, index}
 										<span class="capitalize">{parent.Name}</span>
 
-										{#if (index < entity.Parent.length - 1) && (index < parentMax - 1)}
+										{#if index < entity.Parent.length - 1 && index < parentMax - 1}
 											<span>&nbsp;<i class="fa-solid fa-arrow-right"></i>&nbsp;</span>
 										{/if}
 									{/each}
