@@ -175,7 +175,7 @@
 	<input
 		id="birthday"
 		class="input {formErrorClass.birthday}"
-		type="text"
+		type="date"
 		bind:value={formData.birthday}
 		on:input={validateBirthday}
 		on:focusout={validateBirthday}
