@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test('INT-1: Homepage Has Expected HTML', async ({ page }) => {
 	await page.goto('/');
 	await expect(page.locator('h1')).toBeVisible();
-	await expect(page.locator('h1')).toContainText("Organize This!");
+	await expect(page.locator('h1')).toContainText("WillowSuite Vault");
 
 	await expect(page.locator('#hamburgerMenu')).toBeVisible();
 
