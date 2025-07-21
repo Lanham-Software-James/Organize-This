@@ -229,7 +229,7 @@
 </div>
 
 <div class="flex flex-row justify-between items-center h-16">
-	<h2 class="text-xl">All Things</h2>
+	<h2 class="text-xl">My Vault</h2>
 
 	<div class="flex flex-row justify-end items-center w-2/3 md:5/12 lg:w-1/4">
 		{#if searchVisible}
