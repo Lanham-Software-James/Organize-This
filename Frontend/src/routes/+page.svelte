@@ -7,7 +7,7 @@
 		type ModalSettings,
 		type PopupSettings
 	} from '@skeletonlabs/skeleton';
-	import { getContext, onMount } from 'svelte';
+	import { getContext, onMount, tick } from 'svelte';
 	import { _getEntities as getEntities, type GetEntitiesData } from './+page';
 	import AddNewModal from '$lib/AddNewModal/AddNewModal.svelte';
 	import { slide } from 'svelte/transition';
@@ -171,7 +171,7 @@
 	let searchTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
 
 	let searchVisible = false;
-	let searchInput: HTMLInputElement | undefined;
+	let searchInput: HTMLInputElement | null = null;
 
 	// Reactive statement to handle search when visibility changes
 	$: if (searchVisible && searchString.length >= 0) {
@@ -181,9 +181,7 @@
 	// Reactive statement to focus the input when it becomes visible
 	$: if (searchVisible && searchInput) {
 		// Use setTimeout to ensure the input is rendered before focusing
-		setTimeout(() => {
-			searchInput?.focus();
-		}, 0);
+		tick().then(() => searchInput?.focus());
 	}
 
 	const popupFeatured: PopupSettings = {
