@@ -14,6 +14,7 @@
 	import QrCodeModal from '$lib/QRCodeModal/QRCodeModal.svelte';
 	import { cleanCategory } from '$lib/CleanCategory/CleanCategory';
 	import { goto } from '$app/navigation';
+	import { onDestroy } from 'svelte';
 
 	let entities: GetEntitiesData[] = [];
 	let offset = 0;
@@ -33,7 +34,7 @@
 
 	$: {
 		if (typeof width !== 'undefined') {
-			if(width <= 640) {
+			if (width <= 640) {
 				parentMax = 2;
 			} else if (width <= 768) {
 				parentMax = 5;
@@ -52,6 +53,10 @@
 		});
 
 		return unsubscribe;
+	});
+
+	onDestroy(() => {
+		if (searchTimeout) clearTimeout(searchTimeout);
 	});
 
 	async function loadData() {
@@ -82,7 +87,7 @@
 		}
 
 		// Only search if we have 2+ characters
-		if (searchString.length >= 2) {
+		if (searchString.length > 0) {
 			// Debounce for 400ms
 			searchTimeout = setTimeout(() => {
 				searchFilter();
@@ -97,8 +102,8 @@
 
 	async function rowClick(event: MouseEvent, id: number, category: string) {
 		const target = event.target as HTMLElement;
-		if(id == 0) {
-			return
+		if (id == 0) {
+			return;
 		}
 
 		if (
@@ -112,7 +117,7 @@
 					ref: QrCodeModal,
 					props: {
 						id: id,
-						category: category,
+						category: category
 					}
 				},
 				title: 'QR Code',
@@ -124,7 +129,7 @@
 			(target.tagName === 'I' && target.classList.contains('fa-circle-info'))
 		) {
 			// Navigate to details page
-			goto(`${category}/${id}`)
+			goto(`${category}/${id}`);
 		} else {
 			// Display Edit Modal
 			const modal: ModalSettings = {
@@ -155,13 +160,13 @@
 	};
 
 	let searchString = '';
-	let searchTimeout: ReturnType<typeof setTimeout>;
+	let searchTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
 
 	let searchVisible = false;
 	let searchInput: HTMLInputElement | undefined;
 
 	// Reactive statement to handle search when visibility changes
-	$: if (searchVisible && searchString.length >= 3) {
+	$: if (searchVisible && searchString.length >= 0) {
 		handleSearchInput();
 	}
 
@@ -235,7 +240,6 @@
 				type="text"
 				bind:value={searchString}
 				placeholder="search"
-				on:input={handleSearchInput}
 			/>
 		{/if}
 
@@ -287,7 +291,7 @@
 									{#each [...entity.Parent].slice(0, parentMax).reverse() as parent, index}
 										<span class="capitalize">{parent.Name}</span>
 
-										{#if (index < entity.Parent.length - 1) && (index < parentMax - 1)}
+										{#if index < entity.Parent.length - 1 && index < parentMax - 1}
 											<span>&nbsp;<i class="fa-solid fa-arrow-right"></i>&nbsp;</span>
 										{/if}
 									{/each}
