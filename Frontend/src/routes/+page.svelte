@@ -55,24 +55,42 @@
 	});
 
 	async function loadData() {
-		[entities, paginationSettings.size] = await getEntities(offset, limit, search, filters);
+		[entities, paginationSettings.size] = await getEntities(offset, limit, searchString, filters);
 	}
 
 	async function limitChange(e: CustomEvent) {
 		limit = e.detail;
 
-		[entities, paginationSettings.size] = await getEntities(offset, limit, search, filters);
+		[entities, paginationSettings.size] = await getEntities(offset, limit, searchString, filters);
 	}
 
 	async function pageChange(e: CustomEvent) {
 		page = e.detail;
 		offset = page * limit;
 
-		[entities, paginationSettings.size] = await getEntities(offset, limit, search, filters);
+		[entities, paginationSettings.size] = await getEntities(offset, limit, searchString, filters);
 	}
 
 	async function searchFilter() {
-		[entities, paginationSettings.size] = await getEntities(offset, limit, search, filters);
+		[entities, paginationSettings.size] = await getEntities(offset, limit, searchString, filters);
+	}
+
+	function handleSearchInput() {
+		// Clear existing timeout
+		if (searchTimeout) {
+			clearTimeout(searchTimeout);
+		}
+
+		// Only search if we have 2+ characters
+		if (searchString.length >= 2) {
+			// Debounce for 400ms
+			searchTimeout = setTimeout(() => {
+				searchFilter();
+			}, 400);
+		} else if (searchString.length === 0) {
+			// If search is cleared, search immediately
+			searchFilter();
+		}
 	}
 
 	const modalStore = getModalStore();
@@ -136,9 +154,24 @@
 		item: true
 	};
 
-	let search = '';
+	let searchString = '';
+	let searchTimeout: ReturnType<typeof setTimeout>;
 
-	let isVisible = false;
+	let searchVisible = false;
+	let searchInput: HTMLInputElement | undefined;
+
+	// Reactive statement to handle search when visibility changes
+	$: if (searchVisible && searchString.length >= 3) {
+		handleSearchInput();
+	}
+
+	// Reactive statement to focus the input when it becomes visible
+	$: if (searchVisible && searchInput) {
+		// Use setTimeout to ensure the input is rendered before focusing
+		setTimeout(() => {
+			searchInput?.focus();
+		}, 0);
+	}
 
 	const popupFeatured: PopupSettings = {
 		event: 'click',
@@ -154,7 +187,7 @@
 	}
 
 	function toggleSearch() {
-		isVisible = !isVisible;
+		searchVisible = !searchVisible;
 	}
 </script>
 
@@ -194,14 +227,15 @@
 	<h2 class="text-xl">All Things</h2>
 
 	<div class="flex flex-row justify-end items-center w-2/3 md:5/12 lg:w-1/4">
-		{#if isVisible}
+		{#if searchVisible}
 			<input
+				bind:this={searchInput}
 				class="input w-2/3"
 				transition:slide={{ duration: 300, axis: 'x' }}
 				type="text"
-				bind:value={search}
+				bind:value={searchString}
 				placeholder="search"
-				on:blur={searchFilter}
+				on:input={handleSearchInput}
 			/>
 		{/if}
 
