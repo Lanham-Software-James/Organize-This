@@ -183,18 +183,16 @@
 		tick().then(() => searchInput?.focus());
 	}
 
+	// Reactive statement to handle filter changes
+	$: if (filters) {
+		searchFilter();
+	}
+
 	const popupFeatured: PopupSettings = {
 		event: 'click',
 		target: 'popupFeatured',
 		placement: 'bottom',
-		state: (e: Record<string, boolean>) => popUpOpenClose(e)
 	};
-
-	function popUpOpenClose(e: Record<string, boolean>) {
-		if (!e.state) {
-			searchFilter();
-		}
-	}
 
 	function toggleSearch() {
 		searchVisible = !searchVisible;
