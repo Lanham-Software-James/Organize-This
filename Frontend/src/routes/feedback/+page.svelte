@@ -8,15 +8,15 @@
   let isSubmitting = false;
   let submitStatus = ''; // 'success', 'error', or ''
 
-  var isFormInvalid = true;
-  var formError = {
+  $: isFormInvalid = Object.values(formError).some(error => error !== '');
+  let formError = {
     email: '',
     message: '',
     overallSatisfaction: '',
     suggestionType: '',
     incorrect: ''
   };
-  var formErrorClass = {
+  let formErrorClass = {
     email: '',
     message: '',
     overallSatisfaction: '',
