@@ -223,22 +223,22 @@
 		</form>
 
 		<!-- prettier-ignore -->
-		<footer class="modal-footer flex justify-between items-center">
+		<footer class="modal-footer flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
 			{#if edit}
-				<div class="flex flex-col">
+				<div class="flex flex-col min-w-0">
 					<label class="flex items-center space-x-2 capitalize">
 						<input class="checkbox" type="checkbox" bind:checked={formData.delete}/>
-						<p>Delete {displayCategory}</p>
+						<span class="break-words">Delete {displayCategory}</span>
 					</label>
 
 					{#if formData.delete}
-						<p class="text-red-500 !mt-0">This cannot be undone!</p>
+						<p class="text-red-500 !mt-0 text-sm">This cannot be undone!</p>
 					{/if}
 				</div>
 			{:else}
 				<div></div>
 			{/if}
-			<div>
+			<div class="flex gap-2 sm:flex-shrink-0">
 				<button class="btn {parent.buttonNeutral}" on:click={parent.onClose}>{parent.buttonTextCancel}</button>
 				<button class="btn {parent.buttonPositive}" disabled={isFormInvalid} on:click={onFormSubmit}>{parent.buttonTextSubmit}</button>
 			</div>
