@@ -109,6 +109,15 @@
 						</button>
 					</li>
 				</ul>
+				<ul id="feedback" class="pt-4">
+					<p>Feedback</p>
+
+					<button type="button" class="btn bg-initial" on:click={() => navigate("/feedback")}>
+						<span><i class="fa-solid fa-comment"></i></span>
+						<span>Leave Feedback</span>
+					</button>
+				</ul>
+
 				<ul id="account" class="pt-4">
 					<p>Account</p>
 
