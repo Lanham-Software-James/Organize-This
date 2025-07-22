@@ -183,25 +183,50 @@
 		tick().then(() => searchInput?.focus());
 	}
 
+	// Reactive statement to handle filter changes
+	$: if (filters) {
+		searchFilter();
+	}
+
 	const popupFeatured: PopupSettings = {
 		event: 'click',
 		target: 'popupFeatured',
 		placement: 'bottom',
-		state: (e: Record<string, boolean>) => popUpOpenClose(e)
+		closeQuery: '.btn-close-popup'
 	};
-
-	function popUpOpenClose(e: Record<string, boolean>) {
-		if (!e.state) {
-			searchFilter();
-		}
-	}
 
 	function toggleSearch() {
 		searchVisible = !searchVisible;
 	}
+
+	function resetFilters() {
+		filters = {
+			building: true,
+			room: true,
+			shelving_unit: true,
+			shelf: true,
+			container: true,
+			item: true
+		};
+	}
+
+	function deselectAllFilters() {
+		filters = {
+			building: false,
+			room: false,
+			shelving_unit: false,
+			shelf: false,
+			container: false,
+			item: false
+		};
+	}
+
+
 </script>
 
-<div class="card p-4 w-72 shadow-xl z-50" data-popup="popupFeatured">
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+<!-- svelte-ignore a11y-no-static-element-interactions -->
+<div class="card p-4 w-72 shadow-xl z-50" data-popup="popupFeatured" on:click|stopPropagation>
 	<label class="flex items-center space-x-2">
 		<input class="checkbox" type="checkbox" bind:checked={filters['building']} />
 		<p>Buildings</p>
@@ -231,6 +256,23 @@
 		<input class="checkbox" type="checkbox" bind:checked={filters['item']} />
 		<p>Items</p>
 	</label>
+
+	<div class="flex justify-center gap-2 mt-4">
+		<button 
+			type="button" 
+			class="btn btn-sm variant-soft" 
+			on:mousedown={(e) => { e.preventDefault(); e.stopPropagation(); resetFilters(); }}
+		>
+			Reset Filters
+		</button>
+		<button 
+			type="button" 
+			class="btn btn-sm variant-soft" 
+			on:mousedown={(e) => { e.preventDefault(); e.stopPropagation(); deselectAllFilters(); }}
+		>
+			Deselect All
+		</button>
+	</div>
 </div>
 
 <div class="flex flex-row justify-between items-center h-16">
