@@ -338,10 +338,11 @@
 									{entity.Address}
 								{:else}
 									{#each [...entity.Parent].slice(0, parentMax).reverse() as parent, index}
-										<span class="capitalize">{parent.Name}</span>
+										<span class="capitalize block sm:inline">{parent.Name}</span>
 
 										{#if index < entity.Parent.length - 1 && index < parentMax - 1}
-											<span>&nbsp;<i class="fa-solid fa-arrow-right"></i>&nbsp;</span>
+											<span class="hidden sm:inline">&nbsp;<i class="fa-solid fa-arrow-right"></i>&nbsp;</span>
+											<span class="sm:hidden"><br /></span>
 										{/if}
 									{/each}
 								{/if}
